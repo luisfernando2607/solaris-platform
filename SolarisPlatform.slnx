@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SolarisPlatform.API/SolarisPlatform.API.csproj" />
+    <Project Path="src/SolarisPlatform.Application/SolarisPlatform.Application.csproj" />
+    <Project Path="src/SolarisPlatform.Domain/SolarisPlatform.Domain.csproj" />
+    <Project Path="src/SolarisPlatform.Infrastructure/SolarisPlatform.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SolarisPlatform.Tests/SolarisPlatform.Tests.csproj" />
+  </Folder>
+</Solution>

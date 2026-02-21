@@ -1,0 +1,11 @@
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.Domain/bin/Debug/net10.0/SolarisPlatform.Domain.deps.json
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.Domain/bin/Debug/net10.0/SolarisPlatform.Domain.dll
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.Domain/bin/Debug/net10.0/SolarisPlatform.Domain.pdb
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.Domain/obj/Debug/net10.0/SolarisPlatform.Domain.GeneratedMSBuildEditorConfig.editorconfig
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.Domain/obj/Debug/net10.0/SolarisPlatform.Domain.AssemblyInfoInputs.cache
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.Domain/obj/Debug/net10.0/SolarisPlatform.Domain.AssemblyInfo.cs
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.Domain/obj/Debug/net10.0/SolarisPlatform.Domain.csproj.CoreCompileInputs.cache
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.Domain/obj/Debug/net10.0/SolarisPlatform.Domain.dll
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.Domain/obj/Debug/net10.0/refint/SolarisPlatform.Domain.dll
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.Domain/obj/Debug/net10.0/SolarisPlatform.Domain.pdb
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.Domain/obj/Debug/net10.0/ref/SolarisPlatform.Domain.dll

@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Tests · Solaris Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root, [data-theme="dark"] {
+      --bg:      #07090f; --surface: #0d1117; --surface2: #111820;
+      --border:  #1e2a3a; --text: #e2e8f0;   --muted: #64748b;
+      --green:   #22c55e; --red: #ef4444;     --yellow: #eab308;
+      --blue:    #3b82f6; --accent: #f59e0b;
+      --grid-color: rgba(59,130,246,.04);
+    }
+    [data-theme="light"] {
+      --bg: #f1f5f9; --surface: #fff; --surface2: #f8fafc;
+      --border: #cbd5e1; --text: #0f172a; --muted: #64748b;
+      --green: #16a34a; --red: #dc2626; --yellow: #ca8a04;
+      --blue: #2563eb; --accent: #d97706;
+      --grid-color: rgba(37,99,235,.05);
+    }
+
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh; padding: 2rem;
+      transition: background .35s, color .35s;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none;
+      background-image:
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    .orb { position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; opacity: .15; animation: drift 16s ease-in-out infinite alternate; }
+    .orb-1 { width: 500px; height: 500px; background: #1d4ed8; top: -150px; right: -100px; }
+    .orb-2 { width: 350px; height: 350px; background: #7c3aed; bottom: -100px; left: -80px; animation-delay: 6s; }
+    @keyframes drift { from { transform:translate(0,0); } to { transform:translate(20px,-25px); } }
+
+    .page {
+      position: relative; z-index: 1;
+      max-width: 960px; margin: 0 auto;
+      display: flex; flex-direction: column; gap: 1.5rem;
+      animation: fadeUp .5s ease both;
+    }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:none; } }
+
+    /* ── Header ── */
+    .header {
+      display: flex; align-items: center; gap: 1rem;
+      border-bottom: 1px solid var(--border); padding-bottom: 1.5rem;
+    }
+    .back-btn {
+      font-family: 'JetBrains Mono', monospace; font-size: .72rem; color: var(--muted);
+      text-decoration: none; border: 1px solid var(--border);
+      padding: .35rem .75rem; border-radius: 8px;
+      transition: border-color .2s, color .2s;
+    }
+    .back-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .header-center h1 {
+      font-size: 1.4rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--text) 40%, var(--accent));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .header-center p { font-family: 'JetBrains Mono', monospace; font-size: .68rem; color: var(--muted); margin-top: 2px; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: .75rem; }
+
+    /* theme switch */
+    .theme-switch { display: flex; align-items: center; gap: .4rem; user-select: none; }
+    .toggle { position: relative; width: 38px; height: 20px; cursor: pointer; }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .track { position: absolute; inset: 0; border-radius: 999px; background: var(--border); transition: background .3s; }
+    .toggle input:checked + .track { background: var(--blue); }
+    .thumb { position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; border-radius: 50%; background: #fff; transition: transform .3s; }
+    .toggle input:checked ~ .thumb { transform: translateX(18px); }
+
+    /* ── Credenciales ── */
+    .creds-bar {
+      display: flex; gap: .75rem; align-items: flex-end;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1rem 1.25rem;
+    }
+    .field { display: flex; flex-direction: column; gap: .35rem; flex: 1; }
+    .field label { font-family: 'JetBrains Mono', monospace; font-size: .62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+    .field input {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: .78rem;
+      padding: .5rem .75rem; border-radius: 8px; outline: none;
+      transition: border-color .2s;
+    }
+    .field input:focus { border-color: var(--blue); }
+
+    /* Token display */
+    .token-bar {
+      display: flex; gap: .5rem; align-items: center;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: .65rem 1rem;
+      font-family: 'JetBrains Mono', monospace; font-size: .65rem;
+    }
+    .token-label { color: var(--muted); white-space: nowrap; }
+    .token-val { color: var(--green); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .token-val.empty { color: var(--muted); font-style: italic; }
+
+    /* ── Botones de acción ── */
+    .actions { display: flex; gap: .75rem; flex-wrap: wrap; }
+    .btn {
+      display: flex; align-items: center; gap: .45rem;
+      font-family: 'JetBrains Mono', monospace; font-size: .72rem; font-weight: 500;
+      padding: .55rem 1.1rem; border-radius: 9px; border: 1px solid;
+      cursor: pointer; transition: all .2s; white-space: nowrap;
+    }
+    .btn-primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-outline { background: transparent; border-color: var(--border); color: var(--text); }
+    .btn-outline:hover { border-color: var(--blue); color: var(--blue); }
+    .btn-danger  { background: transparent; border-color: rgba(239,68,68,.4); color: var(--red); }
+    .btn-danger:hover  { background: rgba(239,68,68,.1); }
+
+    /* ── Suites de tests ── */
+    .suite {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+    }
+    .suite-header {
+      display: flex; align-items: center; gap: .75rem;
+      padding: .85rem 1.25rem; background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+    .suite-icon { font-size: 1.1rem; }
+    .suite-title { font-weight: 700; font-size: .9rem; }
+    .suite-desc  { font-family: 'JetBrains Mono', monospace; font-size: .62rem; color: var(--muted); }
+    .suite-stats { margin-left: auto; display: flex; gap: .5rem; font-family: 'JetBrains Mono', monospace; font-size: .65rem; }
+    .stat-ok  { color: var(--green); }
+    .stat-err { color: var(--red); }
+    .stat-skip{ color: var(--muted); }
+
+    /* ── Test rows ── */
+    .test-list { display: flex; flex-direction: column; }
+    .test-row {
+      display: grid; grid-template-columns: 24px 1fr auto;
+      align-items: start; gap: .75rem;
+      padding: .7rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      transition: background .15s;
+    }
+    .test-row:last-child { border-bottom: none; }
+    .test-row:hover { background: var(--surface2); }
+
+    .test-icon { font-size: .9rem; padding-top: 2px; }
+
+    .test-body { display: flex; flex-direction: column; gap: .2rem; }
+    .test-name { font-size: .82rem; font-weight: 600; }
+    .test-desc { font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: var(--muted); }
+
+    /* Response detail expandible */
+    .test-response {
+      display: none; margin-top: .5rem;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; padding: .6rem .85rem;
+      font-family: 'JetBrains Mono', monospace; font-size: .65rem;
+      color: var(--muted); max-height: 200px; overflow-y: auto;
+      white-space: pre-wrap; word-break: break-all;
+    }
+    .test-response.visible { display: block; }
+
+    .test-meta {
+      display: flex; flex-direction: column; align-items: flex-end; gap: .2rem;
+      font-family: 'JetBrains Mono', monospace; font-size: .62rem; color: var(--muted);
+      white-space: nowrap; padding-top: 2px;
+    }
+    .test-status-code { font-weight: 600; }
+    .test-status-code.ok  { color: var(--green); }
+    .test-status-code.err { color: var(--red); }
+    .test-ms { color: var(--muted); }
+
+    .toggle-detail {
+      background: none; border: none; cursor: pointer;
+      font-family: 'JetBrains Mono', monospace; font-size: .6rem;
+      color: var(--blue); padding: 0;
+    }
+    .toggle-detail:hover { text-decoration: underline; }
+
+    /* ── Spinner ── */
+    .spin {
+      display: inline-block; width: 12px; height: 12px;
+      border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
+      border-radius: 50%; animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Resumen final ── */
+    .summary {
+      display: none; border-radius: 12px; padding: 1.1rem 1.5rem;
+      border: 1px solid; font-weight: 700; font-size: 1rem;
+      display: none; align-items: center; gap: 1rem;
+    }
+    .summary.show { display: flex; }
+    .summary.pass { background: rgba(34,197,94,.08);  border-color: rgba(34,197,94,.3); color: var(--green); }
+    .summary.fail { background: rgba(239,68,68,.08);  border-color: rgba(239,68,68,.3); color: var(--red); }
+    .summary-detail { font-family: 'JetBrains Mono', monospace; font-size: .72rem; margin-left: auto; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="page">
+
+    <!-- Header -->
+    <div class="header">
+      <a class="back-btn" href="/">← Inicio</a>
+      <div class="header-center">
+        <h1>🧪 API Test Console</h1>
+        <p>Solaris Platform · Pruebas de integración en tiempo real</p>
+      </div>
+      <div class="header-right">
+        <div class="theme-switch">
+          <span>☀️</span>
+          <label class="toggle">
+            <input type="checkbox" id="themeToggle" />
+            <span class="track"></span><span class="thumb"></span>
+          </label>
+          <span>🌙</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Credenciales -->
+    <div class="creds-bar">
+      <div class="field">
+        <label>Email</label>
+        <input type="text" id="email" value="admin@solaris.local" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="password" value="Admin123!#" />
+      </div>
+      <div class="field" style="max-width:160px">
+        <label>Base URL</label>
+        <input type="text" id="baseUrl" value="http://localhost:5180" />
+      </div>
+    </div>
+
+    <!-- Token activo -->
+    <div class="token-bar">
+      <span class="token-label">JWT activo →</span>
+      <span class="token-val empty" id="tokenDisplay">Sin token — ejecuta los tests primero</span>
+    </div>
+
+    <!-- Botones -->
+    <div class="actions">
+      <button class="btn btn-primary" id="btnRunAll" onclick="runAll()">
+        ▶ Ejecutar todos los tests
+      </button>
+      <button class="btn btn-outline" onclick="runSuite('smoke')">🔍 Solo Smoke</button>
+      <button class="btn btn-outline" onclick="runSuite('auth')">🔑 Solo Auth</button>
+      <button class="btn btn-outline" onclick="runSuite('crud')">📋 Solo CRUD</button>
+      <button class="btn btn-outline" onclick="runSuite('errors')">⚠️ Solo Errores</button>
+      <button class="btn btn-danger"  onclick="clearAll()">✕ Limpiar</button>
+    </div>
+
+    <!-- Resumen -->
+    <div class="summary" id="summary">
+      <span id="summaryText">—</span>
+      <span class="summary-detail" id="summaryDetail"></span>
+    </div>
+
+    <!-- ════════════════════════════════════════
+         SUITE 1: SMOKE TESTS
+         ¿La API responde? Sin autenticación
+    ════════════════════════════════════════ -->
+    <div class="suite" id="suite-smoke">
+      <div class="suite-header">
+        <span class="suite-icon">🔍</span>
+        <div>
+          <div class="suite-title">Smoke Tests</div>
+          <div class="suite-desc">Verificar que la API responde sin autenticación</div>
+        </div>
+        <div class="suite-stats" id="stats-smoke">
+          <span class="stat-ok"  id="smoke-ok">✓0</span>
+          <span class="stat-err" id="smoke-err">✗0</span>
+          <span class="stat-skip"id="smoke-skip">—0</span>
+        </div>
+      </div>
+      <div class="test-list">
+        <div class="test-row" id="t-health-api">
+          <span class="test-icon">⏳</span>
+          <div class="test-body">
+            <span class="test-name">GET /health/api — API responde</span>
+            <span class="test-desc">Espera: status=Healthy, HTTP 200</span>
+            <pre class="test-response" id="r-health-api"></pre>
+          </div>
+          <div class="test-meta">
+            <span class="test-status-code" id="c-health-api">—</span>
+            <span class="test-ms"          id="m-health-api"></span>
+            <button class="toggle-detail"  onclick="toggleDetail('health-api')">ver</button>
+          </div>
+        </div>
+        <div class="test-row" id="t-health-data">
+          <span class="test-icon">⏳</span>
+          <div class="test-body">
+            <span class="test-name">GET /health/data — API + BD responden</span>
+            <span class="test-desc">Espera: status=Healthy, BD conectada</span>
+            <pre class="test-response" id="r-health-data"></pre>
+          </div>
+          <div class="test-meta">
+            <span class="test-status-code" id="c-health-data">—</span>
+            <span class="test-ms"          id="m-health-data"></span>
+            <button class="toggle-detail"  onclick="toggleDetail('health-data')">ver</button>
+          </div>
+        </div>
+        <div class="test-row" id="t-unauth">
+          <span class="test-icon">⏳</span>
+          <div class="test-body">
+            <span class="test-name">GET /api/Usuarios sin JWT → 401</span>
+            <span class="test-desc">Espera: HTTP 401 Unauthorized (endpoint protegido)</span>
+            <pre class="test-response" id="r-unauth"></pre>
+          </div>
+          <div class="test-meta">
+            <span class="test-status-code" id="c-unauth">—</span>
+            <span class="test-ms"          id="m-unauth"></span>
+            <button class="toggle-detail"  onclick="toggleDetail('unauth')">ver</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════
+         SUITE 2: AUTENTICACIÓN
+         Login, credenciales malas, refresh, logout
+    ════════════════════════════════════════ -->
+    <div class="suite" id="suite-auth">
+      <div class="suite-header">
+        <span class="suite-icon">🔑</span>
+        <div>
+          <div class="suite-title">Autenticación</div>
+          <div class="suite-desc">Login, JWT, refresh token y logout</div>
+        </div>
+        <div class="suite-stats">
+          <span class="stat-ok"  id="auth-ok">✓0</span>
+          <span class="stat-err" id="auth-err">✗0</span>
+          <span class="stat-skip"id="auth-skip">—0</span>
+        </div>
+      </div>
+      <div class="test-list">
+        <div class="test-row" id="t-login-bad">
+          <span class="test-icon">⏳</span>
+          <div class="test-body">
+            <span class="test-name">POST /api/Auth/login con credenciales INCORRECTAS → 400/401</span>
+            <span class="test-desc">Espera: error, sin token</span>
+            <pre class="test-response" id="r-login-bad"></pre>
+          </div>
+          <div class="test-meta">
+            <span class="test-status-code" id="c-login-bad">—</span>
+            <span class="test-ms"          id="m-login-bad"></span>
+            <button class="toggle-detail"  onclick="toggleDetail('login-bad')">ver</button>
+          </div>
+        </div>
+        <div class="test-row" id="t-login-ok">
+          <span class="test-icon">⏳</span>
+          <div class="test-body">
+            <span class="test-name">POST /api/Auth/login con credenciales CORRECTAS → 200 + JWT</span>
+            <span class="test-desc">Guarda el token para los siguientes tests</span>
+            <pre class="test-response" id="r-login-ok"></pre>
+          </div>
+          <div class="test-meta">
+            <span class="test-status-code" id="c-login-ok">—</span>
+            <span class="test-ms"          id="m-login-ok"></span>
+            <button class="toggle-detail"  onclick="toggleDetail('login-ok')">ver</button>
+          </div>
+        </div>
+        <div class="test-row" id="t-me">
+          <span class="test-icon">⏳</span>
+          <div class="test-body">
+            <span class="test-name">GET /api/Auth/me con JWT válido → 200 + datos usuario</span>
+            <span class="test-desc">Verifica que el token funciona y devuelve el usuario actual</span>
+            <pre class="test-response" id="r-me"></pre>
+          </div>
+          <div class="test-meta">
+            <span class="test-status-code" id="c-me">—</span>
+            <span class="test-ms"          id="m-me"></span>
+            <button class="toggle-detail"  onclick="toggleDetail('me')">ver</button>
+          </div>
+        </div>
+        <div class="test-row" id="t-refresh">
+          <span class="test-icon">⏳</span>
+          <div class="test-body">
+            <span class="test-name">POST /api/Auth/refresh-token → nuevo JWT</span>
+            <span class="test-desc">Espera: nuevo accessToken válido</span>
+            <pre class="test-response" id="r-refresh"></pre>
+          </div>
+          <div class="test-meta">
+            <span class="test-status-code" id="c-refresh">—</span>
+            <span class="test-ms"          id="m-refresh"></span>
+            <button class="toggle-detail"  onclick="toggleDetail('refresh')">ver</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════
+         SUITE 3: CRUD
+         Listar datos reales de la BD
+    ════════════════════════════════════════ -->
+    <div class="suite" id="suite-crud">
+      <div class="suite-header">
+        <span class="suite-icon">📋</span>
+        <div>
+          <div class="suite-title">CRUD — Datos reales de BD</div>
+          <div class="suite-desc">Verificar que los datos persisten y se leen correctamente</div>
+        </div>
+        <div class="suite-stats">
+          <span class="stat-ok"  id="crud-ok">✓0</span>
+          <span class="stat-err" id="crud-err">✗0</span>
+          <span class="stat-skip"id="crud-skip">—0</span>
+        </div>
+      </div>
+      <div class="test-list">
+        <div class="test-row" id="t-list-usuarios">
+          <span class="test-icon">⏳</span>
+          <div class="test-body">
+            <span class="test-name">GET /api/Usuarios → lista con al menos 1 usuario</span>
+            <span class="test-desc">Verifica que los datos semilla están en la BD</span>
+            <pre class="test-response" id="r-list-usuarios"></pre>
+          </div>
+          <div class="test-meta">
+            <span class="test-status-code" id="c-list-usuarios">—</span>
+            <span class="test-ms"          id="m-list-usuarios"></span>
+            <button class="toggle-detail"  onclick="toggleDetail('list-usuarios')">ver</button>
+          </div>
+        </div>
+        <div class="test-row" id="t-list-roles">
+          <span class="test-icon">⏳</span>
+          <div class="test-body">
+            <span class="test-name">GET /api/Roles → lista con roles del sistema</span>
+            <span class="test-desc">Espera: SUPER_ADMIN, ADMIN_EMPRESA, SUPERVISOR, etc.</span>
+            <pre class="test-response" id="r-list-roles"></pre>
+          </div>
+          <div class="test-meta">
+            <span class="test-status-code" id="c-list-roles">—</span>
+            <span class="test-ms"          id="m-list-roles"></span>
+            <button class="toggle-detail"  onclick="toggleDetail('list-roles')">ver</button>
+          </div>
+        </div>
+        <div class="test-row" id="t-list-empresas">
+          <span class="test-icon">⏳</span>
+          <div class="test-body">
+            <span class="test-name">GET /api/Empresas → empresa demo en BD</span>
+            <span class="test-desc">Espera: Solaris Core Demo S.A. con sus sucursales</span>
+            <pre class="test-response" id="r-list-empresas"></pre>
+          </div>
+          <div class="test-meta">
+            <span class="test-status-code" id="c-list-empresas">—</span>
+            <span class="test-ms"          id="m-list-empresas"></span>
+            <button class="toggle-detail"  onclick="toggleDetail('list-empresas')">ver</button>
+          </div>
+        </div>
+        <div class="test-row" id="t-get-usuario">
+          <span class="test-icon">⏳</span>
+          <div class="test-body">
+            <span class="test-name">GET /api/Usuarios/1 → usuario admin por ID</span>
+            <span class="test-desc">Verifica que el endpoint por ID devuelve datos correctos</span>
+            <pre class="test-response" id="r-get-usuario"></pre>
+          </div>
+          <div class="test-meta">
+            <span class="test-status-code" id="c-get-usuario">—</span>
+            <span class="test-ms"          id="m-get-usuario"></span>
+            <button class="toggle-detail"  onclick="toggleDetail('get-usuario')">ver</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════
+         SUITE 4: CASOS DE ERROR
+         Validar que los errores se manejan bien
+    ════════════════════════════════════════ -->
+    <div class="suite" id="suite-errors">
+      <div class="suite-header">
+        <span class="suite-icon">⚠️</span>
+        <div>
+          <div class="suite-title">Casos de Error</div>
+          <div class="suite-desc">Validar que los errores devuelven respuestas claras</div>
+        </div>
+        <div class="suite-stats">
+          <span class="stat-ok"  id="errors-ok">✓0</span>
+          <span class="stat-err" id="errors-err">✗0</span>
+          <span class="stat-skip"id="errors-skip">—0</span>
+        </div>
+      </div>
+      <div class="test-list">
+        <div class="test-row" id="t-404-usuario">
+          <span class="test-icon">⏳</span>
+          <div class="test-body">
+            <span class="test-name">GET /api/Usuarios/99999 → 404 Not Found</span>
+            <span class="test-desc">ID que no existe debe devolver 404 con mensaje claro</span>
+            <pre class="test-response" id="r-404-usuario"></pre>
+          </div>
+          <div class="test-meta">
+            <span class="test-status-code" id="c-404-usuario">—</span>
+            <span class="test-ms"          id="m-404-usuario"></span>
+            <button class="toggle-detail"  onclick="toggleDetail('404-usuario')">ver</button>
+          </div>
+        </div>
+        <div class="test-row" id="t-login-empty">
+          <span class="test-icon">⏳</span>
+          <div class="test-body">
+            <span class="test-name">POST /api/Auth/login vacío → 400 Bad Request</span>
+            <span class="test-desc">Campos requeridos vacíos deben devolver 400 con errores de validación</span>
+            <pre class="test-response" id="r-login-empty"></pre>
+          </div>
+          <div class="test-meta">
+            <span class="test-status-code" id="c-login-empty">—</span>
+            <span class="test-ms"          id="m-login-empty"></span>
+            <button class="toggle-detail"  onclick="toggleDetail('login-empty')">ver</button>
+          </div>
+        </div>
+        <div class="test-row" id="t-invalid-token">
+          <span class="test-icon">⏳</span>
+          <div class="test-body">
+            <span class="test-name">GET /api/Usuarios con JWT INVÁLIDO → 401</span>
+            <span class="test-desc">Token manipulado/falso debe ser rechazado</span>
+            <pre class="test-response" id="r-invalid-token"></pre>
+          </div>
+          <div class="test-meta">
+            <span class="test-status-code" id="c-invalid-token">—</span>
+            <span class="test-ms"          id="m-invalid-token"></span>
+            <button class="toggle-detail"  onclick="toggleDetail('invalid-token')">ver</button>
+          </div>
+        </div>
+        <div class="test-row" id="t-bad-refresh">
+          <span class="test-icon">⏳</span>
+          <div class="test-body">
+            <span class="test-name">POST /api/Auth/refresh-token con token falso → error</span>
+            <span class="test-desc">Refresh token inválido debe ser rechazado</span>
+            <pre class="test-response" id="r-bad-refresh"></pre>
+          </div>
+          <div class="test-meta">
+            <span class="test-status-code" id="c-bad-refresh">—</span>
+            <span class="test-ms"          id="m-bad-refresh"></span>
+            <button class="toggle-detail"  onclick="toggleDetail('bad-refresh')">ver</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page -->
+
+  <script>
+    // ── Estado global ──────────────────────────────────────
+    let JWT = '';
+    let REFRESH_TOKEN = '';
+    let totalOk  = 0;
+    let totalErr = 0;
+
+    const suiteCounters = {
+      smoke:  { ok:0, err:0, skip:0 },
+      auth:   { ok:0, err:0, skip:0 },
+      crud:   { ok:0, err:0, skip:0 },
+      errors: { ok:0, err:0, skip:0 },
+    };
+
+    // ── Theme ──────────────────────────────────────────────
+    const html   = document.documentElement;
+    const toggle = document.getElementById('themeToggle');
+    applyTheme(localStorage.getItem('solaris-theme') || 'dark');
+    toggle.addEventListener('change', () => {
+      const t = toggle.checked ? 'dark' : 'light';
+      applyTheme(t); localStorage.setItem('solaris-theme', t);
+    });
+    function applyTheme(t) { html.setAttribute('data-theme', t); toggle.checked = (t === 'dark'); }
+
+    // ── Helpers ───────────────────────────────────────────
+    function base() { return document.getElementById('baseUrl').value.trim().replace(/\/$/, ''); }
+
+    // Hace un fetch y devuelve { status, data, ms }
+    async function api(method, path, body, token) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      const t0  = performance.now();
+      const res = await fetch(base() + path, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined
+      });
+      const ms   = Math.round(performance.now() - t0);
+      let data;
+      try { data = await res.json(); } catch { data = null; }
+      return { status: res.status, data, ms };
+    }
+
+    // Marca un test como corriendo
+    function setRunning(id) {
+      document.querySelector(`#t-${id} .test-icon`).textContent = '⏳';
+    }
+
+    // Marca resultado de un test
+    function setResult(id, passed, status, ms, data, suite) {
+      const icon = document.querySelector(`#t-${id} .test-icon`);
+      icon.textContent = passed ? '✅' : '❌';
+
+      const codeEl = document.getElementById(`c-${id}`);
+      codeEl.textContent = status;
+      codeEl.className   = 'test-status-code ' + (passed ? 'ok' : 'err');
+
+      document.getElementById(`m-${id}`).textContent = ms + 'ms';
+
+      const pre = document.getElementById(`r-${id}`);
+      pre.textContent = JSON.stringify(data, null, 2);
+
+      // Counters
+      if (passed) { suiteCounters[suite].ok++;  totalOk++;  }
+      else        { suiteCounters[suite].err++; totalErr++; }
+      updateSuiteStats(suite);
+    }
+
+    function updateSuiteStats(suite) {
+      const c = suiteCounters[suite];
+      document.getElementById(`${suite}-ok`).textContent   = `✓${c.ok}`;
+      document.getElementById(`${suite}-err`).textContent  = `✗${c.err}`;
+      document.getElementById(`${suite}-skip`).textContent = `—${c.skip}`;
+    }
+
+    function toggleDetail(id) {
+      document.getElementById(`r-${id}`).classList.toggle('visible');
+    }
+
+    function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    // ── Limpiar ───────────────────────────────────────────
+    function clearAll() {
+      JWT = ''; REFRESH_TOKEN = ''; totalOk = 0; totalErr = 0;
+      Object.keys(suiteCounters).forEach(s => { suiteCounters[s] = {ok:0,err:0,skip:0}; updateSuiteStats(s); });
+      document.getElementById('tokenDisplay').textContent = 'Sin token — ejecuta los tests primero';
+      document.getElementById('tokenDisplay').className  = 'token-val empty';
+      document.querySelectorAll('.test-icon').forEach(el => el.textContent = '⏳');
+      document.querySelectorAll('.test-status-code').forEach(el => { el.textContent = '—'; el.className = 'test-status-code'; });
+      document.querySelectorAll('.test-ms').forEach(el => el.textContent = '');
+      document.querySelectorAll('.test-response').forEach(el => { el.textContent = ''; el.classList.remove('visible'); });
+      document.getElementById('summary').className = 'summary';
+    }
+
+    // ── SUITE SMOKE ───────────────────────────────────────
+    async function runSmoke() {
+      // Test 1: /health/api
+      setRunning('health-api');
+      try {
+        const r = await api('GET', '/health/api');
+        setResult('health-api', r.status === 200 && r.data?.status === 'Healthy', r.status, r.ms, r.data, 'smoke');
+      } catch(e) { setResult('health-api', false, 'ERR', 0, {error: e.message}, 'smoke'); }
+
+      await delay(300);
+
+      // Test 2: /health/data
+      setRunning('health-data');
+      try {
+        const r = await api('GET', '/health/data');
+        const dbOk = r.data?.checks?.find(c => c.name === 'database')?.status === 'Healthy';
+        setResult('health-data', r.status === 200 && dbOk, r.status, r.ms, r.data, 'smoke');
+      } catch(e) { setResult('health-data', false, 'ERR', 0, {error: e.message}, 'smoke'); }
+
+      await delay(300);
+
+      // Test 3: endpoint protegido sin JWT
+      setRunning('unauth');
+      try {
+        const r = await api('GET', '/api/Usuarios');
+        setResult('unauth', r.status === 401, r.status, r.ms, r.data, 'smoke');
+      } catch(e) { setResult('unauth', false, 'ERR', 0, {error: e.message}, 'smoke'); }
+    }
+
+    // ── SUITE AUTH ────────────────────────────────────────
+    async function runAuth() {
+      // Test 1: Login con credenciales incorrectas
+      setRunning('login-bad');
+      try {
+        const r = await api('POST', '/api/Auth/login', { email: 'malo@test.com', password: 'ContraseñaMala123!' });
+        setResult('login-bad', r.status === 400 || r.status === 401, r.status, r.ms, r.data, 'auth');
+      } catch(e) { setResult('login-bad', false, 'ERR', 0, {error: e.message}, 'auth'); }
+
+      await delay(300);
+
+      // Test 2: Login correcto
+      setRunning('login-ok');
+      try {
+        const email    = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const r = await api('POST', '/api/Auth/login', { email, password });
+        // La API devuelve: { data: { token, refreshToken, usuario... }, success, message }
+        const token = r.data?.data?.token || r.data?.token || r.data?.accessToken;
+        const rToken = r.data?.data?.refreshToken || r.data?.refreshToken;
+        const ok = r.status === 200 && token;
+        if (ok) {
+          JWT           = token;
+          REFRESH_TOKEN = rToken;
+          const el = document.getElementById('tokenDisplay');
+          el.textContent = JWT.substring(0, 60) + '...';
+          el.className   = 'token-val';
+        }
+        // Mostrar respuesta completa pero ocultando el token completo
+        const displayData = r.data ? JSON.parse(JSON.stringify(r.data)) : null;
+        if (displayData?.data?.token) displayData.data.token = displayData.data.token.substring(0,40) + '...';
+        setResult('login-ok', ok, r.status, r.ms, displayData, 'auth');
+      } catch(e) { setResult('login-ok', false, 'ERR', 0, {error: e.message}, 'auth'); }
+
+      await delay(300);
+
+      // Test 3: GET /me con JWT válido
+      setRunning('me');
+      try {
+        const r = await api('GET', '/api/Auth/me', null, JWT);
+        const email = r.data?.data?.email || r.data?.email;
+        setResult('me', r.status === 200 && email, r.status, r.ms, r.data, 'auth');
+      } catch(e) { setResult('me', false, 'ERR', 0, {error: e.message}, 'auth'); }
+
+      await delay(300);
+
+      // Test 4: Refresh token
+      setRunning('refresh');
+      try {
+        // Tu API espera { RefreshToken: "..." } según el error de validación
+        const r = await api('POST', '/api/Auth/refresh-token', { RefreshToken: REFRESH_TOKEN });
+        const newToken = r.data?.data?.token || r.data?.data?.accessToken || r.data?.accessToken || r.data?.token;
+        const ok = r.status === 200 && newToken;
+        if (ok) JWT = newToken;
+        const displayData = r.data ? JSON.parse(JSON.stringify(r.data)) : null;
+        if (displayData?.data?.token) displayData.data.token = displayData.data.token.substring(0,40) + '...';
+        setResult('refresh', ok, r.status, r.ms, displayData, 'auth');
+      } catch(e) { setResult('refresh', false, 'ERR', 0, {error: e.message}, 'auth'); }
+    }
+
+    // ── SUITE CRUD ────────────────────────────────────────
+    async function runCrud() {
+      // Test 1: Listar usuarios
+      setRunning('list-usuarios');
+      try {
+        const r = await api('GET', '/api/Usuarios', null, JWT);
+        // La API puede devolver: array directo, { data: [...] }, { items: [...] }, { data: { items: [...] } }
+        const items = Array.isArray(r.data) ? r.data
+                    : Array.isArray(r.data?.data) ? r.data.data
+                    : r.data?.items || r.data?.data?.items || [];
+        const hasData = r.status === 200 && items.length > 0;
+        setResult('list-usuarios', hasData, r.status, r.ms, r.data, 'crud');
+      } catch(e) { setResult('list-usuarios', false, 'ERR', 0, {error: e.message}, 'crud'); }
+
+      await delay(300);
+
+      // Test 2: Listar roles
+      setRunning('list-roles');
+      try {
+        const r = await api('GET', '/api/Roles', null, JWT);
+        const hasData = r.status === 200;
+        setResult('list-roles', hasData, r.status, r.ms, r.data, 'crud');
+      } catch(e) { setResult('list-roles', false, 'ERR', 0, {error: e.message}, 'crud'); }
+
+      await delay(300);
+
+      // Test 3: Listar empresas
+      setRunning('list-empresas');
+      try {
+        const r = await api('GET', '/api/Empresas', null, JWT);
+        setResult('list-empresas', r.status === 200, r.status, r.ms, r.data, 'crud');
+      } catch(e) { setResult('list-empresas', false, 'ERR', 0, {error: e.message}, 'crud'); }
+
+      await delay(300);
+
+      // Test 4: Usuario por ID
+      setRunning('get-usuario');
+      try {
+        const r = await api('GET', '/api/Usuarios/1', null, JWT);
+        setResult('get-usuario', r.status === 200, r.status, r.ms, r.data, 'crud');
+      } catch(e) { setResult('get-usuario', false, 'ERR', 0, {error: e.message}, 'crud'); }
+    }
+
+    // ── SUITE ERRORS ──────────────────────────────────────
+    async function runErrors() {
+      // Test 1: ID inexistente
+      setRunning('404-usuario');
+      try {
+        const r = await api('GET', '/api/Usuarios/99999', null, JWT);
+        setResult('404-usuario', r.status === 404, r.status, r.ms, r.data, 'errors');
+      } catch(e) { setResult('404-usuario', false, 'ERR', 0, {error: e.message}, 'errors'); }
+
+      await delay(300);
+
+      // Test 2: Login vacío
+      setRunning('login-empty');
+      try {
+        const r = await api('POST', '/api/Auth/login', { email: '', password: '' });
+        setResult('login-empty', r.status === 400, r.status, r.ms, r.data, 'errors');
+      } catch(e) { setResult('login-empty', false, 'ERR', 0, {error: e.message}, 'errors'); }
+
+      await delay(300);
+
+      // Test 3: Token inválido
+      setRunning('invalid-token');
+      try {
+        const r = await api('GET', '/api/Usuarios', null, 'eyJhbGciOiJIUzI1NiJ9.FAKE.INVALID');
+        setResult('invalid-token', r.status === 401, r.status, r.ms, r.data, 'errors');
+      } catch(e) { setResult('invalid-token', false, 'ERR', 0, {error: e.message}, 'errors'); }
+
+      await delay(300);
+
+      // Test 4: Refresh token falso
+      setRunning('bad-refresh');
+      try {
+        const r = await api('POST', '/api/Auth/refresh-token', { refreshToken: 'token-falso-12345' });
+        setResult('bad-refresh', r.status === 400 || r.status === 401, r.status, r.ms, r.data, 'errors');
+      } catch(e) { setResult('bad-refresh', false, 'ERR', 0, {error: e.message}, 'errors'); }
+    }
+
+    // ── Run por suite ─────────────────────────────────────
+    async function runSuite(name) {
+      const btn = document.getElementById('btnRunAll');
+      btn.disabled = true;
+      if (name === 'smoke')  await runSmoke();
+      if (name === 'auth')   await runAuth();
+      if (name === 'crud')   await runCrud();
+      if (name === 'errors') await runErrors();
+      btn.disabled = false;
+      showSummary();
+    }
+
+    // ── Run all ───────────────────────────────────────────
+    async function runAll() {
+      clearAll();
+      const btn = document.getElementById('btnRunAll');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spin"></span> Ejecutando...';
+
+      await runSmoke();
+      await delay(400);
+      await runAuth();
+      await delay(400);
+      await runCrud();
+      await delay(400);
+      await runErrors();
+
+      btn.disabled = false;
+      btn.innerHTML = '▶ Ejecutar todos los tests';
+      showSummary();
+    }
+
+    // ── Resumen final ─────────────────────────────────────
+    function showSummary() {
+      const total  = totalOk + totalErr;
+      const allOk  = totalErr === 0;
+      const el     = document.getElementById('summary');
+      el.className = 'summary show ' + (allOk ? 'pass' : 'fail');
+      document.getElementById('summaryText').textContent =
+        allOk ? `✅ Todos los tests pasaron (${totalOk}/${total})` : `❌ ${totalErr} test(s) fallaron`;
+      document.getElementById('summaryDetail').textContent =
+        `${totalOk} correctos · ${totalErr} fallidos · ${total} total`;
+    }
+  </script>
+
+</body>
+</html>

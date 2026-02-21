@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solaris Platform API</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root, [data-theme="dark"] {
+      --bg:      #07090f;
+      --surface: #0d1117;
+      --surface2:#111820;
+      --border:  #1e2a3a;
+      --accent:  #f59e0b;
+      --accent2: #3b82f6;
+      --text:    #e2e8f0;
+      --muted:   #64748b;
+      --green:   #22c55e;
+      --red:     #ef4444;
+      --radius:  12px;
+      --orb-opacity: .2;
+      --grid-color: rgba(59,130,246,.04);
+    }
+
+    [data-theme="light"] {
+      --bg:      #f1f5f9;
+      --surface: #ffffff;
+      --surface2:#f8fafc;
+      --border:  #cbd5e1;
+      --accent:  #d97706;
+      --accent2: #2563eb;
+      --text:    #0f172a;
+      --muted:   #64748b;
+      --green:   #16a34a;
+      --red:     #dc2626;
+      --orb-opacity: .08;
+      --grid-color: rgba(37,99,235,.05);
+    }
+
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh; padding: 2.5rem 2rem;
+      overflow-x: hidden;
+      transition: background .35s, color .35s;
+    }
+
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image:
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+      background-size: 48px 48px; pointer-events: none;
+    }
+
+    .orb { position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; opacity: var(--orb-opacity); animation: drift 16s ease-in-out infinite alternate; }
+    .orb-1 { width: 600px; height: 600px; background: #1d4ed8; top: -200px; right: -150px; }
+    .orb-2 { width: 400px; height: 400px; background: #7c3aed; bottom: -120px; left: -100px; animation-delay: 6s; }
+
+    @keyframes drift { from { transform: translate(0,0); } to { transform: translate(25px,-30px); } }
+
+    .page {
+      position: relative; z-index: 1;
+      max-width: 880px; margin: 0 auto;
+      display: flex; flex-direction: column; gap: 2.5rem;
+      animation: fadeUp .6s ease both;
+    }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:none; } }
+
+    /* ── Header ── */
+    .header {
+      display: flex; align-items: center; gap: 1.25rem;
+      border-bottom: 1px solid var(--border); padding-bottom: 2rem;
+    }
+
+    .logo {
+      width: 52px; height: 52px; border-radius: 14px; flex-shrink: 0;
+      background: linear-gradient(135deg, #1d4ed8, #7c3aed);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem;
+    }
+
+    .header-text h1 {
+      font-size: 1.8rem; font-weight: 800; letter-spacing: -.5px;
+      background: linear-gradient(135deg, var(--text) 40%, var(--accent));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .header-text p { font-family: 'JetBrains Mono', monospace; font-size: .7rem; color: var(--muted); margin-top: 3px; }
+
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 1rem; }
+
+    /* Status badge */
+    .status-badge {
+      display: flex; align-items: center; gap: .45rem;
+      font-family: 'JetBrains Mono', monospace; font-size: .68rem; font-weight: 600;
+      padding: .35rem .9rem; border-radius: 999px;
+      border: 1px solid; transition: all .4s;
+    }
+    .status-badge.online  { color: var(--green); border-color: rgba(34,197,94,.3);  background: rgba(34,197,94,.08); }
+    .status-badge.offline { color: var(--red);   border-color: rgba(239,68,68,.3);  background: rgba(239,68,68,.08); }
+    .status-badge.loading { color: var(--muted); border-color: var(--border);        background: transparent; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: pulse 2s ease infinite; }
+    @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,.5); } 50% { box-shadow: 0 0 0 5px rgba(34,197,94,0); } }
+
+    /* Theme switch */
+    .theme-switch { display: flex; align-items: center; gap: .4rem; user-select: none; }
+    .theme-icon { font-size: .9rem; }
+    .toggle { position: relative; width: 40px; height: 22px; cursor: pointer; }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .track { position: absolute; inset: 0; border-radius: 999px; background: var(--border); transition: background .3s; }
+    .toggle input:checked + .track { background: var(--accent2); }
+    .thumb { position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: transform .3s cubic-bezier(.4,0,.2,1); }
+    .toggle input:checked ~ .thumb { transform: translateX(18px); }
+
+    /* ── Status cards ── */
+    .section-label { font-size: .68rem; font-weight: 700; letter-spacing: .12em; color: var(--muted); text-transform: uppercase; margin-bottom: .75rem; }
+
+    .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+
+    .status-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.1rem 1.25rem;
+      display: flex; flex-direction: column; gap: .55rem;
+      transition: background .35s, border-color .3s;
+    }
+    .status-card:hover { border-color: var(--accent2); }
+
+    .card-header { display: flex; align-items: center; gap: .6rem; }
+    .card-icon { font-size: 1.1rem; }
+    .card-title { font-weight: 700; font-size: .9rem; }
+
+    .card-status {
+      margin-left: auto;
+      font-family: 'JetBrains Mono', monospace; font-size: .62rem;
+      padding: .18rem .55rem; border-radius: 999px; font-weight: 600;
+    }
+    .cs-ok      { background: rgba(34,197,94,.15);  color: var(--green); }
+    .cs-err     { background: rgba(239,68,68,.15);  color: var(--red); }
+    .cs-loading { background: var(--border);         color: var(--muted); animation: blink .8s ease infinite alternate; }
+    @keyframes blink { from { opacity:.4; } to { opacity:1; } }
+
+    .card-detail { font-family: 'JetBrains Mono', monospace; font-size: .7rem; color: var(--muted); }
+    .card-detail strong { color: var(--text); }
+
+    /* ── Quick access ── */
+    .quick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+
+    .quick-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.25rem;
+      display: flex; align-items: center; gap: 1rem;
+      text-decoration: none; color: var(--text);
+      transition: border-color .2s, transform .2s, background .35s;
+      cursor: pointer;
+    }
+    .quick-card:hover { border-color: var(--accent2); transform: translateY(-2px); }
+
+    .quick-icon {
+      width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+    }
+    .quick-title { font-weight: 700; font-size: .88rem; }
+    .quick-sub   { font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── Endpoints list ── */
+    .ep-list { display: flex; flex-direction: column; gap: .5rem; }
+
+    .ep-item {
+      display: flex; align-items: center; gap: .75rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 9px; padding: .7rem 1rem;
+      font-family: 'JetBrains Mono', monospace; font-size: .75rem;
+      transition: background .15s;
+    }
+    .ep-item:hover { background: var(--surface2); }
+
+    .method {
+      font-size: .58rem; font-weight: 700;
+      padding: .2rem .5rem; border-radius: 5px;
+      letter-spacing: .06em; min-width: 44px; text-align: center;
+    }
+    .GET    { background: rgba(34,197,94,.15);  color: #4ade80; }
+    .POST   { background: rgba(59,130,246,.15); color: #60a5fa; }
+    .PUT    { background: rgba(251,146,60,.15); color: #fb923c; }
+    .DELETE { background: rgba(248,113,113,.15);color: #f87171; }
+    .PATCH  { background: rgba(167,139,250,.15);color: #a78bfa; }
+
+    [data-theme="light"] .GET    { background: rgba(22,163,74,.12);  color: #15803d; }
+    [data-theme="light"] .POST   { background: rgba(37,99,235,.12);  color: #1d4ed8; }
+    [data-theme="light"] .PUT    { background: rgba(234,88,12,.12);  color: #c2410c; }
+    [data-theme="light"] .DELETE { background: rgba(220,38,38,.12);  color: #b91c1c; }
+    [data-theme="light"] .PATCH  { background: rgba(124,58,237,.12); color: #6d28d9; }
+
+    .ep-path { color: var(--text); }
+    .ep-path span { color: var(--accent); }
+    .ep-lock { margin-left: auto; font-size: .68rem; color: var(--muted); }
+    .ep-lock.secured { color: var(--accent); }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center; font-family: 'JetBrains Mono', monospace;
+      font-size: .65rem; color: var(--muted);
+      border-top: 1px solid var(--border); padding-top: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="page">
+
+    <!-- ── Header ── -->
+    <div class="header">
+      <div class="logo">🪐</div>
+      <div class="header-text">
+        <h1>Solaris Platform</h1>
+        <p>ERP API &nbsp;·&nbsp; v1.0.0 &nbsp;·&nbsp; .NET 10 &nbsp;·&nbsp; PostgreSQL 16</p>
+      </div>
+      <div class="header-right">
+        <div class="status-badge loading" id="globalBadge">
+          <span class="dot"></span>
+          <span id="globalBadgeText">VERIFICANDO</span>
+        </div>
+        <div class="theme-switch">
+          <span class="theme-icon">☀️</span>
+          <label class="toggle">
+            <input type="checkbox" id="themeToggle" />
+            <span class="track"></span>
+            <span class="thumb"></span>
+          </label>
+          <span class="theme-icon">🌙</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Estado del sistema ── -->
+    <div>
+      <p class="section-label">Estado del sistema</p>
+      <div class="status-grid">
+
+        <div class="status-card">
+          <div class="card-header">
+            <span class="card-icon">🚀</span>
+            <span class="card-title">API</span>
+            <span class="card-status cs-ok">HEALTHY</span>
+          </div>
+          <div class="card-detail">Solaris Platform API<br><strong id="apiVersion">v1.0.0 · .NET 10</strong></div>
+        </div>
+
+        <div class="status-card">
+          <div class="card-header">
+            <span class="card-icon">🗄️</span>
+            <span class="card-title">Base de Datos</span>
+            <span class="card-status cs-loading" id="dbStatus">...</span>
+          </div>
+          <div class="card-detail" id="dbDetail">Conectando con PostgreSQL...</div>
+        </div>
+
+        <div class="status-card">
+          <div class="card-header">
+            <span class="card-icon">🌿</span>
+            <span class="card-title">Entorno</span>
+            <span class="card-status cs-ok" id="envStatus">...</span>
+          </div>
+          <div class="card-detail" id="envDetail">Cargando...</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Accesos rápidos — solo Swagger y Health ── -->
+    <div>
+      <p class="section-label">Accesos rápidos</p>
+      <div class="quick-grid">
+
+        <a class="quick-card" href="/swagger">
+          <div class="quick-icon" style="background:rgba(59,130,246,.15)">📄</div>
+          <div>
+            <div class="quick-title">Swagger UI</div>
+            <div class="quick-sub">/swagger</div>
+          </div>
+        </a>
+
+        <a class="quick-card" href="/test.html">
+          <div class="quick-icon" style="background:rgba(234,179,8,.15)">🧪</div>
+          <div>
+            <div class="quick-title">API Tests</div>
+            <div class="quick-sub">/test.html</div>
+          </div>
+        </a>
+
+        <a class="quick-card" href="/health.html">
+          <div class="quick-icon" style="background:rgba(34,197,94,.15)">💚</div>
+          <div>
+            <div class="quick-title">Health Dashboard</div>
+            <div class="quick-sub">/health</div>
+          </div>
+        </a>
+
+      </div>
+    </div>
+
+    <!-- ── Endpoints principales ── -->
+    <div>
+      <p class="section-label">Endpoints principales</p>
+      <div class="ep-list">
+        <div class="ep-item"><span class="method POST">POST</span><span class="ep-path">/api/Auth/login</span><span class="ep-lock">🔓 público</span></div>
+        <div class="ep-item"><span class="method POST">POST</span><span class="ep-path">/api/Auth/registro</span><span class="ep-lock">🔓 público</span></div>
+        <div class="ep-item"><span class="method POST">POST</span><span class="ep-path">/api/Auth/refresh-token</span><span class="ep-lock">🔓 público</span></div>
+        <div class="ep-item"><span class="method GET">GET</span><span class="ep-path">/api/Auth/me</span><span class="ep-lock secured">🔒 JWT</span></div>
+        <div class="ep-item"><span class="method GET">GET</span><span class="ep-path">/api/Usuarios</span><span class="ep-lock secured">🔒 JWT</span></div>
+        <div class="ep-item"><span class="method GET">GET</span><span class="ep-path">/api/Roles</span><span class="ep-lock secured">🔒 JWT</span></div>
+        <div class="ep-item"><span class="method GET">GET</span><span class="ep-path">/api/Empresas</span><span class="ep-lock secured">🔒 JWT</span></div>
+      </div>
+    </div>
+
+    <!-- ── Footer ── -->
+    <div class="footer">
+      Solaris Platform ERP &nbsp;·&nbsp; Desarrollado por LuisFer &nbsp;·&nbsp; .NET 10 + PostgreSQL 16
+    </div>
+
+  </div>
+
+  <script>
+    // ── Theme ──────────────────────────────────────────────
+    const html   = document.documentElement;
+    const toggle = document.getElementById('themeToggle');
+    const STORE  = 'solaris-theme';
+    applyTheme(localStorage.getItem(STORE) || 'dark');
+    toggle.addEventListener('change', () => {
+      const t = toggle.checked ? 'dark' : 'light';
+      applyTheme(t); localStorage.setItem(STORE, t);
+    });
+    function applyTheme(t) {
+      html.setAttribute('data-theme', t);
+      toggle.checked = (t === 'dark');
+    }
+
+    // ── Health check — consume /health/data (JSON real) ──
+    // NOTA: NO usar /health/full porque ese ahora redirige al HTML
+    async function checkHealth() {
+      try {
+        const res  = await fetch('/health/data');
+        const data = await res.json();
+
+        const isHealthy = data.status === 'Healthy';
+        const db = data.checks?.find(c => c.name === 'database');
+
+        // Badge global
+        const badge = document.getElementById('globalBadge');
+        const badgeText = document.getElementById('globalBadgeText');
+        badge.className = 'status-badge ' + (isHealthy ? 'online' : 'offline');
+        badgeText.textContent = isHealthy ? 'ONLINE' : 'DEGRADED';
+
+        // Card API
+        document.getElementById('apiVersion').textContent = `v${data.version} · .NET 10`;
+
+        // Card BD
+        const dbEl     = document.getElementById('dbStatus');
+        const dbDetail = document.getElementById('dbDetail');
+        if (db) {
+          const ok = db.status === 'Healthy';
+          dbEl.textContent = ok ? 'HEALTHY' : 'ERROR';
+          dbEl.className   = 'card-status ' + (ok ? 'cs-ok' : 'cs-err');
+          dbDetail.innerHTML = ok
+            ? `PostgreSQL 16 &nbsp;·&nbsp; <strong>${db.database}</strong> &nbsp;·&nbsp; ${db.latencyMs}ms`
+            : `<span style="color:var(--red)">Sin conexión</span>`;
+        }
+
+        // Card Entorno
+        document.getElementById('envStatus').textContent = data.environment || 'Development';
+        document.getElementById('envDetail').textContent = new Date(data.timestamp).toLocaleString('es-EC');
+
+      } catch(e) {
+        // Si la API no responde
+        document.getElementById('globalBadge').className  = 'status-badge offline';
+        document.getElementById('globalBadgeText').textContent = 'OFFLINE';
+        document.getElementById('dbStatus').textContent   = 'ERROR';
+        document.getElementById('dbStatus').className     = 'card-status cs-err';
+        document.getElementById('dbDetail').textContent   = 'No se pudo alcanzar la API';
+      }
+    }
+
+    // Chequear al cargar y cada 30 segundos
+    checkHealth();
+    setInterval(checkHealth, 30000);
+  </script>
+
+</body>
+</html>
