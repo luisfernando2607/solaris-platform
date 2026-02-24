@@ -13,3 +13,4 @@
 /home/devstar/projects/solaris_platform/src/SolarisPlatform.Application/obj/Debug/net10.0/refint/SolarisPlatform.Application.dll
 /home/devstar/projects/solaris_platform/src/SolarisPlatform.Application/obj/Debug/net10.0/SolarisPlatform.Application.pdb
 /home/devstar/projects/solaris_platform/src/SolarisPlatform.Application/obj/Debug/net10.0/ref/SolarisPlatform.Application.dll
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.Application/obj/Debug/net10.0/SolarisPlatform.Application.sourcelink.json

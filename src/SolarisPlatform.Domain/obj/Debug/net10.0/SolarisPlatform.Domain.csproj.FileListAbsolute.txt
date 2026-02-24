@@ -9,3 +9,4 @@
 /home/devstar/projects/solaris_platform/src/SolarisPlatform.Domain/obj/Debug/net10.0/refint/SolarisPlatform.Domain.dll
 /home/devstar/projects/solaris_platform/src/SolarisPlatform.Domain/obj/Debug/net10.0/SolarisPlatform.Domain.pdb
 /home/devstar/projects/solaris_platform/src/SolarisPlatform.Domain/obj/Debug/net10.0/ref/SolarisPlatform.Domain.dll
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.Domain/obj/Debug/net10.0/SolarisPlatform.Domain.sourcelink.json

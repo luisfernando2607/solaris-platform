@@ -209,5 +209,7 @@
 /home/devstar/projects/solaris_platform/src/SolarisPlatform.API/bin/Debug/net10.0/runtimes/win/lib/net9.0/System.Windows.Extensions.dll
 /home/devstar/projects/solaris_platform/src/SolarisPlatform.API/bin/Debug/net10.0/SolarisPlatform.API.staticwebassets.runtime.json
 /home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/bdod1yb0f3-{0}-d9jt0rpx4y-d9jt0rpx4y.gz
-/home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/juvefsmzkr-{0}-qaad4wjpjr-qaad4wjpjr.gz
-/home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/qhv4rly3vt-{0}-8nomsedpb0-8nomsedpb0.gz
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/SolarisPlatform.API.sourcelink.json
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/juvefsmzkr-{0}-z8ub9zoit9-z8ub9zoit9.gz
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/qhv4rly3vt-{0}-9ttjg1aeaz-9ttjg1aeaz.gz
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/uskgedjgag-{0}-9ftvl7xl1u-9ftvl7xl1u.gz

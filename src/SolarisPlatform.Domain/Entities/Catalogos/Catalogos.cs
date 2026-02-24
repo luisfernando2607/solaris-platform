@@ -13,6 +13,8 @@ public class Pais : CatalogoEntity
     public string? Bandera { get; set; }
     
     public virtual ICollection<EstadoProvincia> EstadosProvincias { get; set; } = new List<EstadoProvincia>();
+    public virtual ICollection<TipoIdentificacion> TiposIdentificacion { get; set; } = new List<TipoIdentificacion>();
+    public virtual ICollection<Banco> Bancos { get; set; } = new List<Banco>();
 }
 
 public class EstadoProvincia : CatalogoEntity
