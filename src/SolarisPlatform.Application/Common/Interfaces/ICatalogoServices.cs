@@ -1,5 +1,5 @@
-using SolarisPlatform.Application.DTOs.Catalogos;
 using SolarisPlatform.Application.Common.Models;
+using SolarisPlatform.Application.DTOs.Catalogos;
 
 namespace SolarisPlatform.Application.Common.Interfaces;
 
@@ -9,8 +9,8 @@ public interface IPaisService
     Task<ApiResponse<PaisDto>> ObtenerPorIdAsync(long id);
     Task<ApiResponse<PaisDto>> CrearAsync(CrearPaisRequest request);
     Task<ApiResponse<PaisDto>> ActualizarAsync(long id, ActualizarPaisRequest request);
-    Task<ApiResponse<bool>> CambiarEstadoAsync(long id, bool activo);
-    Task<ApiResponse<bool>> EliminarAsync(long id);
+    Task<ApiResponse<PaisDto>> CambiarEstadoAsync(long id, bool activo);
+    Task<ApiResponse> EliminarAsync(long id);
 }
 
 public interface IEstadoProvinciaService
@@ -20,8 +20,8 @@ public interface IEstadoProvinciaService
     Task<ApiResponse<EstadoProvinciaDto>> ObtenerPorIdAsync(long id);
     Task<ApiResponse<EstadoProvinciaDto>> CrearAsync(CrearEstadoProvinciaRequest request);
     Task<ApiResponse<EstadoProvinciaDto>> ActualizarAsync(long id, ActualizarEstadoProvinciaRequest request);
-    Task<ApiResponse<bool>> CambiarEstadoAsync(long id, bool activo);
-    Task<ApiResponse<bool>> EliminarAsync(long id);
+    Task<ApiResponse<EstadoProvinciaDto>> CambiarEstadoAsync(long id, bool activo);
+    Task<ApiResponse> EliminarAsync(long id);
 }
 
 public interface ICiudadService
@@ -31,8 +31,8 @@ public interface ICiudadService
     Task<ApiResponse<CiudadDto>> ObtenerPorIdAsync(long id);
     Task<ApiResponse<CiudadDto>> CrearAsync(CrearCiudadRequest request);
     Task<ApiResponse<CiudadDto>> ActualizarAsync(long id, ActualizarCiudadRequest request);
-    Task<ApiResponse<bool>> CambiarEstadoAsync(long id, bool activo);
-    Task<ApiResponse<bool>> EliminarAsync(long id);
+    Task<ApiResponse<CiudadDto>> CambiarEstadoAsync(long id, bool activo);
+    Task<ApiResponse> EliminarAsync(long id);
 }
 
 public interface IMonedaService
@@ -41,19 +41,19 @@ public interface IMonedaService
     Task<ApiResponse<MonedaDto>> ObtenerPorIdAsync(long id);
     Task<ApiResponse<MonedaDto>> CrearAsync(CrearMonedaRequest request);
     Task<ApiResponse<MonedaDto>> ActualizarAsync(long id, ActualizarMonedaRequest request);
-    Task<ApiResponse<bool>> CambiarEstadoAsync(long id, bool activo);
-    Task<ApiResponse<bool>> EliminarAsync(long id);
+    Task<ApiResponse<MonedaDto>> CambiarEstadoAsync(long id, bool activo);
+    Task<ApiResponse> EliminarAsync(long id);
 }
 
 public interface ITipoIdentificacionService
 {
     Task<ApiResponse<IEnumerable<TipoIdentificacionDto>>> ObtenerTodosAsync(bool soloActivos = false);
-    Task<ApiResponse<IEnumerable<TipoIdentificacionDto>>> ObtenerPorPaisAsync(long? paisId, bool soloActivos = false);
+    Task<ApiResponse<IEnumerable<TipoIdentificacionDto>>> ObtenerPorPaisAsync(long paisId, bool soloActivos = false);
     Task<ApiResponse<TipoIdentificacionDto>> ObtenerPorIdAsync(long id);
     Task<ApiResponse<TipoIdentificacionDto>> CrearAsync(CrearTipoIdentificacionRequest request);
     Task<ApiResponse<TipoIdentificacionDto>> ActualizarAsync(long id, ActualizarTipoIdentificacionRequest request);
-    Task<ApiResponse<bool>> CambiarEstadoAsync(long id, bool activo);
-    Task<ApiResponse<bool>> EliminarAsync(long id);
+    Task<ApiResponse<TipoIdentificacionDto>> CambiarEstadoAsync(long id, bool activo);
+    Task<ApiResponse> EliminarAsync(long id);
 }
 
 public interface IImpuestoService
@@ -62,8 +62,8 @@ public interface IImpuestoService
     Task<ApiResponse<ImpuestoDto>> ObtenerPorIdAsync(long id);
     Task<ApiResponse<ImpuestoDto>> CrearAsync(CrearImpuestoRequest request);
     Task<ApiResponse<ImpuestoDto>> ActualizarAsync(long id, ActualizarImpuestoRequest request);
-    Task<ApiResponse<bool>> CambiarEstadoAsync(long id, bool activo);
-    Task<ApiResponse<bool>> EliminarAsync(long id);
+    Task<ApiResponse<ImpuestoDto>> CambiarEstadoAsync(long id, bool activo);
+    Task<ApiResponse> EliminarAsync(long id);
 }
 
 public interface IFormaPagoService
@@ -72,8 +72,8 @@ public interface IFormaPagoService
     Task<ApiResponse<FormaPagoDto>> ObtenerPorIdAsync(long id);
     Task<ApiResponse<FormaPagoDto>> CrearAsync(CrearFormaPagoRequest request);
     Task<ApiResponse<FormaPagoDto>> ActualizarAsync(long id, ActualizarFormaPagoRequest request);
-    Task<ApiResponse<bool>> CambiarEstadoAsync(long id, bool activo);
-    Task<ApiResponse<bool>> EliminarAsync(long id);
+    Task<ApiResponse<FormaPagoDto>> CambiarEstadoAsync(long id, bool activo);
+    Task<ApiResponse> EliminarAsync(long id);
 }
 
 public interface IBancoService
@@ -82,6 +82,6 @@ public interface IBancoService
     Task<ApiResponse<BancoDto>> ObtenerPorIdAsync(long id);
     Task<ApiResponse<BancoDto>> CrearAsync(CrearBancoRequest request);
     Task<ApiResponse<BancoDto>> ActualizarAsync(long id, ActualizarBancoRequest request);
-    Task<ApiResponse<bool>> CambiarEstadoAsync(long id, bool activo);
-    Task<ApiResponse<bool>> EliminarAsync(long id);
+    Task<ApiResponse<BancoDto>> CambiarEstadoAsync(long id, bool activo);
+    Task<ApiResponse> EliminarAsync(long id);
 }

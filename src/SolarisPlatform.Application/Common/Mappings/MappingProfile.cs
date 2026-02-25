@@ -1,16 +1,15 @@
 using AutoMapper;
 using SolarisPlatform.Domain.Entities.Seguridad;
 using SolarisPlatform.Domain.Entities.Empresas;
+using SolarisPlatform.Domain.Entities.Catalogos;
 using SolarisPlatform.Domain.Enums;
 using SolarisPlatform.Application.DTOs.Auth;
 using SolarisPlatform.Application.DTOs.Usuarios;
 using SolarisPlatform.Application.DTOs.Roles;
+using SolarisPlatform.Application.DTOs.Catalogos;
 
 namespace SolarisPlatform.Application.Common.Mappings;
 
-/// <summary>
-/// Perfiles de mapeo de AutoMapper
-/// </summary>
 public class MappingProfile : Profile
 {
     public MappingProfile()
@@ -18,7 +17,7 @@ public class MappingProfile : Profile
         // ==========================================
         // USUARIO
         // ==========================================
-        
+
         CreateMap<Usuario, UsuarioDto>()
             .ForMember(dest => dest.EmpresaNombre, opt => opt.MapFrom(src => src.Empresa.RazonSocial))
             .ForMember(dest => dest.SucursalNombre, opt => opt.MapFrom(src => src.Sucursal != null ? src.Sucursal.Nombre : null))
@@ -36,7 +35,7 @@ public class MappingProfile : Profile
 
         CreateMap<Usuario, UsuarioListDto>()
             .ForMember(dest => dest.EstadoNombre, opt => opt.MapFrom(src => GetEstadoNombre(src.Estado)))
-            .ForMember(dest => dest.RolPrincipal, opt => opt.MapFrom(src => 
+            .ForMember(dest => dest.RolPrincipal, opt => opt.MapFrom(src =>
                 src.UsuarioRoles.Where(ur => ur.Activo && ur.EsPrincipal)
                     .Select(ur => ur.Rol.Nombre).FirstOrDefault() ??
                 src.UsuarioRoles.Where(ur => ur.Activo)
@@ -48,7 +47,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Roles, opt => opt.MapFrom(src => src.UsuarioRoles
                 .Where(ur => ur.Activo)
                 .Select(ur => ur.Rol.Codigo).ToList()))
-            .ForMember(dest => dest.Permisos, opt => opt.Ignore()); // Se llena manualmente
+            .ForMember(dest => dest.Permisos, opt => opt.Ignore());
 
         CreateMap<CrearUsuarioRequest, Usuario>()
             .ForMember(dest => dest.Id, opt => opt.Ignore())
@@ -60,7 +59,7 @@ public class MappingProfile : Profile
         // ==========================================
         // ROL
         // ==========================================
-        
+
         CreateMap<Rol, RolDto>()
             .ForMember(dest => dest.CantidadUsuarios, opt => opt.MapFrom(src => src.UsuarioRoles.Count(ur => ur.Activo)))
             .ForMember(dest => dest.Permisos, opt => opt.MapFrom(src => src.RolPermisos
@@ -88,14 +87,14 @@ public class MappingProfile : Profile
         // ==========================================
         // PERMISO
         // ==========================================
-        
+
         CreateMap<Permiso, PermisoDto>()
             .ForMember(dest => dest.ModuloNombre, opt => opt.MapFrom(src => src.Modulo.Nombre));
 
         // ==========================================
         // MÓDULO
         // ==========================================
-        
+
         CreateMap<Modulo, ModuloConPermisosDto>()
             .ForMember(dest => dest.Permisos, opt => opt.MapFrom(src => src.Permisos
                 .Where(p => p.Activo)
@@ -114,6 +113,70 @@ public class MappingProfile : Profile
                 .Where(m => m.Activo)
                 .OrderBy(m => m.Orden)
                 .ToList()));
+
+        // ==========================================
+        // CATÁLOGOS
+        // ==========================================
+
+        // País
+        CreateMap<Pais, PaisDto>()
+            .ConstructUsing(s => new PaisDto(s.Id, s.Codigo, s.CodigoIso2, s.Nombre, s.NombreIngles, s.CodigoTelefonico, s.Bandera, s.Activo, s.Orden));
+        CreateMap<CrearPaisRequest, Pais>().ForMember(d => d.Id, o => o.Ignore());
+        CreateMap<ActualizarPaisRequest, Pais>().ForMember(d => d.Id, o => o.Ignore());
+
+        // Estado/Provincia
+        CreateMap<EstadoProvincia, EstadoProvinciaDto>()
+            .ConstructUsing(s => new EstadoProvinciaDto(s.Id, s.PaisId, s.Pais != null ? s.Pais.Nombre : "", s.Codigo, s.Nombre, s.Activo, s.Orden));
+        CreateMap<CrearEstadoProvinciaRequest, EstadoProvincia>().ForMember(d => d.Id, o => o.Ignore());
+        CreateMap<ActualizarEstadoProvinciaRequest, EstadoProvincia>().ForMember(d => d.Id, o => o.Ignore());
+
+        // Ciudad
+        CreateMap<Ciudad, CiudadDto>()
+            .ConstructUsing(s => new CiudadDto(
+                s.Id,
+                s.EstadoProvinciaId,
+                s.EstadoProvincia != null ? s.EstadoProvincia.Nombre : "",
+                s.EstadoProvincia != null && s.EstadoProvincia.Pais != null ? s.EstadoProvincia.Pais.Nombre : "",
+                s.Codigo,
+                s.Nombre,
+                s.Activo,
+                s.Orden));
+        CreateMap<CrearCiudadRequest, Ciudad>().ForMember(d => d.Id, o => o.Ignore());
+        CreateMap<ActualizarCiudadRequest, Ciudad>().ForMember(d => d.Id, o => o.Ignore());
+
+        // Moneda
+        CreateMap<Moneda, MonedaDto>()
+            .ConstructUsing(s => new MonedaDto(s.Id, s.Codigo, s.Nombre, s.Simbolo, (byte)s.DecimalesPermitidos, s.Activo, s.Orden));
+        CreateMap<CrearMonedaRequest, Moneda>().ForMember(d => d.Id, o => o.Ignore());
+        CreateMap<ActualizarMonedaRequest, Moneda>().ForMember(d => d.Id, o => o.Ignore());
+
+        // Tipo Identificación
+        CreateMap<TipoIdentificacion, TipoIdentificacionDto>()
+            .ConstructUsing(s => new TipoIdentificacionDto(
+                s.Id, s.PaisId,
+                s.Pais != null ? s.Pais.Nombre : null,
+                s.Codigo, s.Nombre, s.Longitud, s.Patron,
+                s.AplicaPersona, s.AplicaEmpresa, s.Activo, s.Orden));
+        CreateMap<CrearTipoIdentificacionRequest, TipoIdentificacion>().ForMember(d => d.Id, o => o.Ignore());
+        CreateMap<ActualizarTipoIdentificacionRequest, TipoIdentificacion>().ForMember(d => d.Id, o => o.Ignore());
+
+        // Impuesto
+        CreateMap<Impuesto, ImpuestoDto>()
+            .ConstructUsing(s => new ImpuestoDto(s.Id, s.EmpresaId, s.Codigo, s.Nombre, s.Porcentaje, s.TipoImpuesto, s.EsRetencion, s.Activo, s.Orden));
+        CreateMap<CrearImpuestoRequest, Impuesto>().ForMember(d => d.Id, o => o.Ignore());
+        CreateMap<ActualizarImpuestoRequest, Impuesto>().ForMember(d => d.Id, o => o.Ignore());
+
+        // Forma de Pago
+        CreateMap<FormaPago, FormaPagoDto>()
+            .ConstructUsing(s => new FormaPagoDto(s.Id, s.EmpresaId, s.Codigo, s.Nombre, s.Tipo, s.DiasCredito, s.RequiereBanco, s.RequiereReferencia, s.Activo, s.Orden));
+        CreateMap<CrearFormaPagoRequest, FormaPago>().ForMember(d => d.Id, o => o.Ignore());
+        CreateMap<ActualizarFormaPagoRequest, FormaPago>().ForMember(d => d.Id, o => o.Ignore());
+
+        // Banco
+        CreateMap<Banco, BancoDto>()
+            .ConstructUsing(s => new BancoDto(s.Id, s.PaisId, s.Pais != null ? s.Pais.Nombre : null, s.Codigo, s.Nombre, s.NombreCorto, s.Activo, s.Orden));
+        CreateMap<CrearBancoRequest, Banco>().ForMember(d => d.Id, o => o.Ignore());
+        CreateMap<ActualizarBancoRequest, Banco>().ForMember(d => d.Id, o => o.Ignore());
     }
 
     private static string GetEstadoNombre(EstadoUsuario estado)

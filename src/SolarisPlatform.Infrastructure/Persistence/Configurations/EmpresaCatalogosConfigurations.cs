@@ -231,34 +231,6 @@ public class MonedaConfiguration : IEntityTypeConfiguration<Moneda>
 /// <summary>
 /// Configuración de TipoIdentificacion
 /// </summary>
-public class TipoIdentificacionConfiguration : IEntityTypeConfiguration<TipoIdentificacion>
-{
-    public void Configure(EntityTypeBuilder<TipoIdentificacion> builder)
-    {
-        builder.ToTable("tipo_identificacion", "cat");
-
-        builder.HasKey(e => e.Id);
-        builder.Property(e => e.Id).HasColumnName("id");
-
-        builder.Property(e => e.PaisId).HasColumnName("pais_id");
-        builder.Property(e => e.Codigo).HasColumnName("codigo").HasMaxLength(20).IsRequired();
-        builder.Property(e => e.Nombre).HasColumnName("nombre").HasMaxLength(100).IsRequired();
-        builder.Property(e => e.Longitud).HasColumnName("longitud");
-        builder.Property(e => e.Patron).HasColumnName("patron").HasMaxLength(100);
-        builder.Property(e => e.AplicaPersona).HasColumnName("aplica_persona");
-        builder.Property(e => e.AplicaEmpresa).HasColumnName("aplica_empresa");
-        builder.Property(e => e.Activo).HasColumnName("activo");
-        builder.Property(e => e.Orden).HasColumnName("orden");
-        builder.Property(e => e.FechaCreacion).HasColumnName("fecha_creacion");
-
-        builder.HasOne(e => e.Pais)
-            .WithMany()
-            .HasForeignKey(e => e.PaisId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasIndex(e => e.Codigo).IsUnique();
-    }
-}
 
 /// <summary>
 /// Configuración de Impuesto

@@ -10,6 +10,9 @@ using SolarisPlatform.Infrastructure.Identity;
 using SolarisPlatform.Infrastructure.Persistence.Context;
 using SolarisPlatform.Infrastructure.Persistence.Repositories;
 using SolarisPlatform.Infrastructure.Services;
+using SolarisPlatform.Domain.Interfaces.Catalogos;
+using SolarisPlatform.Infrastructure.Services.Catalogos;
+using SolarisPlatform.Infrastructure.Persistence.Repositories.Catalogos;
 
 namespace SolarisPlatform.Infrastructure;
 
@@ -110,9 +113,32 @@ public static class DependencyInjection
             };
         });
 
+
+        // ── Catálogos ──────────────────────────────────────────
+        services.AddScoped<IPaisService, PaisService>();
+        services.AddScoped<IEstadoProvinciaService, EstadoProvinciaService>();
+        services.AddScoped<ICiudadService, CiudadService>();
+        services.AddScoped<IMonedaService, MonedaService>();
+        services.AddScoped<ITipoIdentificacionService, TipoIdentificacionService>();
+        services.AddScoped<IImpuestoService, ImpuestoService>();
+        services.AddScoped<IFormaPagoService, FormaPagoService>();
+        services.AddScoped<IBancoService, BancoService>();
+
+        // ── Repositorios de catálogos ──────────────────────────
+        services.AddScoped<IPaisRepository, PaisRepository>();
+        services.AddScoped<IEstadoProvinciaRepository, EstadoProvinciaRepository>();
+        services.AddScoped<ICiudadRepository, CiudadRepository>();
+        services.AddScoped<IMonedaRepository, MonedaRepository>();
+        services.AddScoped<ITipoIdentificacionRepository, TipoIdentificacionRepository>();
+        services.AddScoped<IImpuestoRepository, ImpuestoRepository>();
+        services.AddScoped<IFormaPagoRepository, FormaPagoRepository>();
+        services.AddScoped<IBancoRepository, BancoRepository>();
+
+
         services.AddAuthorization();
         services.AddHttpContextAccessor();
 
         return services;
+
     }
 }
