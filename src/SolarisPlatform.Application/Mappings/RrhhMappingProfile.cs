@@ -21,21 +21,31 @@ public class RrhhMappingProfile : Profile
 
         // ─── Puesto ─────────────────────────────────────────────
         CreateMap<Puesto, PuestoDto>()
-            .ForMember(d => d.DepartamentoNombre,
-                o => o.MapFrom(s => s.Departamento != null ? s.Departamento.Nombre : string.Empty))
-            .ForMember(d => d.NivelJerarquicoNombre,
-                o => o.MapFrom(s => ObtenerNivelNombre(s.NivelJerarquico)));
+            .ConstructUsing((s, ctx) => new PuestoDto(
+                s.Id, s.Codigo, s.Nombre, s.Descripcion,
+                s.DepartamentoId,
+                s.Departamento != null ? s.Departamento.Nombre : string.Empty,
+                s.NivelJerarquico,
+                ObtenerNivelNombre(s.NivelJerarquico),
+                s.BandaSalarialMin, s.BandaSalarialMax,
+                s.RequiereTitulo, true))
+            .ForAllMembers(o => o.Ignore());
 
         CreateMap<CrearPuestoRequest, Puesto>();
 
         // ─── Empleado ───────────────────────────────────────────
         CreateMap<Empleado, EmpleadoListaDto>()
-            .ForMember(d => d.DepartamentoNombre,
-                o => o.MapFrom(s => s.Departamento != null ? s.Departamento.Nombre : null))
-            .ForMember(d => d.PuestoNombre,
-                o => o.MapFrom(s => s.Puesto != null ? s.Puesto.Nombre : null))
-            .ForMember(d => d.EstadoNombre,
-                o => o.MapFrom(s => ObtenerEstadoEmpleadoNombre(s.Estado)));
+            .ConstructUsing((s, ctx) => new EmpleadoListaDto(
+                s.Id, s.Codigo,
+                s.NombreCompleto,
+                s.NumeroIdentificacion,
+                s.EmailCorporativo, s.TelefonoCelular,
+                s.Departamento != null ? s.Departamento.Nombre : null,
+                s.Puesto != null ? s.Puesto.Nombre : null,
+                s.FechaIngreso, s.SalarioBase,
+                s.Estado, ObtenerEstadoEmpleadoNombre(s.Estado),
+                s.FotoUrl))
+            .ForAllMembers(o => o.Ignore());
 
         CreateMap<Empleado, EmpleadoFichaDto>()
             .ForMember(d => d.EdadAnios,

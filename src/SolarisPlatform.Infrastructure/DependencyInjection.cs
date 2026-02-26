@@ -13,6 +13,11 @@ using SolarisPlatform.Infrastructure.Services;
 using SolarisPlatform.Domain.Interfaces.Catalogos;
 using SolarisPlatform.Infrastructure.Services.Catalogos;
 using SolarisPlatform.Infrastructure.Persistence.Repositories.Catalogos;
+// ── RRHH ──────────────────────────────────────────────────────────────
+using SolarisPlatform.Application.Interfaces.RRHH;
+using SolarisPlatform.Infrastructure.Services.RRHH;
+using SolarisPlatform.Infrastructure.Persistence.Repositories.RRHH;
+using SolarisPlatform.Domain.Interfaces.RRHH;
 
 namespace SolarisPlatform.Infrastructure;
 
@@ -46,7 +51,7 @@ public static class DependencyInjection
         });
 
         // ==========================================
-        // REPOSITORIOS
+        // REPOSITORIOS — Core
         // ==========================================
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
@@ -59,7 +64,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // ==========================================
-        // SERVICIOS DE APLICACIÓN
+        // SERVICIOS DE APLICACIÓN — Core
         // ==========================================
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUsuarioService, UsuarioService>();
@@ -76,28 +81,28 @@ public static class DependencyInjection
         // ==========================================
         // AUTENTICACIÓN JWT
         // ==========================================
-        var jwtSecretKey = configuration["Jwt:SecretKey"] 
+        var jwtSecretKey = configuration["Jwt:SecretKey"]
             ?? throw new ArgumentNullException("Jwt:SecretKey no configurado");
-        var jwtIssuer = configuration["Jwt:Issuer"] ?? "SolarisPlatform";
-        var jwtAudience = configuration["Jwt:Audience"] ?? "SolarisPlatformUsers";
+        var jwtIssuer    = configuration["Jwt:Issuer"]    ?? "SolarisPlatform";
+        var jwtAudience  = configuration["Jwt:Audience"]  ?? "SolarisPlatformUsers";
 
         services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme    = JwtBearerDefaults.AuthenticationScheme;
         })
         .AddJwtBearer(options =>
         {
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey)),
-                ValidateIssuer = true,
-                ValidIssuer = jwtIssuer,
-                ValidateAudience = true,
-                ValidAudience = jwtAudience,
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
+                IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey)),
+                ValidateIssuer           = true,
+                ValidIssuer              = jwtIssuer,
+                ValidateAudience         = true,
+                ValidAudience            = jwtAudience,
+                ValidateLifetime         = true,
+                ClockSkew                = TimeSpan.Zero
             };
 
             options.Events = new JwtBearerEvents
@@ -105,40 +110,77 @@ public static class DependencyInjection
                 OnAuthenticationFailed = context =>
                 {
                     if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
-                    {
                         context.Response.Headers["Token-Expired"] = "true";
-                    }
                     return Task.CompletedTask;
                 }
             };
         });
 
+        // ==========================================
+        // CATÁLOGOS — Servicios
+        // ==========================================
+        services.AddScoped<IPaisService,                PaisService>();
+        services.AddScoped<IEstadoProvinciaService,     EstadoProvinciaService>();
+        services.AddScoped<ICiudadService,              CiudadService>();
+        services.AddScoped<IMonedaService,              MonedaService>();
+        services.AddScoped<ITipoIdentificacionService,  TipoIdentificacionService>();
+        services.AddScoped<IImpuestoService,            ImpuestoService>();
+        services.AddScoped<IFormaPagoService,           FormaPagoService>();
+        services.AddScoped<IBancoService,               BancoService>();
 
-        // ── Catálogos ──────────────────────────────────────────
-        services.AddScoped<IPaisService, PaisService>();
-        services.AddScoped<IEstadoProvinciaService, EstadoProvinciaService>();
-        services.AddScoped<ICiudadService, CiudadService>();
-        services.AddScoped<IMonedaService, MonedaService>();
-        services.AddScoped<ITipoIdentificacionService, TipoIdentificacionService>();
-        services.AddScoped<IImpuestoService, ImpuestoService>();
-        services.AddScoped<IFormaPagoService, FormaPagoService>();
-        services.AddScoped<IBancoService, BancoService>();
+        // CATÁLOGOS — Repositorios
+        services.AddScoped<IPaisRepository,                PaisRepository>();
+        services.AddScoped<IEstadoProvinciaRepository,     EstadoProvinciaRepository>();
+        services.AddScoped<ICiudadRepository,              CiudadRepository>();
+        services.AddScoped<IMonedaRepository,              MonedaRepository>();
+        services.AddScoped<ITipoIdentificacionRepository,  TipoIdentificacionRepository>();
+        services.AddScoped<IImpuestoRepository,            ImpuestoRepository>();
+        services.AddScoped<IFormaPagoRepository,           FormaPagoRepository>();
+        services.AddScoped<IBancoRepository,               BancoRepository>();
 
-        // ── Repositorios de catálogos ──────────────────────────
-        services.AddScoped<IPaisRepository, PaisRepository>();
-        services.AddScoped<IEstadoProvinciaRepository, EstadoProvinciaRepository>();
-        services.AddScoped<ICiudadRepository, CiudadRepository>();
-        services.AddScoped<IMonedaRepository, MonedaRepository>();
-        services.AddScoped<ITipoIdentificacionRepository, TipoIdentificacionRepository>();
-        services.AddScoped<IImpuestoRepository, ImpuestoRepository>();
-        services.AddScoped<IFormaPagoRepository, FormaPagoRepository>();
-        services.AddScoped<IBancoRepository, BancoRepository>();
+        // ==========================================
+        // RRHH — Servicios
+        // ==========================================
+        services.AddScoped<IDepartamentoService,    DepartamentoService>();
+        services.AddScoped<IPuestoService,          PuestoService>();
+        services.AddScoped<IEmpleadoService,        EmpleadoService>();
+        services.AddScoped<IAsistenciaService,      AsistenciaService>();
+        services.AddScoped<IConceptoNominaService,  ConceptoNominaService>();
+        services.AddScoped<INominaService,          NominaService>();
+        services.AddScoped<IPrestamoService,        PrestamoService>();
+        services.AddScoped<IEvaluacionService,      EvaluacionService>();
+        services.AddScoped<ICapacitacionService,    CapacitacionService>();
+        services.AddScoped<IRrhhDashboardService,   RrhhDashboardService>();
 
+        // RRHH — Repositorios
+        services.AddScoped<IDepartamentoRepository, DepartamentoRepository>();
+        services.AddScoped<IPuestoRepository,       PuestoRepository>();
+        services.AddScoped<IEmpleadoRepository,     EmpleadoRepository>();
+
+        // ==========================================
+        // MISC
+        // ==========================================
+        
+        // ==========================================
+        // RRHH — Repositorios
+        // ==========================================
+        services.AddScoped<IDepartamentoRepository,         DepartamentoRepository>();
+        services.AddScoped<IPuestoRepository,               PuestoRepository>();
+        services.AddScoped<IEmpleadoRepository,             EmpleadoRepository>();
+        services.AddScoped<IAsistenciaRepository,           AsistenciaRepository>();
+        services.AddScoped<ISolicitudAusenciaRepository,    SolicitudAusenciaRepository>();
+        services.AddScoped<ISaldoVacacionesRepository,      SaldoVacacionesRepository>();
+        services.AddScoped<IConceptoNominaRepository,       ConceptoNominaRepository>();
+        services.AddScoped<IPeriodoNominaRepository,        PeriodoNominaRepository>();
+        services.AddScoped<IRolPagoRepository,              RolPagoRepository>();
+        services.AddScoped<IParametroNominaRepository,      ParametroNominaRepository>();
+        services.AddScoped<IPrestamoRepository,             PrestamoRepository>();
+        services.AddScoped<IEvaluacionRepository,           EvaluacionRepository>();
+        services.AddScoped<ICapacitacionRepository,         CapacitacionRepository>();
 
         services.AddAuthorization();
         services.AddHttpContextAccessor();
 
         return services;
-
     }
 }

@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using SolarisPlatform.Application.Common.Mappings;
+using SolarisPlatform.Application.Mappings;
 
 namespace SolarisPlatform.Application;
 
@@ -12,6 +13,7 @@ public static class DependencyInjection
         services.AddAutoMapper(cfg => 
         {
             cfg.AddProfile<MappingProfile>();
+            cfg.AddProfile<RrhhMappingProfile>();
         });
 
         // FluentValidation
