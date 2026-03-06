@@ -1,0 +1,231 @@
+// ══════════════════════════════════════════════════════════════════════
+//  test.runner.js  —  Solaris Platform · API Test Console
+//  ─────────────────────────────────────────────────────────────────────
+//  Motor de ejecución de tests.
+//  - No manipula el DOM.
+//  - Se comunica con el exterior mediante callbacks/eventos.
+//  - Depende de: test.config.js  (TEST_SUITES debe estar cargado antes)
+// ══════════════════════════════════════════════════════════════════════
+
+const TestRunner = (() => {
+
+  // ── Estado interno ──────────────────────────────────────────────
+  let _jwt          = '';
+  let _refreshToken = '';
+  let _baseUrl      = '';
+
+  // Resultados guardados por testId para que test.report.js los consulte
+  const _results = {};
+
+  // Callbacks que el UI registra para recibir notificaciones
+  const _cb = {
+    onTestStart:    () => {},   // (testId)
+    onTestEnd:      () => {},   // (testId, result)  result = { passed, status, ms, data, diagnosis }
+    onSuiteEnd:     () => {},   // (suiteId)
+    onRunComplete:  () => {},   // (summary)  summary = { total, passed, failed }
+    onTokenCapture: () => {},   // (token, truncated)
+  };
+
+  // ── API HTTP helper ─────────────────────────────────────────────
+  async function _fetch(method, path, body, token) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    const t0 = performance.now();
+    try {
+      const res = await fetch(_baseUrl + path, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined
+      });
+      const ms = Math.round(performance.now() - t0);
+      let data;
+      try { data = await res.json(); } catch { data = null; }
+      return { status: res.status, data, ms };
+    } catch (e) {
+      const ms = Math.round(performance.now() - t0);
+      return { status: 'ERR', data: { error: e.message, hint: 'No se pudo conectar. Verifica que el servidor esté corriendo y la Base URL sea correcta.' }, ms };
+    }
+  }
+
+  // ── Check de expectativas ───────────────────────────────────────
+  function _checkExpect(expect, status, data) {
+    const expectedStatuses = Array.isArray(expect.status) ? expect.status : [expect.status];
+    if (!expectedStatuses.includes(status)) return false;
+    if (expect.check) return !!expect.check(data);
+    return true;
+  }
+
+  // ── Diagnóstico automático al fallar ───────────────────────────
+  function _buildDiagnosis(testDef, res) {
+    const expected = Array.isArray(testDef.expect.status) ? testDef.expect.status : [testDef.expect.status];
+    const statusOk = expected.includes(res.status);
+    const lines    = [];
+
+    if (!statusOk) {
+      lines.push(`HTTP status incorrecto: esperado [${expected.join(' | ')}], recibido ${res.status}.`);
+      if (res.status === 'ERR' || res.status === 0) {
+        lines.push('La API no respondió. Verifica que el servidor esté corriendo y la Base URL sea correcta.');
+      } else if (res.status === 500) {
+        lines.push('Error 500 en el servidor. Revisar logs del backend para ver la excepción.');
+      } else if (res.status === 401 && testDef.auth) {
+        lines.push('401 con auth=true: el JWT puede haber expirado o no se capturó en el login. Asegúrate de que "login-ok" haya pasado primero.');
+      } else if (res.status === 404 && !testDef.path.includes('99999')) {
+        lines.push('404 inesperado: la ruta puede ser incorrecta o el controller no está registrado en Program.cs.');
+      } else if (res.status === 403) {
+        lines.push('403 Forbidden: el usuario autenticado no tiene el rol requerido para este endpoint.');
+      }
+    } else if (testDef.expect.check) {
+      lines.push(`HTTP ${res.status} correcto, pero el check de contenido falló: "${testDef.expect.checkDesc}".`);
+      lines.push('Revisar la estructura del objeto de respuesta — el campo esperado puede tener un nombre diferente.');
+    }
+
+    if (testDef.hint)        lines.push(`Pista: ${testDef.hint}`);
+    if (res.data?.errors)    lines.push(`Errores de validación: ${JSON.stringify(res.data.errors)}`);
+    if (res.data?.message)   lines.push(`Mensaje del servidor: ${res.data.message}`);
+    if (res.data?.error)     lines.push(`Error del servidor: ${res.data.error}`);
+    if (res.data?.title)     lines.push(`Título del error (ProblemDetails): ${res.data.title}`);
+
+    return lines;
+  }
+
+  // ── Ejecutar un test individual ─────────────────────────────────
+  async function _runTest(testDef, suiteId) {
+    _cb.onTestStart(testDef.id);
+
+    // Resolver body especial
+    let body  = testDef.body  ?? null;
+    let token = testDef.auth  ? _jwt : undefined;
+
+    if (body === '__USE_CREDS__') {
+      // El UI inyecta las credenciales a través de getCredentials()
+      const creds = _runner.getCredentials();
+      body = { email: creds.email, password: creds.password };
+    }
+    if (body === '__USE_REFRESH__') {
+      body = { RefreshToken: _refreshToken };
+    }
+    if (testDef._fakeToken) {
+      token = testDef._fakeToken;
+    }
+
+    const res = await _fetch(testDef.method, testDef.path, body, token);
+
+    // Capturar JWT y refreshToken del login-ok
+    if (testDef.id === 'login-ok' && res.status === 200) {
+      const t  = res.data?.data?.token || res.data?.token || res.data?.accessToken;
+      const rt = res.data?.data?.refreshToken || res.data?.refreshToken;
+      if (t)  { _jwt = t;  _cb.onTokenCapture(t, t.substring(0, 70) + '…'); }
+      if (rt) { _refreshToken = rt; }
+    }
+
+    // Capturar JWT renovado del refresh
+    if (testDef.id === 'refresh' && res.status === 200) {
+      const nt = res.data?.data?.token || res.data?.data?.accessToken || res.data?.token || res.data?.accessToken;
+      if (nt) { _jwt = nt; _cb.onTokenCapture(nt, nt.substring(0, 70) + '…'); }
+    }
+
+    const passed    = _checkExpect(testDef.expect, res.status, res.data);
+    const diagnosis = passed ? null : _buildDiagnosis(testDef, res);
+
+    // Sanitizar token en la respuesta mostrada (no enviar el token completo al UI)
+    let displayData = res.data;
+    if (res.data?.data?.token) {
+      displayData = JSON.parse(JSON.stringify(res.data));
+      displayData.data.token = displayData.data.token.substring(0, 50) + '…[truncado]';
+    }
+
+    const result = {
+      suiteId,
+      testId:   testDef.id,
+      passed,
+      status:   res.status,
+      ms:       res.ms,
+      data:     displayData,
+      diagnosis,
+      // metadata extra para el reporte
+      method:        testDef.method,
+      path:          testDef.path,
+      fullUrl:       _baseUrl + testDef.path,
+      requiresAuth:  testDef.auth,
+      expectedStatus: testDef.expect.status,
+      checkDesc:     testDef.expect.checkDesc || null,
+      hint:          testDef.hint || null,
+      name:          testDef.name,
+    };
+
+    _results[testDef.id] = result;
+    _cb.onTestEnd(testDef.id, result);
+    return result;
+  }
+
+  // ── Ejecutar una suite ──────────────────────────────────────────
+  async function _runSuite(suite) {
+    for (const testDef of suite.tests) {
+      await _runTest(testDef, suite.id);
+      await _delay(280);
+    }
+    _cb.onSuiteEnd(suite.id);
+  }
+
+  // ── Utils ───────────────────────────────────────────────────────
+  function _delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  function _countResults() {
+    const all   = Object.values(_results);
+    const total  = all.length;
+    const passed = all.filter(r => r.passed).length;
+    const failed = total - passed;
+    return { total, passed, failed };
+  }
+
+  // ── API pública ─────────────────────────────────────────────────
+  const _runner = {
+
+    // El UI llama esto para proveer las credenciales (evita acoplamiento)
+    getCredentials: () => ({ email: '', password: '' }),  // override desde fuera
+
+    // Registrar callbacks
+    on(event, fn) { if (_cb[event] !== undefined) _cb[event] = fn; return this; },
+
+    // Configurar base URL
+    setBaseUrl(url) { _baseUrl = url.replace(/\/$/, ''); return this; },
+
+    // Limpiar estado
+    reset() {
+      _jwt = ''; _refreshToken = '';
+      Object.keys(_results).forEach(k => delete _results[k]);
+    },
+
+    // Exponer resultados para test.report.js
+    getResults() { return { ..._results }; },
+    getSuites()  { return TEST_SUITES; },
+
+    // Ejecutar una suite por id
+    async runSuite(suiteId) {
+      const suite = TEST_SUITES.find(s => s.id === suiteId);
+      if (!suite) return;
+      this.setBaseUrl(this.getBaseUrl());
+      await _runSuite(suite);
+      const summary = _countResults();
+      _cb.onRunComplete(summary);
+    },
+
+    // Ejecutar todas las suites
+    async runAll() {
+      this.setBaseUrl(this.getBaseUrl());
+      for (const suite of TEST_SUITES) {
+        await _runSuite(suite);
+        await _delay(350);
+      }
+      const summary = _countResults();
+      _cb.onRunComplete(summary);
+    },
+
+    // El UI sobreescribe esto
+    getBaseUrl: () => 'http://localhost:5180',
+  };
+
+  return _runner;
+
+})();

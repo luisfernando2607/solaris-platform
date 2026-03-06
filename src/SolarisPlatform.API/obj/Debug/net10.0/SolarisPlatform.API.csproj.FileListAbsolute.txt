@@ -427,4 +427,4 @@
 /home/devstar/Dropbox/solaris/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/SolarisPlatform.API.pdb
 /home/devstar/Dropbox/solaris/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/SolarisPlatform.API.genruntimeconfig.cache
 /home/devstar/Dropbox/solaris/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/ref/SolarisPlatform.API.dll
-/home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/uskgedjgag-{0}-lr98ratuci-lr98ratuci.gz
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/uskgedjgag-{0}-doplngzj9r-doplngzj9r.gz
