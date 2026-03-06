@@ -25,12 +25,46 @@ public class ProyectosMappingProfile : Profile
             .ForAllMembers(o => o.Ignore());
 
         CreateMap<Proyecto, ProyectoDto>()
-            .ForMember(d => d.GerenteProyectoNombre, o => o.Ignore())
-            .ForMember(d => d.ResponsableNombre,     o => o.Ignore())
-            .ForMember(d => d.SucursalNombre,        o => o.Ignore())
-            .ForMember(d => d.MonedaNombre,          o => o.Ignore())
-            .ForMember(d => d.ClienteNombre,         o => o.Ignore())
-            .ForMember(d => d.Fases,                 o => o.MapFrom(s => s.Fases));
+            .ConstructUsing((s, ctx) => new ProyectoDto(
+                s.Id, s.EmpresaId, s.Codigo, s.Nombre, s.Descripcion,
+                s.TipoProyecto, s.Estado, s.Prioridad,
+                s.FechaInicioPlan, s.FechaFinPlan,
+                s.FechaInicioReal, s.FechaFinReal,
+                s.MonedaId, null,               // MonedaNombre — cross-schema
+                s.PresupuestoTotal, s.CostoRealTotal,
+                s.PorcentajeAvancePlan, s.PorcentajeAvanceReal,
+                s.ClienteId, null,              // ClienteNombre — cross-schema
+                s.GerenteProyectoId, null,      // GerenteProyectoNombre — cross-schema
+                s.ResponsableId, null,          // ResponsableNombre — cross-schema
+                s.SucursalId, null,             // SucursalNombre — cross-schema
+                s.Latitud, s.Longitud, s.Direccion,
+                true,                           // Activo — BaseEntity no tiene este campo
+                DateTime.UtcNow,                // FechaCreacion — Proyecto hereda BaseEntity (sin auditoría)
+                new List<ProyectoFaseDto>()))   // Fases — se mapean abajo con AfterMap
+            .AfterMap((s, d, ctx) =>
+            {
+                d.Fases.AddRange(ctx.Mapper.Map<List<ProyectoFaseDto>>(s.Fases));
+            })
+            .ForAllMembers(o => o.Ignore());
+
+        // ─── DASHBOARD ───────────────────────────────────────────
+        // FIX PRINCIPAL: Mapeo faltante Proyecto → ProyectoDashboardDto
+        CreateMap<Proyecto, ProyectoDashboardDto>()
+            .ConstructUsing((s, ctx) => new ProyectoDashboardDto(
+                s.Id,
+                s.Codigo,
+                s.Nombre,
+                s.Estado,
+                s.PorcentajeAvancePlan,
+                s.PorcentajeAvanceReal,
+                s.PresupuestoTotal,
+                s.CostoRealTotal,
+                null,                           // DiasRestantes — calculado en Service
+                false,                          // EstaRetrasado — calculado en Service
+                new List<ProyectoHitoListDto>(),
+                new List<AlertaProyectoDto>(),
+                new List<KpiProyectoDto>()))
+            .ForAllMembers(o => o.Ignore());
 
         // ─── Fase ────────────────────────────────────────────────
         CreateMap<ProyectoFase, ProyectoFaseDto>()
@@ -45,7 +79,13 @@ public class ProyectosMappingProfile : Profile
 
         // ─── Hito ────────────────────────────────────────────────
         CreateMap<ProyectoHito, ProyectoHitoDto>()
-            .ForMember(d => d.ResponsableNombre, o => o.Ignore());
+            .ConstructUsing((s, ctx) => new ProyectoHitoDto(
+                s.Id, s.ProyectoId, s.Nombre, s.Descripcion,
+                s.FechaCompromiso, s.FechaReal,
+                s.Estado, s.PorcentajePeso,
+                s.ResponsableId, null,          // ResponsableNombre — cross-schema
+                s.Orden, true))                 // Activo
+            .ForAllMembers(o => o.Ignore());
 
         CreateMap<ProyectoHito, ProyectoHitoListDto>()
             .ConstructUsing((s, ctx) => new ProyectoHitoListDto(
@@ -57,7 +97,13 @@ public class ProyectosMappingProfile : Profile
 
         // ─── Documento ───────────────────────────────────────────
         CreateMap<ProyectoDocumento, ProyectoDocumentoDto>()
-            .ForMember(d => d.SubidoPorNombre, o => o.Ignore());
+            .ConstructUsing((s, ctx) => new ProyectoDocumentoDto(
+                s.Id, s.ProyectoId, s.TipoDocumento,
+                s.Nombre, s.Descripcion, s.UrlStorage,
+                s.NombreArchivoOriginal, s.Extension, s.TamanoBytes,
+                null,                           // SubidoPorNombre — cross-schema
+                s.FechaSubida, true))
+            .ForAllMembers(o => o.Ignore());
 
         // ─── WBS ─────────────────────────────────────────────────
         CreateMap<WbsNodo, WbsNodoDto>()
@@ -79,11 +125,19 @@ public class ProyectosMappingProfile : Profile
 
         CreateMap<Tarea, TareaDto>()
             .ForMember(d => d.ResponsableNombre,   o => o.Ignore())
-
             .ForMember(d => d.DependenciasOrigen,  o => o.MapFrom(s => s.DependenciasOrigen))
             .ForMember(d => d.DependenciasDestino, o => o.MapFrom(s => s.DependenciasDestino));
 
-        CreateMap<TareaDependencia, TareaDependenciaDto>();
+        CreateMap<TareaDependencia, TareaDependenciaDto>()
+            .ConstructUsing((s, ctx) => new TareaDependenciaDto(
+                s.Id,
+                s.TareaOrigenId,
+                null!,              // TareaOrigenNombre — completar en Service
+                s.TareaDestinoId,
+                null!,              // TareaDestinoNombre — completar en Service
+                s.TipoDependencia,
+                s.Desfase))
+            .ForAllMembers(o => o.Ignore());
 
         // ─── Cuadrilla ───────────────────────────────────────────
         CreateMap<Cuadrilla, CuadrillaDto>()
