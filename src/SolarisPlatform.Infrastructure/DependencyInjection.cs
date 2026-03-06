@@ -1,3 +1,11 @@
+// ── Proyectos ────────────────────────────────────────────────────
+using SolarisPlatform.Application.Common.Interfaces.Proyectos;
+using SolarisPlatform.Infrastructure.Services.Proyectos;
+using SolarisPlatform.Infrastructure.Persistence.Repositories.Proyectos;
+using SolarisPlatform.Domain.Interfaces.Proyectos;
+using SolarisPlatform.Application.Common.Interfaces.Proyectos;
+using SolarisPlatform.Infrastructure.Services.Proyectos;
+
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -42,6 +50,7 @@ public static class DependencyInjection
                         maxRetryCount: 3,
                         maxRetryDelay: TimeSpan.FromSeconds(30),
                         errorCodesToAdd: null);
+                    npgsqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
                 });
 
             #if DEBUG
@@ -177,6 +186,46 @@ public static class DependencyInjection
         services.AddScoped<IPrestamoRepository,             PrestamoRepository>();
         services.AddScoped<IEvaluacionRepository,           EvaluacionRepository>();
         services.AddScoped<ICapacitacionRepository,         CapacitacionRepository>();
+
+        // ── Proyectos — Repositorios ─────────────────────────────
+        services.AddScoped<IProyectoRepository, ProyectoRepository>();
+        services.AddScoped<IProyectoHitoRepository, ProyectoHitoRepository>();
+        services.AddScoped<IProyectoFaseRepository, ProyectoFaseRepository>();
+        services.AddScoped<IProyectoDocumentoRepository, ProyectoDocumentoRepository>();
+        services.AddScoped<IWbsNodoRepository, WbsNodoRepository>();
+        services.AddScoped<ITareaRepository, TareaRepository>();
+        services.AddScoped<ITareaDependenciaRepository, TareaDependenciaRepository>();
+        services.AddScoped<ICuadrillaRepository, CuadrillaRepository>();
+        services.AddScoped<ICuadrillaMiembroRepository, CuadrillaMiembroRepository>();
+        services.AddScoped<IRecursoProyectoRepository, RecursoProyectoRepository>();
+        services.AddScoped<IPresupuestoRepository, PresupuestoRepository>();
+        services.AddScoped<IPresupuestoPartidaRepository, PresupuestoPartidaRepository>();
+        services.AddScoped<ICostoRealRepository, CostoRealRepository>();
+        services.AddScoped<IGanttLineaBaseRepository, GanttLineaBaseRepository>();
+        services.AddScoped<IGanttProgresoRepository, GanttProgresoRepository>();
+        services.AddScoped<ICentroCostoRepository, CentroCostoRepository>();
+        services.AddScoped<IAsignacionCentroCostoRepository, AsignacionCentroCostoRepository>();
+        services.AddScoped<IOrdenTrabajoRepository, OrdenTrabajoRepository>();
+        services.AddScoped<IOtActividadRepository, OtActividadRepository>();
+        services.AddScoped<IOtMaterialRepository, OtMaterialRepository>();
+        services.AddScoped<IReporteAvanceRepository, ReporteAvanceRepository>();
+        services.AddScoped<IKpiProyectoRepository, KpiProyectoRepository>();
+        services.AddScoped<IAlertaProyectoRepository, AlertaProyectoRepository>();
+
+        // ── Proyectos — Servicios ──────────────────────────────
+        services.AddScoped<IProyectoService, ProyectoService>();
+        services.AddScoped<IProyectoFaseService, ProyectoFaseService>();
+        services.AddScoped<IProyectoHitoService, ProyectoHitoService>();
+        services.AddScoped<IProyectoDocumentoService, ProyectoDocumentoService>();
+        services.AddScoped<IWbsService, WbsService>();
+        services.AddScoped<ITareaService, TareaService>();
+        services.AddScoped<ICuadrillaService, CuadrillaService>();
+        services.AddScoped<IPresupuestoService, PresupuestoService>();
+        services.AddScoped<IGanttService, GanttService>();
+        services.AddScoped<ICentroCostoService, CentroCostoService>();
+        services.AddScoped<IOrdenTrabajoService, OrdenTrabajoService>();
+        services.AddScoped<IReporteAvanceService, ReporteAvanceService>();
+        services.AddScoped<IKpiService, KpiService>();
 
         services.AddAuthorization();
         services.AddHttpContextAccessor();

@@ -14,6 +14,8 @@ public static class DependencyInjection
         {
             cfg.AddProfile<MappingProfile>();
             cfg.AddProfile<RrhhMappingProfile>();
+            cfg.AddProfile<CatalogosMappingProfile>();
+            cfg.AddProfile<ProyectosMappingProfile>();
         });
 
         // FluentValidation

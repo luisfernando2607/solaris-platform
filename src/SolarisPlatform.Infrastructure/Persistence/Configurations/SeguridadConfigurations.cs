@@ -198,6 +198,7 @@ public class RolPermisoConfiguration : IEntityTypeConfiguration<RolPermiso>
     public void Configure(EntityTypeBuilder<RolPermiso> builder)
     {
         builder.ToTable("rol_permiso", "seg");
+            builder.HasQueryFilter(rp => !rp.Rol!.Eliminado);
 
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Id).HasColumnName("id");
@@ -229,6 +230,7 @@ public class UsuarioRolConfiguration : IEntityTypeConfiguration<UsuarioRol>
     public void Configure(EntityTypeBuilder<UsuarioRol> builder)
     {
         builder.ToTable("usuario_rol", "seg");
+            builder.HasQueryFilter(ur => !ur.Rol!.Eliminado);
 
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Id).HasColumnName("id");
@@ -264,6 +266,7 @@ public class UsuarioSucursalConfiguration : IEntityTypeConfiguration<UsuarioSucu
     public void Configure(EntityTypeBuilder<UsuarioSucursal> builder)
     {
         builder.ToTable("usuario_sucursal", "seg");
+            builder.HasQueryFilter(us => us.Sucursal!.Activo);
 
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Id).HasColumnName("id");
@@ -297,6 +300,7 @@ public class SesionUsuarioConfiguration : IEntityTypeConfiguration<SesionUsuario
     public void Configure(EntityTypeBuilder<SesionUsuario> builder)
     {
         builder.ToTable("sesion_usuario", "seg");
+            builder.HasQueryFilter(s => s.Usuario!.Activo && !s.Usuario!.Eliminado);
 
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Id).HasColumnName("id");

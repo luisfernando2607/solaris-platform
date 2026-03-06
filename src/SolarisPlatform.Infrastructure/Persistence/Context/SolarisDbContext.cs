@@ -6,6 +6,7 @@ using SolarisPlatform.Domain.Entities.RRHH;
 using SolarisPlatform.Domain.Common;
 using SolarisPlatform.Application.Common.Interfaces;
 
+using SolarisPlatform.Domain.Entities.Proyectos;
 namespace SolarisPlatform.Infrastructure.Persistence.Context;
 
 /// <summary>
@@ -108,6 +109,34 @@ public class SolarisDbContext : DbContext
 
     // RRHH — Nómina parámetros
     public DbSet<ParametroNomina> ParametrosNomina => Set<ParametroNomina>();
+
+    // ==========================================
+    // MÓDULO PROYECTOS
+    // ==========================================
+    public DbSet<Proyecto>                Proyectos              => Set<Proyecto>();
+    public DbSet<ProyectoHito>            ProyectoHitos          => Set<ProyectoHito>();
+    public DbSet<ProyectoFase>            ProyectoFases          => Set<ProyectoFase>();
+    public DbSet<ProyectoDocumento>       ProyectoDocumentos     => Set<ProyectoDocumento>();
+    public DbSet<WbsNodo>                 WbsNodos               => Set<WbsNodo>();
+    public DbSet<Tarea>                   Tareas                 => Set<Tarea>();
+    public DbSet<TareaDependencia>        TareaDependencias      => Set<TareaDependencia>();
+    public DbSet<Cuadrilla>               Cuadrillas             => Set<Cuadrilla>();
+    public DbSet<CuadrillaMiembro>        CuadrillaMiembros      => Set<CuadrillaMiembro>();
+    public DbSet<RecursoProyecto>         RecursosProyecto       => Set<RecursoProyecto>();
+    public DbSet<Presupuesto>             Presupuestos           => Set<Presupuesto>();
+    public DbSet<PresupuestoPartida>      PresupuestoPartidas    => Set<PresupuestoPartida>();
+    public DbSet<CostoReal>               CostosReales           => Set<CostoReal>();
+    public DbSet<GanttLineaBase>          GanttLineasBase        => Set<GanttLineaBase>();
+    public DbSet<GanttProgreso>           GanttProgresos         => Set<GanttProgreso>();
+    public DbSet<CentroCosto>             CentrosCosto           => Set<CentroCosto>();
+    public DbSet<AsignacionCentroCosto>   AsignacionesCentroCosto => Set<AsignacionCentroCosto>();
+    public DbSet<OrdenTrabajo>            OrdenesTrabajo         => Set<OrdenTrabajo>();
+    public DbSet<OtActividad>             OtActividades          => Set<OtActividad>();
+    public DbSet<OtMaterial>              OtMateriales           => Set<OtMaterial>();
+    public DbSet<ReporteAvance>           ReportesAvance         => Set<ReporteAvance>();
+    public DbSet<ReporteAvanceFoto>       ReporteAvanceFotos     => Set<ReporteAvanceFoto>();
+    public DbSet<KpiProyecto>             KpisProyecto           => Set<KpiProyecto>();
+    public DbSet<AlertaProyecto>          AlertasProyecto        => Set<AlertaProyecto>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
