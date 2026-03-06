@@ -427,4 +427,9 @@
 /home/devstar/Dropbox/solaris/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/SolarisPlatform.API.pdb
 /home/devstar/Dropbox/solaris/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/SolarisPlatform.API.genruntimeconfig.cache
 /home/devstar/Dropbox/solaris/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/ref/SolarisPlatform.API.dll
-/home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/uskgedjgag-{0}-doplngzj9r-doplngzj9r.gz
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/uskgedjgag-{0}-1xhh7zuprg-1xhh7zuprg.gz
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/dbp8604aae-{0}-ognjp93a65-ognjp93a65.gz
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/h79wdjv80j-{0}-9opcjusy2o-9opcjusy2o.gz
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/m5semjinr7-{0}-ojmiodurek-ojmiodurek.gz
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/xirms6amwm-{0}-5dbwgojm5a-5dbwgojm5a.gz
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/o3sd5qjmpc-{0}-8aa80w6gq9-8aa80w6gq9.gz

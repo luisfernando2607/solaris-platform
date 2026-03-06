@@ -31,7 +31,6 @@ public class OrdenTrabajoService : IOrdenTrabajoService
 
     public async Task<OrdenTrabajoDto?> GetByIdAsync(long id, CancellationToken ct = default)
     {
-        // GetByIdAsync genérico - no hay GetWithDetallesAsync en esta entidad
         var e = await _repo.GetByIdAsync(id, ct);
         return e == null ? null : _mapper.Map<OrdenTrabajoDto>(e);
     }
@@ -41,27 +40,28 @@ public class OrdenTrabajoService : IOrdenTrabajoService
 
     public async Task<Result<OrdenTrabajoDto>> CreateAsync(CrearOrdenTrabajoRequest request, long usuarioId, CancellationToken ct = default)
     {
-        var numero = await GenerarNumeroOtAsync(request.ProyectoId, ct);
+        var codigo = await GenerarCodigoOtAsync(request.ProyectoId, ct);
         var e = new OrdenTrabajo
         {
-            ProyectoId           = request.ProyectoId,
-            TareaId              = request.TareaId,
-            CuadrillaId          = request.CuadrillaId,
-            TecnicoResponsableId = request.TecnicoResponsableId,
-            Numero               = numero,
-            Titulo               = request.Titulo,
-            Descripcion          = request.Descripcion,
-            Estado               = EstadoOrdenTrabajo.Borrador,
-            FechaAsignacion      = DateTime.UtcNow,
-            FechaInicioPlan      = request.FechaInicioPlan,
-            FechaFinPlan         = request.FechaFinPlan,
-            AsignadoPorId        = usuarioId,
-            Latitud              = request.Latitud,
-            Longitud             = request.Longitud,
-            DireccionSitio       = request.DireccionSitio,
-            RequiereFirma        = request.RequiereFirma,
-            RequiereFotos        = request.RequiereFotos,
-            FotosRequeridas      = request.FotosRequeridas
+            ProyectoId          = request.ProyectoId,
+            TareaId             = request.TareaId,
+            CuadrillaId         = request.CuadrillaId,
+            // FIX: TecnicoResponsableId → TecnicoAsignadoId
+            TecnicoAsignadoId   = request.TecnicoResponsableId,
+            // FIX: Numero → Codigo, Titulo eliminado (ahora es Descripcion)
+            Codigo              = codigo,
+            Descripcion         = request.Titulo ?? request.Descripcion,
+            Estado              = EstadoOrdenTrabajo.Borrador,
+            // FIX: FechaAsignacion eliminada — BD no tiene esa columna
+            // FIX: FechaInicioPlan/FinPlan → FechaProgramada
+            FechaProgramada     = request.FechaInicioPlan,
+            // FIX: AsignadoPorId eliminado — no existe en BD
+            Latitud             = request.Latitud,
+            Longitud            = request.Longitud,
+            // FIX: DireccionSitio → Direccion
+            Direccion           = request.DireccionSitio,
+            // FIX: RequiereFirma, RequiereFotos, FotosRequeridas → PrimerIntento
+            PrimerIntento       = true
         };
         await _repo.AddAsync(e, ct);
         await _uow.SaveChangesAsync(ct);
@@ -92,12 +92,19 @@ public class OrdenTrabajoService : IOrdenTrabajoService
     {
         var e = await _repo.GetByIdAsync(request.Id, ct);
         if (e == null) return Result<OrdenTrabajoDto>.Failure("Orden de trabajo no encontrada");
-        e.Titulo = request.Titulo; e.Descripcion = request.Descripcion;
-        e.CuadrillaId = request.CuadrillaId; e.TecnicoResponsableId = request.TecnicoResponsableId;
-        e.FechaInicioPlan = request.FechaInicioPlan; e.FechaFinPlan = request.FechaFinPlan;
-        e.Latitud = request.Latitud; e.Longitud = request.Longitud; e.DireccionSitio = request.DireccionSitio;
-        e.RequiereFirma = request.RequiereFirma; e.RequiereFotos = request.RequiereFotos;
-        e.FotosRequeridas = request.FotosRequeridas; e.ObservacionesSupervisor = request.ObservacionesSupervisor;
+        // FIX: Titulo → Descripcion
+        e.Descripcion       = request.Titulo ?? request.Descripcion;
+        e.CuadrillaId       = request.CuadrillaId;
+        // FIX: TecnicoResponsableId → TecnicoAsignadoId
+        e.TecnicoAsignadoId = request.TecnicoResponsableId;
+        // FIX: FechaInicioPlan → FechaProgramada
+        e.FechaProgramada   = request.FechaInicioPlan;
+        e.Latitud           = request.Latitud;
+        e.Longitud          = request.Longitud;
+        // FIX: DireccionSitio → Direccion
+        e.Direccion         = request.DireccionSitio;
+        // FIX: ObservacionesSupervisor → ObservacionesCierre
+        e.ObservacionesCierre = request.ObservacionesSupervisor;
         await _repo.UpdateAsync(e, ct);
         await _uow.SaveChangesAsync(ct);
         return Result<OrdenTrabajoDto>.Success(_mapper.Map<OrdenTrabajoDto>(e));
@@ -117,10 +124,11 @@ public class OrdenTrabajoService : IOrdenTrabajoService
         var e = await _repo.GetByIdAsync(request.Id, ct);
         if (e == null) return Result.Failure("Orden de trabajo no encontrada");
         e.Estado = request.Estado;
-        if (request.Estado == EstadoOrdenTrabajo.EnCurso && e.FechaInicioReal == null)
-            e.FechaInicioReal = DateTime.UtcNow;
-        if (request.Estado == EstadoOrdenTrabajo.Completada && e.FechaFinReal == null)
-            e.FechaFinReal = DateTime.UtcNow;
+        // FIX: FechaInicioReal/FinReal → FechaInicioEjecucion/FechaFinEjecucion
+        if (request.Estado == EstadoOrdenTrabajo.EnCurso && e.FechaInicioEjecucion == null)
+            e.FechaInicioEjecucion = DateTime.UtcNow;
+        if (request.Estado == EstadoOrdenTrabajo.Completada && e.FechaFinEjecucion == null)
+            e.FechaFinEjecucion = DateTime.UtcNow;
         await _repo.UpdateAsync(e, ct);
         await _uow.SaveChangesAsync(ct);
         return Result.Success();
@@ -144,16 +152,16 @@ public class OrdenTrabajoService : IOrdenTrabajoService
     {
         var e = await _repo.GetByIdAsync(request.Id, ct);
         if (e == null) return Result.Failure("Orden de trabajo no encontrada");
-        e.FirmaBase64      = request.FirmaBase64;
-        e.FirmadoPorNombre = request.FirmantNombre;
-        e.FechaFirma       = DateTime.UtcNow;
+        // FIX: FirmaBase64 → UrlFirmaDigital, FirmadoPorNombre y FechaFirma eliminados de entidad
+        e.UrlFirmaDigital = request.FirmaBase64;  // Ahora se guarda URL, no base64
         await _repo.UpdateAsync(e, ct);
         await _uow.SaveChangesAsync(ct);
         return Result.Success();
     }
 
-    private async Task<string> GenerarNumeroOtAsync(long proyectoId, CancellationToken ct)
+    private async Task<string> GenerarCodigoOtAsync(long proyectoId, CancellationToken ct)
     {
+        // FIX: Genera Codigo en lugar de Numero
         var count = await _repo.CountAsync(o => o.ProyectoId == proyectoId, ct);
         return $"OT-{proyectoId:D6}-{(count + 1):D4}";
     }
@@ -182,17 +190,18 @@ public class ReporteAvanceService : IReporteAvanceService
     {
         var e = new ReporteAvance
         {
-            ProyectoId           = request.ProyectoId,
-            OrdenTrabajoId       = request.OrdenTrabajoId,
-            FechaReporte         = request.FechaReporte.ToDateTime(TimeOnly.MinValue),
-            Titulo               = request.Titulo,
-            Descripcion          = request.Descripcion,
-            PorcentajeAvancePlan = request.PorcentajeAvancePlan,
-            PorcentajeAvanceReal = request.PorcentajeAvanceReal,
-            Observaciones        = request.Observaciones,
-            Latitud              = request.Latitud,
-            Longitud             = request.Longitud,
-            ReportadoPorId       = usuarioId
+            ProyectoId    = request.ProyectoId,
+            // FIX: OrdenTrabajoId eliminado de ReporteAvance — BD no tiene esa columna
+            // FIX: FechaReporte es DateOnly en BD (no DateTime)
+            FechaReporte  = request.FechaReporte,
+            Titulo        = request.Titulo,
+            // FIX: Descripcion eliminada — BD no tiene esa columna; se usa Observaciones
+            // FIX: PorcentajeAvancePlan/Real → AvanceGeneral/AvanceCosto
+            AvanceGeneral = request.PorcentajeAvancePlan,
+            AvanceCosto   = request.PorcentajeAvanceReal,
+            Observaciones = request.Observaciones ?? request.Descripcion,
+            // FIX: Latitud/Longitud/ReportadoPorId eliminados de ReporteAvance
+            CreadoPorId   = usuarioId
         };
         await _repo.AddAsync(e, ct);
         await _uow.SaveChangesAsync(ct);

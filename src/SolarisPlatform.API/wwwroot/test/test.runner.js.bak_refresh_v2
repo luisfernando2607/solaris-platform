@@ -103,7 +103,7 @@ const TestRunner = (() => {
       body = { email: creds.email, password: creds.password };
     }
     if (body === '__USE_REFRESH__') {
-      body = { Token: _jwt, RefreshToken: _refreshToken };  // RefreshTokenRequest exige ambos campos  // backend espera campo 'RefreshToken' (RefreshTokenRequest DTO)
+      body = { RefreshToken: _refreshToken };  // backend espera campo 'RefreshToken' (RefreshTokenRequest DTO)
     }
     if (testDef._fakeToken) {
       token = testDef._fakeToken;

@@ -10,42 +10,44 @@ namespace SolarisPlatform.Domain.Entities.Proyectos;
 
 /// <summary>
 /// Cuadrilla de trabajo asignada a un proyecto.
-/// Agrupa empleados para ejecutar tareas de campo.
+/// BD: proy.cuadrilla — tiene columna capacidad_maxima (no capacidad_max)
 /// </summary>
 public class Cuadrilla : BaseEntity
 {
     public long   EmpresaId      { get; set; }
     public long   ProyectoId     { get; set; }
-    public string Nombre         { get; set; } = null!;
+    // FIX: BD también tiene columna "codigo"
+    public string  Codigo        { get; set; } = null!;
+    public string  Nombre        { get; set; } = null!;
     public string? Descripcion   { get; set; }
-    public long?  LiderId        { get; set; }   // FK rrhh.empleado - líder de cuadrilla
-    public int    CapacidadMax   { get; set; } = 10;
+    public long?  LiderId        { get; set; }
+    // FIX: CapacidadMax → CapacidadMaxima (BD: capacidad_maxima)
+    public int    CapacidadMaxima { get; set; } = 10;
 
-    // ── Navegación ──────────────────────────────────────────────────
-    public virtual Proyecto                     Proyecto { get; set; } = null!;
+    public virtual Proyecto                      Proyecto { get; set; } = null!;
     public virtual ICollection<CuadrillaMiembro> Miembros { get; set; } = new List<CuadrillaMiembro>();
-    public virtual ICollection<Tarea>           Tareas   { get; set; } = new List<Tarea>();
+    public virtual ICollection<Tarea>            Tareas   { get; set; } = new List<Tarea>();
 }
 
 /// <summary>
-/// Miembro de una cuadrilla. Relaciona empleados con cuadrillas.
+/// Miembro de una cuadrilla.
+/// BD: proy.cuadrilla_miembro
 /// </summary>
 public class CuadrillaMiembro : BaseEntity
 {
     public long     EmpresaId     { get; set; }
     public long     CuadrillaId   { get; set; }
-    public long     EmpleadoId    { get; set; }   // FK rrhh.empleado
+    public long     EmpleadoId    { get; set; }
     public DateOnly FechaIngreso  { get; set; }
     public DateOnly? FechaSalida  { get; set; }
-    public string?  Rol           { get; set; }   // Ej: "Técnico", "Ayudante", "Supervisor"
+    public string?  Rol           { get; set; }
 
-    // ── Navegación ──────────────────────────────────────────────────
     public virtual Cuadrilla Cuadrilla { get; set; } = null!;
 }
 
 /// <summary>
-/// Recurso asignado al proyecto (humano, material, equipo, servicio).
-/// Representa el plan de recursos y su consumo real.
+/// Recurso asignado al proyecto.
+/// BD: proy.recurso_proyecto
 /// </summary>
 public class RecursoProyecto : BaseEntity
 {
@@ -61,10 +63,9 @@ public class RecursoProyecto : BaseEntity
     public decimal       CostoUnitario     { get; set; }
     public decimal       CostoTotalPlan    { get; set; }
     public decimal       CostoTotalReal    { get; set; }
-    public long?         EmpleadoId        { get; set; }   // FK rrhh.empleado (si es humano)
-    public long?         ProveedorId       { get; set; }   // futuro crm.proveedor
+    public long?         EmpleadoId        { get; set; }
+    public long?         ProveedorId       { get; set; }
 
-    // ── Navegación ──────────────────────────────────────────────────
     public virtual Proyecto Proyecto   { get; set; } = null!;
     public virtual Tarea?   Tarea      { get; set; }
 }

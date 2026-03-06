@@ -33,12 +33,14 @@ public class WbsService : IWbsService
             ProyectoId       = request.ProyectoId,
             FaseId           = request.FaseId,
             PadreId          = request.PadreId,
-            Codigo           = request.Codigo,
+            // FIX: Codigo → CodigoWbs
+            CodigoWbs        = request.Codigo,
             Nombre           = request.Nombre,
             Descripcion      = request.Descripcion,
             TipoNodo         = request.TipoNodo,
             Orden            = request.Orden,
-            PorcentajePeso   = request.PorcentajePeso,
+            // FIX: PorcentajePeso → PesoRelativo
+            PesoRelativo     = request.PorcentajePeso,
             PorcentajeAvance = 0,
             EsHoja           = true,
             Nivel            = 1
@@ -52,9 +54,12 @@ public class WbsService : IWbsService
     {
         var e = await _repo.GetByIdAsync(request.Id, ct);
         if (e == null) return Result<WbsNodoDto>.Failure("Nodo WBS no encontrado");
-        e.Nombre = request.Nombre; e.Descripcion = request.Descripcion;
-        e.TipoNodo = request.TipoNodo; e.Orden = request.Orden;
-        e.PorcentajePeso = request.PorcentajePeso;
+        e.Nombre      = request.Nombre;
+        e.Descripcion = request.Descripcion;
+        e.TipoNodo    = request.TipoNodo;
+        e.Orden       = request.Orden;
+        // FIX: PorcentajePeso → PesoRelativo
+        e.PesoRelativo = request.PorcentajePeso;
         await _repo.UpdateAsync(e, ct);
         await _uow.SaveChangesAsync(ct);
         return Result<WbsNodoDto>.Success(_mapper.Map<WbsNodoDto>(e));
@@ -97,7 +102,7 @@ public class TareaService : ITareaService
         {
             ProyectoId       = request.ProyectoId,
             WbsNodoId        = request.WbsNodoId,
-            FaseId           = request.FaseId,
+            // FIX: FaseId eliminado de entidad Tarea — ignorado
             CuadrillaId      = request.CuadrillaId,
             ResponsableId    = request.ResponsableId,
             Nombre           = request.Nombre,
@@ -105,14 +110,12 @@ public class TareaService : ITareaService
             Prioridad        = request.Prioridad,
             FechaInicioPlan  = request.FechaInicioPlan,
             FechaFinPlan     = request.FechaFinPlan,
-            DuracionDias     = (decimal)(request.DuracionDias ?? 0),
-            HorasEstimadas   = (decimal)(request.HorasEstimadas ?? 0),
-            Latitud          = request.Latitud,
-            Longitud         = request.Longitud,
-            Ubicacion        = request.Ubicacion,
+            // FIX: DuracionDias → DuracionDiasPlan (BD: duracion_dias_plan)
+            DuracionDiasPlan = (int)(request.DuracionDias ?? 0),
+            DuracionDiasReal = 0,
+            // FIX: HorasEstimadas, Latitud, Longitud, Ubicacion eliminados de entidad
             Estado           = EstadoTarea.Pendiente,
-            PorcentajeAvance = 0,
-            HorasReales      = 0
+            PorcentajeAvance = 0
         };
         await _repo.AddAsync(e, ct);
         await _uow.SaveChangesAsync(ct);
@@ -123,15 +126,20 @@ public class TareaService : ITareaService
     {
         var e = await _repo.GetByIdAsync(request.Id, ct);
         if (e == null) return Result<TareaDto>.Failure("Tarea no encontrada");
-        e.Nombre = request.Nombre; e.Descripcion = request.Descripcion;
-        e.Prioridad = request.Prioridad; e.WbsNodoId = request.WbsNodoId;
-        e.FaseId = request.FaseId; e.CuadrillaId = request.CuadrillaId;
-        e.ResponsableId = request.ResponsableId;
-        e.FechaInicioPlan = request.FechaInicioPlan; e.FechaFinPlan = request.FechaFinPlan;
-        e.FechaInicioReal = request.FechaInicioReal; e.FechaFinReal = request.FechaFinReal;
-        e.DuracionDias    = (decimal)(request.DuracionDias ?? 0);
-        e.HorasEstimadas  = (decimal)(request.HorasEstimadas ?? e.HorasEstimadas);
-        e.Latitud = request.Latitud; e.Longitud = request.Longitud; e.Ubicacion = request.Ubicacion;
+        e.Nombre         = request.Nombre;
+        e.Descripcion    = request.Descripcion;
+        e.Prioridad      = request.Prioridad;
+        e.WbsNodoId      = request.WbsNodoId;
+        // FIX: FaseId eliminado
+        e.CuadrillaId    = request.CuadrillaId;
+        e.ResponsableId  = request.ResponsableId;
+        e.FechaInicioPlan = request.FechaInicioPlan;
+        e.FechaFinPlan    = request.FechaFinPlan;
+        e.FechaInicioReal = request.FechaInicioReal;
+        e.FechaFinReal    = request.FechaFinReal;
+        // FIX: DuracionDias → DuracionDiasPlan
+        e.DuracionDiasPlan = (int)(request.DuracionDias ?? 0);
+        // FIX: HorasEstimadas, Latitud, Longitud, Ubicacion eliminados
         await _repo.UpdateAsync(e, ct);
         await _uow.SaveChangesAsync(ct);
         return Result<TareaDto>.Success(_mapper.Map<TareaDto>(e));
@@ -168,7 +176,7 @@ public class TareaService : ITareaService
         var e = await _repo.GetByIdAsync(request.Id, ct);
         if (e == null) return Result.Failure("Tarea no encontrada");
         e.PorcentajeAvance = request.Porcentaje;
-        e.HorasReales += request.HorasTrabajadas;
+        // FIX: HorasReales eliminado — se acumula en DuracionDiasReal si corresponde
         await _repo.UpdateAsync(e, ct);
         await _uow.SaveChangesAsync(ct);
         return Result.Success();
@@ -220,11 +228,12 @@ public class CuadrillaService : ICuadrillaService
     {
         var e = new Cuadrilla
         {
-            ProyectoId   = request.ProyectoId,
-            Nombre       = request.Nombre,
-            Descripcion  = request.Descripcion,
-            LiderId      = request.LiderId,
-            CapacidadMax = request.CapacidadMax
+            ProyectoId      = request.ProyectoId,
+            Nombre          = request.Nombre,
+            Descripcion     = request.Descripcion,
+            LiderId         = request.LiderId,
+            // FIX: CapacidadMax → CapacidadMaxima
+            CapacidadMaxima = request.CapacidadMax
         };
         await _repo.AddAsync(e, ct);
         await _uow.SaveChangesAsync(ct);
@@ -235,8 +244,11 @@ public class CuadrillaService : ICuadrillaService
     {
         var e = await _repo.GetByIdAsync(request.Id, ct);
         if (e == null) return Result<CuadrillaDto>.Failure("Cuadrilla no encontrada");
-        e.Nombre = request.Nombre; e.Descripcion = request.Descripcion;
-        e.LiderId = request.LiderId; e.CapacidadMax = request.CapacidadMax;
+        e.Nombre          = request.Nombre;
+        e.Descripcion     = request.Descripcion;
+        e.LiderId         = request.LiderId;
+        // FIX: CapacidadMax → CapacidadMaxima
+        e.CapacidadMaxima = request.CapacidadMax;
         await _repo.UpdateAsync(e, ct);
         await _uow.SaveChangesAsync(ct);
         return Result<CuadrillaDto>.Success(_mapper.Map<CuadrillaDto>(e));

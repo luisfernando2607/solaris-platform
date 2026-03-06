@@ -157,7 +157,7 @@ const TEST_SUITES = [
         id: 'refresh', method: 'POST', path: '/api/Auth/refresh-token', auth: false,
         name: 'POST /api/Auth/refresh-token — renovar JWT',
         desc: 'Espera: HTTP 200 con nuevo token',
-        body: '__USE_REFRESH__',   // runner enviará { RefreshToken: refreshToken } — backend espera campo 'RefreshToken'
+        body: '__USE_REFRESH__',   // runner enviará { Token: refreshToken } — backend espera "Token" no "RefreshToken"
         expect: {
           status: 200,
           check: d => !!(d?.data?.token || d?.data?.accessToken || d?.token || d?.accessToken),
@@ -523,7 +523,7 @@ const TEST_SUITES = [
         id: 'bad-refresh', method: 'POST', path: '/api/Auth/refresh-token', auth: false,
         name: 'POST /api/Auth/refresh-token con token falso → error',
         desc: 'Refresh token inválido debe ser rechazado con 400 o 401',
-        body: { RefreshToken: 'token-falso-12345' },  // backend espera campo 'RefreshToken'
+        body: { Token: 'token-falso-12345' },   // backend espera campo "Token" (no "RefreshToken")
         expect: { status: [400, 401] },
         hint: 'El servicio de auth debe validar el refreshToken contra la BD.'
       }

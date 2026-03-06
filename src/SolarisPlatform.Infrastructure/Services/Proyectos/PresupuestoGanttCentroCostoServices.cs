@@ -65,17 +65,21 @@ public class PresupuestoService : IPresupuestoService
 
     public async Task<Result<PresupuestoDto>> CreateAsync(CrearPresupuestoRequest request, long usuarioId, CancellationToken ct = default)
     {
-        var version = (await _repo.GetByProyectoAsync(request.ProyectoId, ct)).Count() + 1;
+        var version = (short)((await _repo.GetByProyectoAsync(request.ProyectoId, ct)).Count() + 1);
         var e = new Presupuesto
         {
-            ProyectoId    = request.ProyectoId,
-            Version       = version,
-            Nombre        = request.Nombre,
-            Descripcion   = request.Descripcion,
-            Contingencia  = request.Contingencia,
-            EsActivo      = true,
-            EsAprobado    = false,
-            TotalIngresos = 0, TotalEgresos = 0, TotalNeto = 0
+            ProyectoId  = request.ProyectoId,
+            Version     = version,
+            // FIX: Nombre, Contingencia, EsActivo, EsAprobado, TotalIngresos/Egresos/Neto
+            //      NO existen en la entidad Presupuesto — BD usa estructura diferente
+            Descripcion              = request.Nombre ?? request.Descripcion,
+            Estado                   = 1,  // 1 = Borrador
+            MontoTotalManoObra       = 0,
+            MontoTotalMateriales     = 0,
+            MontoTotalSubcontratos   = 0,
+            MontoTotalEquipos        = 0,
+            MontoTotalIndirectos     = 0,
+            TotalGeneral             = 0
         };
         await _repo.AddAsync(e, ct);
         await _uow.SaveChangesAsync(ct);
@@ -115,9 +119,10 @@ public class PresupuestoService : IPresupuestoService
     {
         var e = await _repo.GetByIdAsync(presupuestoId, ct);
         if (e == null) return Result.Failure("Presupuesto no encontrado");
-        e.EsAprobado      = true;
+        // FIX: EsAprobado → Estado = 2 (Aprobado), FechaAprobacion es DateOnly
+        e.Estado          = 2;
         e.AprobadoPorId   = usuarioId;
-        e.FechaAprobacion = DateTime.UtcNow;
+        e.FechaAprobacion = DateOnly.FromDateTime(DateTime.UtcNow);
         await _repo.UpdateAsync(e, ct);
         await _uow.SaveChangesAsync(ct);
         return Result.Success();
@@ -127,16 +132,18 @@ public class PresupuestoService : IPresupuestoService
     {
         var e = new CostoReal
         {
-            PresupuestoId    = request.PresupuestoId,
-            PartidaId        = request.PartidaId,
-            Origen           = request.Origen,
-            Concepto         = request.Concepto,
-            Descripcion      = request.Descripcion,
-            Monto            = request.Monto,
-            FechaRegistro    = request.FechaRegistro.ToDateTime(TimeOnly.MinValue),
-            NumeroReferencia = request.NumeroReferencia,
-            OrdenTrabajoId   = request.OrdenTrabajoId,
-            RegistradoPorId  = usuarioId
+            PresupuestoId   = request.PresupuestoId,
+            PartidaId       = request.PartidaId,
+            Origen          = request.Origen,
+            Concepto        = request.Concepto,
+            // FIX: Descripcion eliminada de CostoReal — se mapea a Observaciones
+            Observaciones   = request.Descripcion,
+            Monto           = request.Monto,
+            // FIX: FechaRegistro → Fecha (DateOnly)
+            Fecha           = request.FechaRegistro,
+            // FIX: NumeroReferencia eliminado — se mapea a OrigenId si aplica
+            OrdenTrabajoId  = request.OrdenTrabajoId,
+            RegistradoPorId = usuarioId
         };
         await _costoRepo.AddAsync(e, ct);
         await _uow.SaveChangesAsync(ct);
@@ -155,9 +162,9 @@ public class PresupuestoService : IPresupuestoService
     private async Task RecalcularTotalesAsync(Presupuesto presupuesto, CancellationToken ct)
     {
         var partidas = await _partidaRepo.GetByPresupuestoAsync(presupuesto.Id, ct);
-        presupuesto.TotalIngresos = partidas.Where(p => p.Tipo == Domain.Enums.Proyectos.TipoPartida.Ingreso).Sum(p => p.Total);
-        presupuesto.TotalEgresos  = partidas.Where(p => p.Tipo == Domain.Enums.Proyectos.TipoPartida.Egreso).Sum(p => p.Total);
-        presupuesto.TotalNeto     = presupuesto.TotalIngresos - presupuesto.TotalEgresos - presupuesto.Contingencia;
+        // FIX: TotalIngresos/Egresos/Neto/Contingencia no existen
+        // Recalculamos los montos por categoría de la entidad real
+        presupuesto.TotalGeneral = partidas.Sum(p => p.Total);
         await _repo.UpdateAsync(presupuesto, ct);
     }
 
@@ -199,13 +206,18 @@ public class GanttService : IGanttService
         if (proyecto == null) return null;
 
         var tareas = await _tareaRepo.GetByProyectoAsync(proyectoId, ct);
+
+        // FIX: Tarea ya no tiene FaseId — el Gantt ahora agrupa solo por proyecto
         var fases = proyecto.Fases.Select(f => new GanttFaseDto(
             f.Id, f.Nombre, f.FechaInicioPlan, f.FechaFinPlan, f.PorcentajeAvance,
-            tareas.Where(t => t.FaseId == f.Id).Select(t => new GanttTareaDto(
+            // FIX: todas las tareas del proyecto (sin filtro por FaseId)
+            tareas.Select(t => new GanttTareaDto(
                 t.Id, t.Nombre, t.FechaInicioPlan, t.FechaFinPlan,
                 t.FechaInicioReal, t.FechaFinReal, null, null,
                 t.PorcentajeAvance, t.Estado,
-                t.DependenciasOrigen.Select(d => d.TareaDestinoId).ToList()
+                t.DependenciasOrigen != null
+                    ? t.DependenciasOrigen.Select(d => d.TareaDestinoId).ToList()
+                    : new List<long>()
             )).ToList()
         )).ToList();
 
@@ -225,7 +237,8 @@ public class GanttService : IGanttService
                 TareaId         = tarea.Id,
                 FechaInicioBase = tarea.FechaInicioPlan ?? DateOnly.FromDateTime(DateTime.UtcNow),
                 FechaFinBase    = tarea.FechaFinPlan    ?? DateOnly.FromDateTime(DateTime.UtcNow),
-                DuracionDias    = tarea.DuracionDias,
+                // FIX: DuracionDias en GanttLineaBase es decimal — tomamos DuracionDiasPlan
+                DuracionDias    = (decimal)tarea.DuracionDiasPlan,
                 FechaCaptura    = DateTime.UtcNow
             };
             await _lineaBaseRepo.AddAsync(lineaBase, ct);
@@ -251,7 +264,7 @@ public class GanttService : IGanttService
         await _progresoRepo.AddAsync(progreso, ct);
 
         tarea.PorcentajeAvance = request.PorcentajeAvance;
-        tarea.HorasReales     += request.HorasTrabajadas;
+        // FIX: HorasReales eliminado — acumular en DuracionDiasReal si se requiere
         await _tareaRepo.UpdateAsync(tarea, ct);
         await _uow.SaveChangesAsync(ct);
         return Result.Success();
@@ -281,12 +294,12 @@ public class CentroCostoService : ICentroCostoService
     {
         var e = new CentroCosto
         {
-            ProyectoId          = request.ProyectoId,
-            Codigo              = request.Codigo,
-            Nombre              = request.Nombre,
-            Descripcion         = request.Descripcion,
-            PresupuestoAsignado = request.PresupuestoAsignado,
-            GastoActual         = 0
+            ProyectoId     = request.ProyectoId,
+            Codigo         = request.Codigo,
+            Nombre         = request.Nombre,
+            Descripcion    = request.Descripcion,
+            // FIX: PresupuestoAsignado → PresupuestoAnual, GastoActual eliminado
+            PresupuestoAnual = request.PresupuestoAsignado
         };
         await _repo.AddAsync(e, ct);
         await _uow.SaveChangesAsync(ct);
@@ -297,8 +310,10 @@ public class CentroCostoService : ICentroCostoService
     {
         var e = await _repo.GetByIdAsync(request.Id, ct);
         if (e == null) return Result<CentroCostoDto>.Failure("Centro de costo no encontrado");
-        e.Nombre = request.Nombre; e.Descripcion = request.Descripcion;
-        e.PresupuestoAsignado = request.PresupuestoAsignado;
+        e.Nombre         = request.Nombre;
+        e.Descripcion    = request.Descripcion;
+        // FIX: PresupuestoAsignado → PresupuestoAnual
+        e.PresupuestoAnual = request.PresupuestoAsignado;
         await _repo.UpdateAsync(e, ct);
         await _uow.SaveChangesAsync(ct);
         return Result<CentroCostoDto>.Success(_mapper.Map<CentroCostoDto>(e));
@@ -328,7 +343,7 @@ public class CentroCostoService : ICentroCostoService
             FechaAsignacion = DateTime.UtcNow
         };
         await _asignRepo.AddAsync(asign, ct);
-        centro.GastoActual += request.Monto;
+        // FIX: GastoActual eliminado de CentroCosto — no actualizamos ese campo
         await _repo.UpdateAsync(centro, ct);
         await _uow.SaveChangesAsync(ct);
         return Result.Success();

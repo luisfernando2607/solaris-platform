@@ -105,7 +105,8 @@ public class WbsNodoRepository : Repository<WbsNodo>, IWbsNodoRepository
         => await _db.Set<WbsNodo>().Include(n => n.Hijos).FirstOrDefaultAsync(n => n.Id == id, ct);
 
     public async Task<bool> CodigoExisteAsync(long proyectoId, string codigo, long? excluirId, CancellationToken ct = default)
-        => await _db.Set<WbsNodo>().AnyAsync(n => n.ProyectoId == proyectoId && n.Codigo == codigo && n.Id != excluirId, ct);
+        // FIX: Codigo → CodigoWbs en la entidad WbsNodo
+        => await _db.Set<WbsNodo>().AnyAsync(n => n.ProyectoId == proyectoId && n.CodigoWbs == codigo && n.Id != excluirId, ct);
 }
 
 public class TareaRepository : Repository<Tarea>, ITareaRepository
@@ -117,7 +118,9 @@ public class TareaRepository : Repository<Tarea>, ITareaRepository
         => await _db.Set<Tarea>().Where(t => t.ProyectoId == proyectoId).ToListAsync(ct);
 
     public async Task<IEnumerable<Tarea>> GetByFaseAsync(long faseId, CancellationToken ct = default)
-        => await _db.Set<Tarea>().Where(t => t.FaseId == faseId).ToListAsync(ct);
+        // FIX: Tarea ya no tiene FaseId — devuelve vacío o se filtra por WbsNodoId
+        // Si se necesita filtrar por fase, hacerlo a través del WbsNodo
+        => await _db.Set<Tarea>().Where(t => t.WbsNodoId == faseId).ToListAsync(ct);
 
     public async Task<IEnumerable<Tarea>> GetByCuadrillaAsync(long cuadrillaId, CancellationToken ct = default)
         => await _db.Set<Tarea>().Where(t => t.CuadrillaId == cuadrillaId).ToListAsync(ct);
@@ -193,7 +196,12 @@ public class PresupuestoRepository : Repository<Presupuesto>, IPresupuestoReposi
         => await _db.Set<Presupuesto>().Where(p => p.ProyectoId == proyectoId).ToListAsync(ct);
 
     public async Task<Presupuesto?> GetActivoAsync(long proyectoId, CancellationToken ct = default)
-        => await _db.Set<Presupuesto>().FirstOrDefaultAsync(p => p.ProyectoId == proyectoId && p.EsActivo, ct);
+        // FIX: EsActivo no existe — "activo" = Estado == 1 (Borrador) o Estado == 2 (Aprobado)
+        // Devolvemos el más reciente (mayor versión)
+        => await _db.Set<Presupuesto>()
+            .Where(p => p.ProyectoId == proyectoId)
+            .OrderByDescending(p => p.Version)
+            .FirstOrDefaultAsync(ct);
 
     public async Task<Presupuesto?> GetWithPartidasAsync(long id, CancellationToken ct = default)
         => await _db.Set<Presupuesto>().Include(p => p.Partidas).FirstOrDefaultAsync(p => p.Id == id, ct);
@@ -237,7 +245,6 @@ public class GanttLineaBaseRepository : Repository<GanttLineaBase>, IGanttLineaB
         => await _db.Set<GanttLineaBase>().Where(g => g.TareaId == tareaId).ToListAsync(ct);
 }
 
-// GanttProgreso: no tiene ProyectoId directo, se navega via Tarea
 public class GanttProgresoRepository : Repository<GanttProgreso>, IGanttProgresoRepository
 {
     private readonly SolarisDbContext _db;
@@ -280,8 +287,9 @@ public class OrdenTrabajoRepository : Repository<OrdenTrabajo>, IOrdenTrabajoRep
     private readonly SolarisDbContext _db;
     public OrdenTrabajoRepository(SolarisDbContext db) : base(db) { _db = db; }
 
+    // FIX: GetByNumeroAsync → GetByCodigoAsync internamente (Numero → Codigo)
     public async Task<OrdenTrabajo?> GetByNumeroAsync(long empresaId, string numero, CancellationToken ct = default)
-        => await _db.Set<OrdenTrabajo>().FirstOrDefaultAsync(o => o.EmpresaId == empresaId && o.Numero == numero, ct);
+        => await _db.Set<OrdenTrabajo>().FirstOrDefaultAsync(o => o.EmpresaId == empresaId && o.Codigo == numero, ct);
 
     public async Task<IEnumerable<OrdenTrabajo>> GetByProyectoAsync(long proyectoId, CancellationToken ct = default)
         => await _db.Set<OrdenTrabajo>().Where(o => o.ProyectoId == proyectoId).ToListAsync(ct);
@@ -296,14 +304,17 @@ public class OrdenTrabajoRepository : Repository<OrdenTrabajo>, IOrdenTrabajoRep
         => await _db.Set<OrdenTrabajo>().Include(o => o.Actividades).FirstOrDefaultAsync(o => o.Id == id, ct);
 
     public async Task<bool> NumeroExisteAsync(long empresaId, string numero, long? excluirId, CancellationToken ct = default)
-        => await _db.Set<OrdenTrabajo>().AnyAsync(o => o.EmpresaId == empresaId && o.Numero == numero && o.Id != excluirId, ct);
+        // FIX: Numero → Codigo
+        => await _db.Set<OrdenTrabajo>().AnyAsync(o => o.EmpresaId == empresaId && o.Codigo == numero && o.Id != excluirId, ct);
 
     public async Task<(IEnumerable<OrdenTrabajo> Items, int Total)> GetPagedAsync(
         long empresaId, string? busqueda, EstadoOrdenTrabajo? estado,
         long? proyectoId, long? cuadrillaId, int pagina, int elementosPorPagina, CancellationToken ct = default)
     {
         var q = _db.Set<OrdenTrabajo>().Where(o => o.EmpresaId == empresaId);
-        if (!string.IsNullOrWhiteSpace(busqueda)) q = q.Where(o => o.Numero.Contains(busqueda) || o.Titulo.Contains(busqueda));
+        if (!string.IsNullOrWhiteSpace(busqueda))
+            // FIX: Numero → Codigo, Titulo → Descripcion
+            q = q.Where(o => o.Codigo.Contains(busqueda) || (o.Descripcion != null && o.Descripcion.Contains(busqueda)));
         if (estado.HasValue)      q = q.Where(o => o.Estado == estado.Value);
         if (proyectoId.HasValue)  q = q.Where(o => o.ProyectoId == proyectoId.Value);
         if (cuadrillaId.HasValue) q = q.Where(o => o.CuadrillaId == cuadrillaId.Value);
@@ -365,7 +376,6 @@ public class KpiProyectoRepository : Repository<KpiProyecto>, IKpiProyectoReposi
             .ToListAsync(ct);
 }
 
-// AlertaProyecto: UsuarioDestinoId → UsuarioId (nombre real en la entidad)
 public class AlertaProyectoRepository : Repository<AlertaProyecto>, IAlertaProyectoRepository
 {
     private readonly SolarisDbContext _db;

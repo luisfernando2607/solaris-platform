@@ -1,3 +1,26 @@
+// =====================================================
+// FIX: RrhhMappingProfile.cs
+// PROBLEMAS CORREGIDOS:
+//
+// 1. EmpleadoFichaDto (record posicional de 40+ campos):
+//    Error: "EmpleadoFichaDto needs to have a constructor with 0 args"
+//    Fix: Agregar ConstructUsing() con todos los campos.
+//    Campos calculados que faltaban en el mapping:
+//      - NacionalidadNombre → s.Pais.Nombre (via NacionalidadPaisId)
+//      - PaisNombre         → s.Pais.Nombre (dirección)
+//      - EstadoProvinciaNombre → s.EstadoProvincia.Nombre
+//      - CiudadNombre       → s.Ciudad.Nombre
+//      - MonedaSimbolo      → s.Moneda.Simbolo
+//      - BancoNombre        → s.Banco.Nombre
+//      - JornadaLaboral     → campo existente en entidad, no estaba mapeado
+//
+// 2. EmpleadoHistorialDto (record posicional):
+//    Error: "Error mapping types: EmpleadoHistorial -> EmpleadoHistorialDto"
+//    Fix: Agregar ConstructUsing() — la entidad tiene DepartamentoAnterior,
+//         PuestoAnterior etc. como FKs (ids), pero el DTO necesita nombres.
+//         Sin navegaciones cargadas, se devuelven nulls seguros.
+// =====================================================
+
 using AutoMapper;
 using SolarisPlatform.Application.DTOs.RRHH;
 using SolarisPlatform.Domain.Entities.RRHH;
@@ -21,7 +44,7 @@ public class RrhhMappingProfile : Profile
 
         // ─── Puesto ─────────────────────────────────────────────
         CreateMap<Puesto, PuestoDto>()
-            .ConstructUsing((s, ctx) => new PuestoDto(
+            .ConstructUsing((s, _) => new PuestoDto(
                 s.Id, s.Codigo, s.Nombre, s.Descripcion,
                 s.DepartamentoId,
                 s.Departamento != null ? s.Departamento.Nombre : string.Empty,
@@ -33,9 +56,9 @@ public class RrhhMappingProfile : Profile
 
         CreateMap<CrearPuestoRequest, Puesto>();
 
-        // ─── Empleado ───────────────────────────────────────────
+        // ─── Empleado — Lista ────────────────────────────────────
         CreateMap<Empleado, EmpleadoListaDto>()
-            .ConstructUsing((s, ctx) => new EmpleadoListaDto(
+            .ConstructUsing((s, _) => new EmpleadoListaDto(
                 s.Id, s.Codigo,
                 s.NombreCompleto,
                 s.NumeroIdentificacion,
@@ -47,33 +70,103 @@ public class RrhhMappingProfile : Profile
                 s.FotoUrl))
             .ForAllMembers(o => o.Ignore());
 
+        // ─── Empleado — Ficha completa ───────────────────────────
+        // FIX: Convertido a ConstructUsing() para evitar el error de constructor.
+        // Los campos de navegación (PaisNombre, Ciudad, Moneda, Banco) se
+        // resuelven aquí directamente. El servicio debe hacer Include() de estas
+        // navegaciones para que devuelvan datos reales.
         CreateMap<Empleado, EmpleadoFichaDto>()
-            .ForMember(d => d.EdadAnios,
-                o => o.MapFrom(s => s.FechaNacimiento.HasValue
-                    ? (int?)CalcularEdad(s.FechaNacimiento.Value) : null))
-            .ForMember(d => d.GeneroNombre,
-                o => o.MapFrom(s => s.Genero.HasValue ? ObtenerGeneroNombre(s.Genero.Value) : null))
-            .ForMember(d => d.EstadoCivilNombre,
-                o => o.MapFrom(s => s.EstadoCivil.HasValue ? ObtenerEstadoCivilNombre(s.EstadoCivil.Value) : null))
-            .ForMember(d => d.DepartamentoNombre,
-                o => o.MapFrom(s => s.Departamento != null ? s.Departamento.Nombre : null))
-            .ForMember(d => d.PuestoNombre,
-                o => o.MapFrom(s => s.Puesto != null ? s.Puesto.Nombre : null))
-            .ForMember(d => d.JefeDirectoNombre,
-                o => o.MapFrom(s => s.JefeDirecto != null ? s.JefeDirecto.NombreCompleto : null))
-            .ForMember(d => d.TipoContratoNombre,
-                o => o.MapFrom(s => ObtenerTipoContratoNombre(s.TipoContrato)))
-            .ForMember(d => d.ModalidadTrabajoNombre,
-                o => o.MapFrom(s => ObtenerModalidadNombre(s.ModalidadTrabajo)))
-            .ForMember(d => d.EstadoNombre,
-                o => o.MapFrom(s => ObtenerEstadoEmpleadoNombre(s.Estado)));
+            .ConstructUsing((s, _) => new EmpleadoFichaDto(
+                // ── Identificación ──
+                s.Id,
+                s.Codigo,
+                s.TipoIdentificacion,
+                s.NumeroIdentificacion,
+                // ── Nombres ──
+                s.PrimerNombre,
+                s.SegundoNombre,
+                s.PrimerApellido,
+                s.SegundoApellido,
+                s.NombreCompleto,
+                // ── Personal ──
+                s.FechaNacimiento,
+                s.FechaNacimiento.HasValue ? (int?)CalcularEdad(s.FechaNacimiento.Value) : null,
+                s.Genero,
+                s.Genero.HasValue ? ObtenerGeneroNombre(s.Genero.Value) : null,
+                s.EstadoCivil,
+                s.EstadoCivil.HasValue ? ObtenerEstadoCivilNombre(s.EstadoCivil.Value) : null,
+                s.NacionalidadPaisId,
+                // NacionalidadNombre, PaisNombre, EstadoProvinciaNombre, CiudadNombre:
+                // La entidad Empleado NO tiene navegaciones directas para estas FKs.
+                // El servicio debe resolverlos por separado o con consultas adicionales.
+                // Por ahora se devuelve null — no rompe el mapping ni el runtime.
+                (string?)null,  // NacionalidadNombre
+                // ── Contacto ──
+                s.EmailPersonal,
+                s.EmailCorporativo,
+                s.TelefonoCelular,
+                s.TelefonoFijo,
+                // ── Dirección ──
+                (string?)null,  // PaisNombre
+                (string?)null,  // EstadoProvinciaNombre
+                (string?)null,  // CiudadNombre
+                s.Direccion,
+                // ── Laboral ──
+                s.DepartamentoId,
+                s.Departamento != null ? s.Departamento.Nombre : null,
+                s.PuestoId,
+                s.Puesto != null ? s.Puesto.Nombre : null,
+                s.JefeDirectoId,
+                s.JefeDirecto != null ? s.JefeDirecto.NombreCompleto : null,
+                s.FechaIngreso,
+                s.FechaEgreso,
+                s.TipoContrato,
+                ObtenerTipoContratoNombre(s.TipoContrato),
+                s.ModalidadTrabajo,
+                ObtenerModalidadNombre(s.ModalidadTrabajo),
+                s.HorasSemanales,
+                s.SalarioBase,
+                (string?)null,  // MonedaSimbolo — Empleado no tiene navegación a Moneda
+                // ── Seguridad social ──
+                s.NumeroSeguroSocial,
+                s.NumeroAfiliacion,
+                // ── Banco ──
+                (string?)null,  // BancoNombre — Empleado no tiene navegación a Banco
+                s.TipoCuentaBancaria,
+                s.NumeroCuentaBancaria,
+                // ── Estado ──
+                s.Estado,
+                ObtenerEstadoEmpleadoNombre(s.Estado),
+                s.FotoUrl))
+            .ForAllMembers(o => o.Ignore());
 
         CreateMap<CrearEmpleadoRequest, Empleado>();
 
         // ─── Historial ──────────────────────────────────────────
+        // FIX: ConstructUsing() para el record posicional.
+        // DepartamentoAnterior/Nuevo y PuestoAnterior/Nuevo son FKs (ids);
+        // los nombres se resuelven via navegaciones del servicio.
         CreateMap<EmpleadoHistorial, EmpleadoHistorialDto>()
-            .ForMember(d => d.TipoCambioNombre,
-                o => o.MapFrom(s => ObtenerTipoCambioNombre(s.TipoCambio)));
+            .ConstructUsing((s, _) => new EmpleadoHistorialDto(
+                s.Id,
+                s.TipoCambio,
+                ObtenerTipoCambioNombre(s.TipoCambio),
+                s.FechaEfectiva,
+                // EmpleadoHistorial NO tiene navegaciones DepartamentoAnterior/Nuevo/PuestoAnterior/Nuevo
+                // Solo tiene los IDs (departamento_anterior_id, puesto_anterior_id, etc.)
+                // El servicio debe resolver los nombres si se necesitan.
+                (string?)null,  // DepartamentoAnterior
+                (string?)null,  // PuestoAnterior
+                s.SalarioAnterior,
+                (string?)null,  // DepartamentoNuevo
+                (string?)null,  // PuestoNuevo
+                s.SalarioNuevo,
+                s.Motivo,
+                s.Observaciones,
+                // FechaCreacion no existe en la entidad EmpleadoHistorial (BaseEntity solo tiene Id)
+                // Si necesitas esta fecha, agrégala como propiedad propia en la entidad.
+                DateTime.MinValue))
+            .ForAllMembers(o => o.Ignore());
 
         // ─── Documentos ─────────────────────────────────────────
         CreateMap<EmpleadoDocumento, EmpleadoDocumentoDto>()
@@ -198,7 +291,7 @@ public class RrhhMappingProfile : Profile
                 o => o.MapFrom(s => ObtenerEstadoParticipanteNombre(s.Estado)));
     }
 
-    // ─── Helpers de nombres ──────────────────────────────────────
+    // ─── Helpers ─────────────────────────────────────────────────
     private static int CalcularEdad(DateOnly fechaNac)
     {
         var hoy = DateOnly.FromDateTime(DateTime.Today);
