@@ -1,239 +1,36 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="dark">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Solaris Platform API</title>
+  <title>Solaris Platform · DevTools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root, [data-theme="dark"] {
-      --bg:      #07090f;
-      --surface: #0d1117;
-      --surface2:#111820;
-      --border:  #1e2a3a;
-      --accent:  #f59e0b;
-      --accent2: #3b82f6;
-      --text:    #e2e8f0;
-      --muted:   #64748b;
-      --green:   #22c55e;
-      --red:     #ef4444;
-      --radius:  12px;
-      --orb-opacity: .2;
-      --grid-color: rgba(59,130,246,.04);
-    }
-
-    [data-theme="light"] {
-      --bg:      #f1f5f9;
-      --surface: #ffffff;
-      --surface2:#f8fafc;
-      --border:  #cbd5e1;
-      --accent:  #d97706;
-      --accent2: #2563eb;
-      --text:    #0f172a;
-      --muted:   #64748b;
-      --green:   #16a34a;
-      --red:     #dc2626;
-      --orb-opacity: .08;
-      --grid-color: rgba(37,99,235,.05);
-    }
-
-    body {
-      background: var(--bg); color: var(--text);
-      font-family: 'Syne', sans-serif;
-      min-height: 100vh; padding: 2.5rem 2rem;
-      overflow-x: hidden;
-      transition: background .35s, color .35s;
-    }
-
-    body::before {
-      content: ''; position: fixed; inset: 0;
-      background-image:
-        linear-gradient(var(--grid-color) 1px, transparent 1px),
-        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
-      background-size: 48px 48px; pointer-events: none;
-    }
-
-    .orb { position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; opacity: var(--orb-opacity); animation: drift 16s ease-in-out infinite alternate; }
-    .orb-1 { width: 600px; height: 600px; background: #1d4ed8; top: -200px; right: -150px; }
-    .orb-2 { width: 400px; height: 400px; background: #7c3aed; bottom: -120px; left: -100px; animation-delay: 6s; }
-
-    @keyframes drift { from { transform: translate(0,0); } to { transform: translate(25px,-30px); } }
-
-    .page {
-      position: relative; z-index: 1;
-      max-width: 880px; margin: 0 auto;
-      display: flex; flex-direction: column; gap: 2.5rem;
-      animation: fadeUp .6s ease both;
-    }
-
-    @keyframes fadeUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:none; } }
-
-    /* ── Header ── */
-    .header {
-      display: flex; align-items: center; gap: 1.25rem;
-      border-bottom: 1px solid var(--border); padding-bottom: 2rem;
-    }
-
-
-.logo {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent; /* quitamos el fondo degradado */
-}
-
-.logo img {
-  width: 100%;
-  height: auto;
-  object-fit: contain;
-}
-
-    .header-text h1 {
-      font-size: 1.8rem; font-weight: 800; letter-spacing: -.5px;
-      background: linear-gradient(135deg, var(--text) 40%, var(--accent));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-    }
-    .header-text p { font-family: 'JetBrains Mono', monospace; font-size: .7rem; color: var(--muted); margin-top: 3px; }
-
-    .header-right { margin-left: auto; display: flex; align-items: center; gap: 1rem; }
-
-    /* Status badge */
-    .status-badge {
-      display: flex; align-items: center; gap: .45rem;
-      font-family: 'JetBrains Mono', monospace; font-size: .68rem; font-weight: 600;
-      padding: .35rem .9rem; border-radius: 999px;
-      border: 1px solid; transition: all .4s;
-    }
-    .status-badge.online  { color: var(--green); border-color: rgba(34,197,94,.3);  background: rgba(34,197,94,.08); }
-    .status-badge.offline { color: var(--red);   border-color: rgba(239,68,68,.3);  background: rgba(239,68,68,.08); }
-    .status-badge.loading { color: var(--muted); border-color: var(--border);        background: transparent; }
-    .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: pulse 2s ease infinite; }
-    @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,.5); } 50% { box-shadow: 0 0 0 5px rgba(34,197,94,0); } }
-
-    /* Theme switch */
-    .theme-switch { display: flex; align-items: center; gap: .4rem; user-select: none; }
-    .theme-icon { font-size: .9rem; }
-    .toggle { position: relative; width: 40px; height: 22px; cursor: pointer; }
-    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
-    .track { position: absolute; inset: 0; border-radius: 999px; background: var(--border); transition: background .3s; }
-    .toggle input:checked + .track { background: var(--accent2); }
-    .thumb { position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: transform .3s cubic-bezier(.4,0,.2,1); }
-    .toggle input:checked ~ .thumb { transform: translateX(18px); }
-
-    /* ── Status cards ── */
-    .section-label { font-size: .68rem; font-weight: 700; letter-spacing: .12em; color: var(--muted); text-transform: uppercase; margin-bottom: .75rem; }
-
-    .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
-
-    .status-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 1.1rem 1.25rem;
-      display: flex; flex-direction: column; gap: .55rem;
-      transition: background .35s, border-color .3s;
-    }
-    .status-card:hover { border-color: var(--accent2); }
-
-    .card-header { display: flex; align-items: center; gap: .6rem; }
-    .card-icon { font-size: 1.1rem; }
-    .card-title { font-weight: 700; font-size: .9rem; }
-
-    .card-status {
-      margin-left: auto;
-      font-family: 'JetBrains Mono', monospace; font-size: .62rem;
-      padding: .18rem .55rem; border-radius: 999px; font-weight: 600;
-    }
-    .cs-ok      { background: rgba(34,197,94,.15);  color: var(--green); }
-    .cs-err     { background: rgba(239,68,68,.15);  color: var(--red); }
-    .cs-loading { background: var(--border);         color: var(--muted); animation: blink .8s ease infinite alternate; }
-    @keyframes blink { from { opacity:.4; } to { opacity:1; } }
-
-    .card-detail { font-family: 'JetBrains Mono', monospace; font-size: .7rem; color: var(--muted); }
-    .card-detail strong { color: var(--text); }
-
-    /* ── Quick access ── */
-    .quick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
-
-    .quick-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 1.25rem;
-      display: flex; align-items: center; gap: 1rem;
-      text-decoration: none; color: var(--text);
-      transition: border-color .2s, transform .2s, background .35s;
-      cursor: pointer;
-    }
-    .quick-card:hover { border-color: var(--accent2); transform: translateY(-2px); }
-
-    .quick-icon {
-      width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
-    }
-    .quick-title { font-weight: 700; font-size: .88rem; }
-    .quick-sub   { font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: var(--muted); margin-top: 2px; }
-
-    /* ── Endpoints list ── */
-    .ep-list { display: flex; flex-direction: column; gap: .5rem; }
-
-    .ep-item {
-      display: flex; align-items: center; gap: .75rem;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 9px; padding: .7rem 1rem;
-      font-family: 'JetBrains Mono', monospace; font-size: .75rem;
-      transition: background .15s;
-    }
-    .ep-item:hover { background: var(--surface2); }
-
-    .method {
-      font-size: .58rem; font-weight: 700;
-      padding: .2rem .5rem; border-radius: 5px;
-      letter-spacing: .06em; min-width: 44px; text-align: center;
-    }
-    .GET    { background: rgba(34,197,94,.15);  color: #4ade80; }
-    .POST   { background: rgba(59,130,246,.15); color: #60a5fa; }
-    .PUT    { background: rgba(251,146,60,.15); color: #fb923c; }
-    .DELETE { background: rgba(248,113,113,.15);color: #f87171; }
-    .PATCH  { background: rgba(167,139,250,.15);color: #a78bfa; }
-
-    [data-theme="light"] .GET    { background: rgba(22,163,74,.12);  color: #15803d; }
-    [data-theme="light"] .POST   { background: rgba(37,99,235,.12);  color: #1d4ed8; }
-    [data-theme="light"] .PUT    { background: rgba(234,88,12,.12);  color: #c2410c; }
-    [data-theme="light"] .DELETE { background: rgba(220,38,38,.12);  color: #b91c1c; }
-    [data-theme="light"] .PATCH  { background: rgba(124,58,237,.12); color: #6d28d9; }
-
-    .ep-path { color: var(--text); }
-    .ep-path span { color: var(--accent); }
-    .ep-lock { margin-left: auto; font-size: .68rem; color: var(--muted); }
-    .ep-lock.secured { color: var(--accent); }
-
-    /* ── Footer ── */
-    .footer {
-      text-align: center; font-family: 'JetBrains Mono', monospace;
-      font-size: .65rem; color: var(--muted);
-      border-top: 1px solid var(--border); padding-top: 1.5rem;
-    }
-  </style>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/solaris.css" />
 </head>
+
 <body>
 
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
 
   <div class="page">
 
-    <!-- ── Header ── -->
+    <!-- ══════════════════════════════════════════════
+         HEADER
+    ══════════════════════════════════════════════ -->
     <div class="header">
       <div class="logo">
-        <img src="logo_back.png" alt="Solaris Logo">
+        <img src="assets/img/logo_back.png" alt="Solaris"
+          onerror="this.style.display='none';this.parentElement.textContent='🌞'" />
       </div>
       <div class="header-text">
         <h1>Solaris Platform</h1>
-        <p>ERP API &nbsp;·&nbsp; v1.0.0 &nbsp;·&nbsp; .NET 10 &nbsp;·&nbsp; PostgreSQL 16</p>
+        <p>ERP API &nbsp;·&nbsp; v1.0.0 &nbsp;·&nbsp; .NET 10 &nbsp;·&nbsp; PostgreSQL 16 &nbsp;·&nbsp; Developer Console</p>
       </div>
       <div class="header-right">
         <div class="status-badge loading" id="globalBadge">
@@ -252,158 +49,676 @@
       </div>
     </div>
 
-    <!-- ── Estado del sistema ── -->
+    <!-- ══════════════════════════════════════════════
+         ESTADO DEL SISTEMA
+    ══════════════════════════════════════════════ -->
     <div>
       <p class="section-label">Estado del sistema</p>
       <div class="status-grid">
 
-        <div class="status-card">
-          <div class="card-header">
-            <span class="card-icon">🚀</span>
-            <span class="card-title">API</span>
-            <span class="card-status cs-ok">HEALTHY</span>
+        <div class="status-card card-api">
+          <div class="card-top">
+            <div class="card-icon-wrap">🚀</div>
+            <span class="card-badge badge-ok">HEALTHY</span>
           </div>
-          <div class="card-detail">Solaris Platform API<br><strong id="apiVersion">v1.0.0 · .NET 10</strong></div>
+          <div class="card-name">API</div>
+          <div class="card-detail">
+            Solaris Platform API<br>
+            <strong id="apiVersion">v1.0.0 · .NET 10</strong>
+          </div>
         </div>
 
-        <div class="status-card">
-          <div class="card-header">
-            <span class="card-icon">🗄️</span>
-            <span class="card-title">Base de Datos</span>
-            <span class="card-status cs-loading" id="dbStatus">...</span>
+        <div class="status-card card-db">
+          <div class="card-top">
+            <div class="card-icon-wrap">🗄️</div>
+            <span class="card-badge badge-loading" id="dbBadge">···</span>
           </div>
-          <div class="card-detail" id="dbDetail">Conectando con PostgreSQL...</div>
+          <div class="card-name">Base de Datos</div>
+          <div class="card-detail" id="dbDetail">Conectando con PostgreSQL…</div>
+          <div class="db-latency-bar" id="dbLatencyBar">
+            <div class="lat-bar" style="height:40%"></div>
+            <div class="lat-bar" style="height:60%"></div>
+            <div class="lat-bar" style="height:45%"></div>
+            <div class="lat-bar" style="height:70%"></div>
+            <div class="lat-bar" style="height:55%"></div>
+          </div>
         </div>
 
-        <div class="status-card">
-          <div class="card-header">
-            <span class="card-icon">🌿</span>
-            <span class="card-title">Entorno</span>
-            <span class="card-status cs-ok" id="envStatus">...</span>
+        <div class="status-card card-env">
+          <div class="card-top">
+            <div class="card-icon-wrap">🌿</div>
+            <span class="card-badge badge-loading" id="envBadge">···</span>
           </div>
-          <div class="card-detail" id="envDetail">Cargando...</div>
+          <div class="card-name">Entorno</div>
+          <div class="card-detail" id="envDetail">Cargando…</div>
+          <div class="build-uptime-wrap">
+            <span class="uptime-label">⏱ uptime</span>
+            <span class="uptime-val" id="uptimeVal">—</span>
+          </div>
         </div>
 
       </div>
     </div>
 
-    <!-- ── Accesos rápidos — solo Swagger y Health ── -->
+    <!-- ══════════════════════════════════════════════
+         QUICK ACCESS — Herramientas
+    ══════════════════════════════════════════════ -->
     <div>
-      <p class="section-label">Accesos rápidos</p>
+      <p class="section-label">Herramientas</p>
       <div class="quick-grid">
-
-        <a class="quick-card" href="/swagger">
-          <div class="quick-icon" style="background:rgba(59,130,246,.15)">📄</div>
+        <a class="quick-card qc-swagger" href="/swagger">
+          <div class="quick-icon" style="background:rgba(59,130,246,.12)">📄</div>
           <div>
             <div class="quick-title">Swagger UI</div>
-            <div class="quick-sub">/swagger</div>
+            <div class="quick-sub">/swagger · Explorar y testear endpoints</div>
           </div>
         </a>
-
-        <a class="quick-card" href="/test.html">
-          <div class="quick-icon" style="background:rgba(234,179,8,.15)">🧪</div>
+        <a class="quick-card qc-tests" href="/test/test.html">
+          <div class="quick-icon" style="background:rgba(234,179,8,.12)">🧪</div>
           <div>
             <div class="quick-title">API Tests</div>
-            <div class="quick-sub">/test.html</div>
+            <div class="quick-sub">/test · Suite de integración</div>
           </div>
         </a>
-
-        <a class="quick-card" href="/health.html">
-          <div class="quick-icon" style="background:rgba(34,197,94,.15)">💚</div>
+        <a class="quick-card qc-health" href="/pages/health.html">
+          <div class="quick-icon" style="background:rgba(34,197,94,.12)">💚</div>
           <div>
             <div class="quick-title">Health Dashboard</div>
-            <div class="quick-sub">/health</div>
+            <div class="quick-sub">/pages/health · Uptime y métricas</div>
           </div>
         </a>
-
       </div>
     </div>
 
-    <!-- ── Endpoints principales ── -->
+    <!-- ══════════════════════════════════════════════
+         DEVTOOLS GRID
+    ══════════════════════════════════════════════ -->
     <div>
-      <p class="section-label">Endpoints principales</p>
-      <div class="ep-list">
-        <div class="ep-item"><span class="method POST">POST</span><span class="ep-path">/api/Auth/login</span><span class="ep-lock">🔓 público</span></div>
-        <div class="ep-item"><span class="method POST">POST</span><span class="ep-path">/api/Auth/registro</span><span class="ep-lock">🔓 público</span></div>
-        <div class="ep-item"><span class="method POST">POST</span><span class="ep-path">/api/Auth/refresh-token</span><span class="ep-lock">🔓 público</span></div>
-        <div class="ep-item"><span class="method GET">GET</span><span class="ep-path">/api/Auth/me</span><span class="ep-lock secured">🔒 JWT</span></div>
-        <div class="ep-item"><span class="method GET">GET</span><span class="ep-path">/api/Usuarios</span><span class="ep-lock secured">🔒 JWT</span></div>
-        <div class="ep-item"><span class="method GET">GET</span><span class="ep-path">/api/Roles</span><span class="ep-lock secured">🔒 JWT</span></div>
-        <div class="ep-item"><span class="method GET">GET</span><span class="ep-path">/api/Empresas</span><span class="ep-lock secured">🔒 JWT</span></div>
+      <p class="section-label">DevTools</p>
+      <div class="devtools-grid">
+
+        <!-- ── Environment Inspector ── -->
+        <div class="dt-card">
+          <div class="dt-card-header">
+            <span class="dt-card-icon">🌿</span>
+            <div>
+              <div class="dt-card-title">Environment Inspector</div>
+              <div class="dt-card-sub">Variables del servidor en runtime</div>
+            </div>
+            <span class="dt-card-badge" id="envInspBadge">CARGANDO</span>
+          </div>
+          <div class="dt-card-body">
+            <table class="env-table">
+              <tbody id="envTableBody">
+                <tr class="env-row">
+                  <td class="env-key">Environment</td>
+                  <td class="env-val" id="ei-env">
+                    <span class="badge-loading" style="font-family:monospace;font-size:.65rem">···</span>
+                  </td>
+                </tr>
+                <tr class="env-row">
+                  <td class="env-key">API Version</td>
+                  <td class="env-val" id="ei-version">v1.0.0</td>
+                </tr>
+                <tr class="env-row">
+                  <td class="env-key">Runtime</td>
+                  <td class="env-val">.NET 10.0</td>
+                </tr>
+                <tr class="env-row">
+                  <td class="env-key">ORM</td>
+                  <td class="env-val">Entity Framework Core</td>
+                </tr>
+                <tr class="env-row">
+                  <td class="env-key">Auth</td>
+                  <td class="env-val">JWT Bearer / Role-Based</td>
+                </tr>
+                <tr class="env-row">
+                  <td class="env-key">Architecture</td>
+                  <td class="env-val">Clean Architecture</td>
+                </tr>
+                <tr class="env-row">
+                  <td class="env-key">Multi-tenant</td>
+                  <td class="env-val">Sí · por Empresa</td>
+                </tr>
+                <tr class="env-row">
+                  <td class="env-key">Last check</td>
+                  <td class="env-val" id="ei-lastcheck">—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── DB Console ── -->
+        <div class="dt-card">
+          <div class="dt-card-header">
+            <span class="dt-card-icon">🗄️</span>
+            <div>
+              <div class="dt-card-title">DB Console</div>
+              <div class="dt-card-sub">PostgreSQL 16 · Estado y latencia</div>
+            </div>
+            <span class="dt-card-badge" id="dbConsoleBadge">···</span>
+          </div>
+          <div class="dt-card-body">
+            <div class="db-stats">
+              <div class="db-stat-row">
+                <span class="db-stat-label">Conexión</span>
+                <span class="db-stat-val ok" id="dbc-conn">—</span>
+              </div>
+              <div class="db-stat-row">
+                <span class="db-stat-label">Base de datos</span>
+                <span class="db-stat-val" id="dbc-name">—</span>
+              </div>
+              <div class="db-stat-row">
+                <span class="db-stat-label">Latencia actual</span>
+                <span class="db-stat-val" id="dbc-latency">—</span>
+              </div>
+              <div class="db-stat-row">
+                <span class="db-stat-label">Promedio (10 checks)</span>
+                <span class="db-stat-val" id="dbc-avg">—</span>
+              </div>
+              <div class="db-stat-row">
+                <span class="db-stat-label">Migraciones</span>
+                <span class="db-stat-val ok">1 aplicada</span>
+              </div>
+            </div>
+            <div class="latency-graph" style="margin-top:.75rem">
+              <div class="latency-graph-label">Historial de latencia (últimas 12 lecturas)</div>
+              <div class="latency-bars" id="latencyBars">
+                <div class="l-bar" style="height:30%"></div>
+                <div class="l-bar" style="height:45%"></div>
+                <div class="l-bar" style="height:35%"></div>
+                <div class="l-bar" style="height:50%"></div>
+                <div class="l-bar" style="height:40%"></div>
+                <div class="l-bar" style="height:55%"></div>
+                <div class="l-bar" style="height:38%"></div>
+                <div class="l-bar" style="height:42%"></div>
+                <div class="l-bar" style="height:48%"></div>
+                <div class="l-bar" style="height:35%"></div>
+                <div class="l-bar" style="height:52%"></div>
+                <div class="l-bar" style="height:40%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Migrations ── -->
+        <div class="dt-card">
+          <div class="dt-card-header">
+            <span class="dt-card-icon">🔄</span>
+            <div>
+              <div class="dt-card-title">Migrations</div>
+              <div class="dt-card-sub">Entity Framework Core · Estado</div>
+            </div>
+            <span class="dt-card-badge"
+              style="color:var(--green); border-color:rgba(34,197,94,.3); background:rgba(34,197,94,.06)">AL DÍA</span>
+          </div>
+          <div class="dt-card-body">
+            <div class="migration-list">
+              <div class="migration-row">
+                <div class="mig-status applied"></div>
+                <div class="mig-name">20260210041843_InitialCreate</div>
+                <div class="mig-date">2026-02-10</div>
+                <span class="mig-badge applied">APPLIED</span>
+              </div>
+              <div class="migration-row" style="opacity:.5">
+                <div class="mig-status" style="background:var(--border)"></div>
+                <div class="mig-name" style="color:var(--muted)">Próxima migración pendiente…</div>
+                <div class="mig-date"></div>
+                <span class="mig-badge"
+                  style="background:var(--surface3);color:var(--muted);border-color:var(--border)">—</span>
+              </div>
+            </div>
+            <div style="margin-top:.85rem; padding-top:.75rem; border-top: 1px solid var(--border)">
+              <div style="font-family:'JetBrains Mono',monospace; font-size:.6rem; color:var(--muted); margin-bottom:.4rem;">
+                Comandos rápidos
+              </div>
+              <div style="display:flex; flex-direction:column; gap:.3rem">
+                <div style="font-family:'JetBrains Mono',monospace; font-size:.62rem; background:var(--surface3); padding:.35rem .6rem; border-radius:6px; color:var(--cyan); border:1px solid var(--border)">
+                  dotnet ef migrations add NombreMigracion
+                </div>
+                <div style="font-family:'JetBrains Mono',monospace; font-size:.62rem; background:var(--surface3); padding:.35rem .6rem; border-radius:6px; color:var(--cyan); border:1px solid var(--border)">
+                  dotnet ef database update
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Module Dependency Map ── -->
+        <div class="dt-card">
+          <div class="dt-card-header">
+            <span class="dt-card-icon">🗺️</span>
+            <div>
+              <div class="dt-card-title">Dependency Map</div>
+              <div class="dt-card-sub">Capas del proyecto · Clean Architecture</div>
+            </div>
+          </div>
+          <div class="dt-card-body">
+            <div class="dep-map">
+              <div class="dep-layer-label">API Layer</div>
+              <div class="dep-layer-items">
+                <span class="dep-pill layer-api"><span class="dep-pill-dot"></span>SolarisPlatform.API</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:.4rem;padding:.2rem 0 .2rem .5rem">
+                <div style="width:1px;height:12px;background:var(--border);margin-left:6px"></div>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--muted)">depende de ↓</span>
+              </div>
+              <div class="dep-layer-label">Application Layer</div>
+              <div class="dep-layer-items">
+                <span class="dep-pill layer-app"><span class="dep-pill-dot"></span>Application</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:.4rem;padding:.2rem 0 .2rem .5rem">
+                <div style="width:1px;height:12px;background:var(--border);margin-left:6px"></div>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--muted)">depende de ↓</span>
+              </div>
+              <div class="dep-layer-label">Domain Layer (núcleo)</div>
+              <div class="dep-layer-items">
+                <span class="dep-pill layer-domain"><span class="dep-pill-dot"></span>Domain</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:.4rem;padding:.2rem 0 .2rem .5rem">
+                <div style="width:1px;height:12px;background:var(--border);margin-left:6px"></div>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--muted)">implementado por ↓</span>
+              </div>
+              <div class="dep-layer-label">Infrastructure Layer</div>
+              <div class="dep-layer-items">
+                <span class="dep-pill layer-infra"><span class="dep-pill-dot"></span>Infrastructure</span>
+                <span class="dep-pill layer-db"><span class="dep-pill-dot"></span>PostgreSQL 16</span>
+              </div>
+              <div style="margin-top:.65rem; padding-top:.6rem; border-top:1px solid var(--border)">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);margin-bottom:.4rem">
+                  Módulos del dominio
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:.3rem">
+                  <span class="dep-pill layer-domain" style="font-size:.58rem;padding:.18rem .5rem">👤 Seguridad</span>
+                  <span class="dep-pill layer-domain" style="font-size:.58rem;padding:.18rem .5rem">🏢 Empresas</span>
+                  <span class="dep-pill layer-domain" style="font-size:.58rem;padding:.18rem .5rem">📋 Proyectos</span>
+                  <span class="dep-pill layer-domain" style="font-size:.58rem;padding:.18rem .5rem">👷 RRHH</span>
+                  <span class="dep-pill layer-domain" style="font-size:.58rem;padding:.18rem .5rem">📦 Catálogos</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
-    <!-- ── Footer ── -->
-    <div class="footer">
-      Solaris Platform ERP &nbsp;·&nbsp; Desarrollado por LuisFer &nbsp;·&nbsp; .NET 10 + PostgreSQL 16
+    <!-- ══════════════════════════════════════════════
+         API EXPLORER
+    ══════════════════════════════════════════════ -->
+    <div>
+      <div class="api-summary">
+        <p class="section-label" style="margin-bottom:0">API Explorer</p>
+        <div class="api-counts">
+          <span><span class="cnt-dot" style="background:#4ade80"></span>GET</span>
+          <span><span class="cnt-dot" style="background:#60a5fa"></span>POST</span>
+          <span><span class="cnt-dot" style="background:#fb923c"></span>PUT</span>
+          <span><span class="cnt-dot" style="background:#a78bfa"></span>PATCH</span>
+          <span><span class="cnt-dot" style="background:#f87171"></span>DELETE</span>
+        </div>
+        <a class="api-link" href="/pages/api.html">Ver referencia completa →</a>
+      </div>
+
+      <div class="explorer-grid">
+
+        <!-- Auth -->
+        <div class="mod-card" style="--mc-color:#60a5fa; --mc-bg:rgba(59,130,246,.12)">
+          <div class="mod-head" onclick="this.closest('.mod-card').classList.toggle('open')">
+            <div class="mod-icon">🔑</div>
+            <div class="mod-info">
+              <div class="mod-name">Auth</div>
+              <div class="mod-desc">Autenticación y sesiones · JWT</div>
+            </div>
+            <div class="mod-right">
+              <div class="mod-methods"><span class="mm mm-get"></span><span class="mm mm-post"></span></div>
+              <span class="mod-count">5</span>
+              <span class="mod-chevron">▼</span>
+            </div>
+          </div>
+          <div class="mod-eps">
+            <div class="mod-eps-inner">
+              <div class="ep-row"><span class="ep-method em-POST">POST</span><span class="ep-path-text">/api/Auth/login</span><span class="ep-auth">🔓</span><button class="ep-copy" onclick="quickCopy('/api/Auth/login','POST')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-POST">POST</span><span class="ep-path-text">/api/Auth/registro</span><span class="ep-auth">🔓</span><button class="ep-copy" onclick="quickCopy('/api/Auth/registro','POST')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-POST">POST</span><span class="ep-path-text">/api/Auth/refresh-token</span><span class="ep-auth">🔓</span><button class="ep-copy" onclick="quickCopy('/api/Auth/refresh-token','POST')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-POST">POST</span><span class="ep-path-text">/api/Auth/logout</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Auth/logout','POST')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-GET">GET</span><span class="ep-path-text">/api/Auth/me</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Auth/me','GET')">curl</button></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Usuarios -->
+        <div class="mod-card" style="--mc-color:#4ade80; --mc-bg:rgba(34,197,94,.12)">
+          <div class="mod-head" onclick="this.closest('.mod-card').classList.toggle('open')">
+            <div class="mod-icon">👤</div>
+            <div class="mod-info">
+              <div class="mod-name">Usuarios</div>
+              <div class="mod-desc">Gestión de usuarios · CRUD</div>
+            </div>
+            <div class="mod-right">
+              <div class="mod-methods"><span class="mm mm-get"></span><span class="mm mm-post"></span><span class="mm mm-put"></span><span class="mm mm-patch"></span><span class="mm mm-delete"></span></div>
+              <span class="mod-count">7</span>
+              <span class="mod-chevron">▼</span>
+            </div>
+          </div>
+          <div class="mod-eps">
+            <div class="mod-eps-inner">
+              <div class="ep-row"><span class="ep-method em-GET">GET</span><span class="ep-path-text">/api/Usuarios</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Usuarios','GET')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-POST">POST</span><span class="ep-path-text">/api/Usuarios</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Usuarios','POST')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-GET">GET</span><span class="ep-path-text">/api/Usuarios/<em>{id}</em></span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Usuarios/{id}','GET')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-PUT">PUT</span><span class="ep-path-text">/api/Usuarios/<em>{id}</em></span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Usuarios/{id}','PUT')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-DELETE">DELETE</span><span class="ep-path-text">/api/Usuarios/<em>{id}</em></span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Usuarios/{id}','DELETE')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-PATCH">PATCH</span><span class="ep-path-text">/api/Usuarios/<em>{id}</em>/activar</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Usuarios/{id}/activar','PATCH')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-PATCH">PATCH</span><span class="ep-path-text">/api/Usuarios/<em>{id}</em>/bloquear</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Usuarios/{id}/bloquear','PATCH')">curl</button></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Roles -->
+        <div class="mod-card" style="--mc-color:#a78bfa; --mc-bg:rgba(167,139,250,.12)">
+          <div class="mod-head" onclick="this.closest('.mod-card').classList.toggle('open')">
+            <div class="mod-icon">🛡️</div>
+            <div class="mod-info">
+              <div class="mod-name">Roles</div>
+              <div class="mod-desc">Roles y permisos · RBAC</div>
+            </div>
+            <div class="mod-right">
+              <div class="mod-methods"><span class="mm mm-get"></span><span class="mm mm-post"></span><span class="mm mm-put"></span><span class="mm mm-delete"></span></div>
+              <span class="mod-count">6</span>
+              <span class="mod-chevron">▼</span>
+            </div>
+          </div>
+          <div class="mod-eps">
+            <div class="mod-eps-inner">
+              <div class="ep-row"><span class="ep-method em-GET">GET</span><span class="ep-path-text">/api/Roles</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Roles','GET')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-POST">POST</span><span class="ep-path-text">/api/Roles</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Roles','POST')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-GET">GET</span><span class="ep-path-text">/api/Roles/<em>{id}</em></span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Roles/{id}','GET')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-PUT">PUT</span><span class="ep-path-text">/api/Roles/<em>{id}</em></span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Roles/{id}','PUT')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-DELETE">DELETE</span><span class="ep-path-text">/api/Roles/<em>{id}</em></span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Roles/{id}','DELETE')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-PUT">PUT</span><span class="ep-path-text">/api/Roles/<em>{id}</em>/permisos</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Roles/{id}/permisos','PUT')">curl</button></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empresas -->
+        <div class="mod-card" style="--mc-color:#fb923c; --mc-bg:rgba(251,146,60,.12)">
+          <div class="mod-head" onclick="this.closest('.mod-card').classList.toggle('open')">
+            <div class="mod-icon">🏢</div>
+            <div class="mod-info">
+              <div class="mod-name">Empresas</div>
+              <div class="mod-desc">Multi-tenancy · Sucursales</div>
+            </div>
+            <div class="mod-right">
+              <div class="mod-methods"><span class="mm mm-get"></span><span class="mm mm-post"></span><span class="mm mm-put"></span><span class="mm mm-delete"></span></div>
+              <span class="mod-count">7</span>
+              <span class="mod-chevron">▼</span>
+            </div>
+          </div>
+          <div class="mod-eps">
+            <div class="mod-eps-inner">
+              <div class="ep-row"><span class="ep-method em-GET">GET</span><span class="ep-path-text">/api/Empresas</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Empresas','GET')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-POST">POST</span><span class="ep-path-text">/api/Empresas</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Empresas','POST')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-GET">GET</span><span class="ep-path-text">/api/Empresas/<em>{id}</em></span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Empresas/{id}','GET')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-PUT">PUT</span><span class="ep-path-text">/api/Empresas/<em>{id}</em></span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Empresas/{id}','PUT')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-DELETE">DELETE</span><span class="ep-path-text">/api/Empresas/<em>{id}</em></span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Empresas/{id}','DELETE')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-GET">GET</span><span class="ep-path-text">/api/Empresas/<em>{id}</em>/sucursales</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Empresas/{id}/sucursales','GET')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-POST">POST</span><span class="ep-path-text">/api/Empresas/<em>{id}</em>/sucursales</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Empresas/{id}/sucursales','POST')">curl</button></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Proyectos -->
+        <div class="mod-card" style="--mc-color:#f59e0b; --mc-bg:rgba(245,158,11,.12)">
+          <div class="mod-head" onclick="this.closest('.mod-card').classList.toggle('open')">
+            <div class="mod-icon">📋</div>
+            <div class="mod-info">
+              <div class="mod-name">Proyectos</div>
+              <div class="mod-desc">WBS · Gantt · KPIs · OT · Fases</div>
+            </div>
+            <div class="mod-right">
+              <div class="mod-methods"><span class="mm mm-get"></span><span class="mm mm-post"></span><span class="mm mm-put"></span><span class="mm mm-delete"></span></div>
+              <span class="mod-count">CRUD</span>
+              <span class="mod-chevron">▼</span>
+            </div>
+          </div>
+          <div class="mod-eps">
+            <div class="mod-eps-inner">
+              <div class="ep-row"><span class="ep-method em-GET">GET</span><span class="ep-path-text">/api/Proyectos</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Proyectos','GET')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-POST">POST</span><span class="ep-path-text">/api/Proyectos</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Proyectos','POST')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-GET">GET</span><span class="ep-path-text">/api/Proyectos/<em>{id}</em>/fases</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Proyectos/{id}/fases','GET')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-GET">GET</span><span class="ep-path-text">/api/Proyectos/<em>{id}</em>/wbs</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Proyectos/{id}/wbs','GET')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-GET">GET</span><span class="ep-path-text">/api/Proyectos/<em>{id}</em>/gantt</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Proyectos/{id}/gantt','GET')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-GET">GET</span><span class="ep-path-text">/api/Proyectos/<em>{id}</em>/kpis</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/Proyectos/{id}/kpis','GET')">curl</button></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RRHH -->
+        <div class="mod-card" style="--mc-color:#34d399; --mc-bg:rgba(52,211,153,.12)">
+          <div class="mod-head" onclick="this.closest('.mod-card').classList.toggle('open')">
+            <div class="mod-icon">👷</div>
+            <div class="mod-info">
+              <div class="mod-name">RRHH</div>
+              <div class="mod-desc">Nómina · Asistencia · Evaluación</div>
+            </div>
+            <div class="mod-right">
+              <div class="mod-methods"><span class="mm mm-get"></span><span class="mm mm-post"></span><span class="mm mm-put"></span><span class="mm mm-delete"></span></div>
+              <span class="mod-count">CRUD</span>
+              <span class="mod-chevron">▼</span>
+            </div>
+          </div>
+          <div class="mod-eps">
+            <div class="mod-eps-inner">
+              <div class="ep-row"><span class="ep-method em-GET">GET</span><span class="ep-path-text">/api/RRHH/empleados</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/RRHH/empleados','GET')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-GET">GET</span><span class="ep-path-text">/api/RRHH/asistencia</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/RRHH/asistencia','GET')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-GET">GET</span><span class="ep-path-text">/api/RRHH/nomina</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/RRHH/nomina','GET')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-GET">GET</span><span class="ep-path-text">/api/RRHH/capacitacion</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/RRHH/capacitacion','GET')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-GET">GET</span><span class="ep-path-text">/api/RRHH/evaluacion</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/RRHH/evaluacion','GET')">curl</button></div>
+              <div class="ep-row"><span class="ep-method em-GET">GET</span><span class="ep-path-text">/api/RRHH/dashboard</span><span class="ep-auth lock">🔒</span><button class="ep-copy" onclick="quickCopy('/api/RRHH/dashboard','GET')">curl</button></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
 
-  </div>
+    <!-- ══════════════════════════════════════════════
+         ARQUITECTURA DEL SISTEMA
+    ══════════════════════════════════════════════ -->
+    <div>
+      <p class="section-label">Arquitectura del sistema</p>
+      <div class="arch-stack">
 
-  <script>
-    // ── Theme ──────────────────────────────────────────────
-    const html   = document.documentElement;
-    const toggle = document.getElementById('themeToggle');
-    const STORE  = 'solaris-theme';
-    applyTheme(localStorage.getItem(STORE) || 'dark');
-    toggle.addEventListener('change', () => {
-      const t = toggle.checked ? 'dark' : 'light';
-      applyTheme(t); localStorage.setItem(STORE, t);
-    });
-    function applyTheme(t) {
-      html.setAttribute('data-theme', t);
-      toggle.checked = (t === 'dark');
-    }
+        <div class="arch-layer-row" id="layer-client">
+          <div class="arch-head" style="--ac-color:#64748b; --ac-bg:rgba(100,116,139,.1)" onclick="toggleLayer('client')">
+            <div class="ac-icon-wrap">🌐</div>
+            <div class="ac-head-body">
+              <div class="ac-name">Interfaces de Usuario</div>
+              <div class="ac-tagline">Clientes externos · Web · Mobile · Integraciones</div>
+            </div>
+            <span class="ac-badge" style="--ac-color:#64748b; --ac-bg:rgba(100,116,139,.1)">CLIENTES</span>
+            <span class="ac-chevron">▼</span>
+          </div>
+          <div class="arch-body" id="body-client">
+            <div class="arch-body-inner">
+              <div class="arch-body-content" style="--ac-color:#64748b">
+                <p class="ac-desc">Cualquier aplicación, navegador o herramienta que quiera usar la plataforma.</p>
+                <div class="ac-bullets">
+                  <div class="ac-bullet"><span class="ac-bullet-dot" style="background:#64748b"></span>Aplicaciones web y móviles del ERP</div>
+                  <div class="ac-bullet"><span class="ac-bullet-dot" style="background:#64748b"></span>Swagger UI para explorar y probar la API</div>
+                  <div class="ac-bullet"><span class="ac-bullet-dot" style="background:#64748b"></span>Integraciones con sistemas externos</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-    // ── Health check — consume /health/data (JSON real) ──
-    // NOTA: NO usar /health/full porque ese ahora redirige al HTML
-    async function checkHealth() {
-      try {
-        const res  = await fetch('/health/data');
-        const data = await res.json();
+        <div class="arch-connector">
+          <div class="arch-connector-line" id="cl-1"></div>
+          <span class="arch-connector-label" id="lb-1">solicitudes HTTP · respuestas JSON</span>
+        </div>
 
-        const isHealthy = data.status === 'Healthy';
-        const db = data.checks?.find(c => c.name === 'database');
+        <div class="arch-layer-row" id="layer-api">
+          <div class="arch-head" style="--ac-color:#3b82f6; --ac-bg:rgba(59,130,246,.1)" onclick="toggleLayer('api')">
+            <div class="ac-icon-wrap">🚀</div>
+            <div class="ac-head-body">
+              <div class="ac-name">API</div>
+              <div class="ac-tagline">SolarisPlatform.API · Controllers · Middleware · JWT</div>
+            </div>
+            <span class="ac-badge" style="--ac-color:#3b82f6; --ac-bg:rgba(59,130,246,.1)">.NET 10</span>
+            <span class="ac-chevron">▼</span>
+          </div>
+          <div class="arch-body" id="body-api">
+            <div class="arch-body-inner">
+              <div class="arch-body-content" style="--ac-color:#3b82f6">
+                <p class="ac-desc">El punto de entrada oficial. Recibe todas las peticiones, verifica identidad con JWT y las dirige al lugar correcto.</p>
+                <div class="ac-bullets">
+                  <div class="ac-bullet"><span class="ac-bullet-dot" style="background:#3b82f6"></span><strong>Controllers:</strong> Auth, Usuarios, Roles, Empresas, Proyectos, RRHH, Catálogos</div>
+                  <div class="ac-bullet"><span class="ac-bullet-dot" style="background:#3b82f6"></span><strong>Middleware:</strong> ExceptionHandlingMiddleware</div>
+                  <div class="ac-bullet"><span class="ac-bullet-dot" style="background:#3b82f6"></span><strong>wwwroot:</strong> DevTools estáticos</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        // Badge global
-        const badge = document.getElementById('globalBadge');
-        const badgeText = document.getElementById('globalBadgeText');
-        badge.className = 'status-badge ' + (isHealthy ? 'online' : 'offline');
-        badgeText.textContent = isHealthy ? 'ONLINE' : 'DEGRADED';
+        <div class="arch-connector">
+          <div class="arch-connector-line" id="cl-2"></div>
+          <span class="arch-connector-label" id="lb-2">comandos y consultas validadas</span>
+        </div>
 
-        // Card API
-        document.getElementById('apiVersion').textContent = `v${data.version} · .NET 10`;
+        <div class="arch-layer-row" id="layer-app">
+          <div class="arch-head" style="--ac-color:#f59e0b; --ac-bg:rgba(245,158,11,.1)" onclick="toggleLayer('app')">
+            <div class="ac-icon-wrap">⚙️</div>
+            <div class="ac-head-body">
+              <div class="ac-name">Aplicación</div>
+              <div class="ac-tagline">SolarisPlatform.Application · Services · DTOs · Validators</div>
+            </div>
+            <span class="ac-badge" style="--ac-color:#f59e0b; --ac-bg:rgba(245,158,11,.1)">LÓGICA</span>
+            <span class="ac-chevron">▼</span>
+          </div>
+          <div class="arch-body" id="body-app">
+            <div class="arch-body-inner">
+              <div class="arch-body-content" style="--ac-color:#f59e0b">
+                <p class="ac-desc">Las reglas de negocio. Coordina el trabajo sin hablar directamente con la base de datos.</p>
+                <div class="ac-bullets">
+                  <div class="ac-bullet"><span class="ac-bullet-dot" style="background:#f59e0b"></span><strong>DTOs:</strong> Auth, Catalogos, Proyectos, Roles, RRHH, Usuarios</div>
+                  <div class="ac-bullet"><span class="ac-bullet-dot" style="background:#f59e0b"></span><strong>Validators:</strong> FluentValidation por módulo</div>
+                  <div class="ac-bullet"><span class="ac-bullet-dot" style="background:#f59e0b"></span><strong>Mappings:</strong> AutoMapper profiles por módulo</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        // Card BD
-        const dbEl     = document.getElementById('dbStatus');
-        const dbDetail = document.getElementById('dbDetail');
-        if (db) {
-          const ok = db.status === 'Healthy';
-          dbEl.textContent = ok ? 'HEALTHY' : 'ERROR';
-          dbEl.className   = 'card-status ' + (ok ? 'cs-ok' : 'cs-err');
-          dbDetail.innerHTML = ok
-            ? `PostgreSQL 16 &nbsp;·&nbsp; <strong>${db.database}</strong> &nbsp;·&nbsp; ${db.latencyMs}ms`
-            : `<span style="color:var(--red)">Sin conexión</span>`;
-        }
+        <div class="arch-connector">
+          <div class="arch-connector-line" id="cl-3"></div>
+          <span class="arch-connector-label" id="lb-3">objetos de dominio</span>
+        </div>
 
-        // Card Entorno
-        document.getElementById('envStatus').textContent = data.environment || 'Development';
-        document.getElementById('envDetail').textContent = new Date(data.timestamp).toLocaleString('es-EC');
+        <div class="arch-layer-row" id="layer-domain">
+          <div class="arch-head" style="--ac-color:#a78bfa; --ac-bg:rgba(167,139,250,.1)" onclick="toggleLayer('domain')">
+            <div class="ac-icon-wrap">🧩</div>
+            <div class="ac-head-body">
+              <div class="ac-name">Dominio</div>
+              <div class="ac-tagline">SolarisPlatform.Domain · Entities · Enums · Interfaces</div>
+            </div>
+            <span class="ac-badge" style="--ac-color:#a78bfa; --ac-bg:rgba(167,139,250,.1)">NÚCLEO</span>
+            <span class="ac-chevron">▼</span>
+          </div>
+          <div class="arch-body" id="body-domain">
+            <div class="arch-body-inner">
+              <div class="arch-body-content" style="--ac-color:#a78bfa">
+                <p class="ac-desc">El corazón del sistema. La única capa que no depende de ninguna otra.</p>
+                <div class="ac-bullets">
+                  <div class="ac-bullet"><span class="ac-bullet-dot" style="background:#a78bfa"></span><strong>Entities:</strong> Seguridad, Empresas, Proyectos, RRHH, Catálogos</div>
+                  <div class="ac-bullet"><span class="ac-bullet-dot" style="background:#a78bfa"></span><strong>Interfaces:</strong> IRepository, IRepositories especializados</div>
+                  <div class="ac-bullet"><span class="ac-bullet-dot" style="background:#a78bfa"></span><strong>Enums:</strong> Generales, ProyectosEnums, RrhhEnums</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      } catch(e) {
-        // Si la API no responde
-        document.getElementById('globalBadge').className  = 'status-badge offline';
-        document.getElementById('globalBadgeText').textContent = 'OFFLINE';
-        document.getElementById('dbStatus').textContent   = 'ERROR';
-        document.getElementById('dbStatus').className     = 'card-status cs-err';
-        document.getElementById('dbDetail').textContent   = 'No se pudo alcanzar la API';
-      }
-    }
+        <div class="arch-connector">
+          <div class="arch-connector-line" id="cl-4"></div>
+          <span class="arch-connector-label" id="lb-4">implementaciones concretas</span>
+        </div>
 
-    // Chequear al cargar y cada 30 segundos
-    checkHealth();
-    setInterval(checkHealth, 30000);
-  </script>
+        <div class="arch-layer-row" id="layer-infra">
+          <div class="arch-head" style="--ac-color:#34d399; --ac-bg:rgba(52,211,153,.1)" onclick="toggleLayer('infra')">
+            <div class="ac-icon-wrap">🏗️</div>
+            <div class="ac-head-body">
+              <div class="ac-name">Infraestructura</div>
+              <div class="ac-tagline">SolarisPlatform.Infrastructure · Repositories · Services · EF Core</div>
+            </div>
+            <span class="ac-badge" style="--ac-color:#34d399; --ac-bg:rgba(52,211,153,.1)">DATOS</span>
+            <span class="ac-chevron">▼</span>
+          </div>
+          <div class="arch-body" id="body-infra">
+            <div class="arch-body-inner">
+              <div class="arch-body-content" style="--ac-color:#34d399">
+                <p class="ac-desc">El puente entre el sistema y el mundo exterior. Si se cambia de BD o proveedor, solo esta capa se toca.</p>
+                <div class="ac-bullets">
+                  <div class="ac-bullet"><span class="ac-bullet-dot" style="background:#34d399"></span><strong>Repositories:</strong> Seguridad, Catálogos, Proyectos, RRHH</div>
+                  <div class="ac-bullet"><span class="ac-bullet-dot" style="background:#34d399"></span><strong>Services:</strong> Auth, Rol, Usuario, Token + módulos especializados</div>
+                  <div class="ac-bullet"><span class="ac-bullet-dot" style="background:#34d399"></span><strong>RRHH Services:</strong> Asistencia, Capacitación, Nómina, Evaluación, Dashboard</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="arch-connector">
+          <div class="arch-connector-line" id="cl-5"></div>
+          <span class="arch-connector-label" id="lb-5">SQL · Entity Framework Core</span>
+        </div>
+
+        <div class="arch-layer-row" id="layer-db">
+          <div class="arch-head" style="--ac-color:#22c55e; --ac-bg:rgba(34,197,94,.1)" onclick="toggleLayer('db')">
+            <div class="ac-icon-wrap">🗄️</div>
+            <div class="ac-head-body">
+              <div class="ac-name">Base de Datos</div>
+              <div class="ac-tagline" id="dbArchTagline">PostgreSQL 16 · solaris_db · migraciones EF Core</div>
+            </div>
+            <span class="ac-badge" style="--ac-color:#22c55e; --ac-bg:rgba(34,197,94,.1)" id="dbArchBadge">PostgreSQL 16</span>
+            <span class="ac-chevron">▼</span>
+          </div>
+          <div class="arch-body" id="body-db">
+            <div class="arch-body-inner">
+              <div class="arch-body-content" style="--ac-color:#22c55e">
+                <p class="ac-desc">El almacén permanente. Guarda usuarios, proyectos, empleados, nóminas y configuraciones.</p>
+                <div class="ac-bullets">
+                  <div class="ac-bullet"><span class="ac-bullet-dot" style="background:#22c55e"></span>PostgreSQL 16 — base de datos relacional de alto rendimiento</div>
+                  <div class="ac-bullet"><span class="ac-bullet-dot" style="background:#22c55e"></span><span id="dbArchLatency">Latencia de respuesta en tiempo real: —</span></div>
+                  <div class="ac-bullet"><span class="ac-bullet-dot" style="background:#22c55e"></span>1 migración aplicada: <code style="font-family:'JetBrains Mono',monospace;font-size:.75em;color:#86efac">20260210041843_InitialCreate</code></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════
+         FOOTER
+    ══════════════════════════════════════════════ -->
+    <div class="footer">
+      Solaris Platform ERP &nbsp;·&nbsp; Developer Console &nbsp;·&nbsp; .NET 10 + PostgreSQL 16 &nbsp;·&nbsp; Clean Architecture
+    </div>
+
+  </div><!-- /page -->
+
+  <!-- ══════════════════════════════════════════════
+       MÓDULOS JS  (orden importa)
+  ══════════════════════════════════════════════ -->
+  <script src="js/theme.js"></script>
+  <script src="js/uptime.js"></script>
+  <script src="js/arch.js"></script>
+  <script src="js/curl.js"></script>
+  <script src="js/request-log.js"></script>
+  <script src="js/health.js"></script>
 
 </body>
 </html>

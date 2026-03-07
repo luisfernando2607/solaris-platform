@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Info · Solaris Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root, [data-theme="dark"] {
+      --bg:      #07090f;
+      --surface: #0d1117;
+      --surface2: #111820;
+      --border:  #1e2a3a;
+      --accent:  #f59e0b;
+      --accent2: #3b82f6;
+      --text:    #e2e8f0;
+      --muted:   #64748b;
+      --green:   #22c55e;
+      --blue:    #60a5fa;
+      --orange:  #fb923c;
+      --purple:  #a78bfa;
+      --red:     #f87171;
+      --radius:  12px;
+      --orb-opacity: .2;
+      --grid-color: rgba(59,130,246,.04);
+    }
+
+    [data-theme="light"] {
+      --bg:      #f1f5f9;
+      --surface: #ffffff;
+      --surface2: #f8fafc;
+      --border:  #cbd5e1;
+      --accent:  #d97706;
+      --accent2: #2563eb;
+      --text:    #0f172a;
+      --muted:   #64748b;
+      --green:   #16a34a;
+      --blue:    #2563eb;
+      --orange:  #ea580c;
+      --purple:  #7c3aed;
+      --red:     #dc2626;
+      --orb-opacity: .08;
+      --grid-color: rgba(37,99,235,.05);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      padding: 2rem;
+      overflow-x: hidden;
+      transition: background .35s, color .35s;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    .orb { position: fixed; border-radius: 50%; filter: blur(90px); pointer-events: none; opacity: var(--orb-opacity); animation: drift 14s ease-in-out infinite alternate; }
+    .orb-1 { width: 500px; height: 500px; background: #1d4ed8; top: -150px; right: -100px; }
+    .orb-2 { width: 350px; height: 350px; background: #7c3aed; bottom: -100px; left: -80px; animation-delay: 4s; }
+
+    @keyframes drift {
+      from { transform: translate(0,0); }
+      to   { transform: translate(20px, -25px); }
+    }
+
+    /* ── Layout ── */
+    .page {
+      position: relative; z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex; flex-direction: column; gap: 2rem;
+      animation: fadeUp .6s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex; align-items: center; gap: 1rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.5rem;
+    }
+
+    .back-btn {
+      display: flex; align-items: center; gap: .4rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .72rem; color: var(--muted);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      padding: .35rem .75rem;
+      border-radius: 8px;
+      transition: border-color .2s, color .2s;
+      white-space: nowrap;
+    }
+    .back-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+
+    .header-center { flex: 1; }
+    .header-center h1 {
+      font-size: 1.5rem; font-weight: 800; letter-spacing: -.4px;
+      background: linear-gradient(135deg, var(--text) 40%, var(--accent));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .header-center p {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .68rem; color: var(--muted); margin-top: 2px;
+    }
+
+    .header-right { display: flex; align-items: center; gap: .75rem; }
+
+    .version-badge {
+      font-family: 'JetBrains Mono', monospace; font-size: .65rem;
+      color: var(--accent); background: rgba(245,158,11,.1);
+      border: 1px solid rgba(245,158,11,.25);
+      padding: .3rem .65rem; border-radius: 999px;
+    }
+
+    /* Theme switch */
+    .theme-switch { display: flex; align-items: center; gap: .4rem; user-select: none; }
+    .theme-icon { font-size: .85rem; }
+    .toggle { position: relative; width: 38px; height: 20px; cursor: pointer; }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .track { position: absolute; inset: 0; border-radius: 999px; background: var(--border); border: 1px solid var(--border); transition: background .3s; }
+    .toggle input:checked + .track { background: var(--accent2); border-color: var(--accent2); }
+    .thumb { position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: transform .3s cubic-bezier(.4,0,.2,1); }
+    .toggle input:checked ~ .thumb { transform: translateX(18px); }
+
+    /* ── Info bar ── */
+    .info-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem;
+    }
+
+    .info-chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: .85rem 1rem;
+      display: flex; flex-direction: column; gap: .2rem;
+      transition: background .35s;
+    }
+
+    .info-chip .chip-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .6rem; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .1em;
+    }
+    .info-chip .chip-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .82rem; color: var(--text); font-weight: 500;
+    }
+
+    /* ── Grupos de endpoints ── */
+    .group {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: background .35s;
+    }
+
+    .group-header {
+      display: flex; align-items: center; gap: .75rem;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+      cursor: pointer;
+      user-select: none;
+      transition: background .15s;
+    }
+    .group-header:hover { background: var(--border); }
+
+    .group-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; flex-shrink: 0;
+    }
+
+    .group-title { font-size: .95rem; font-weight: 700; }
+    .group-desc  { font-family: 'JetBrains Mono', monospace; font-size: .65rem; color: var(--muted); margin-top: 1px; }
+
+    .group-count {
+      margin-left: auto;
+      font-family: 'JetBrains Mono', monospace; font-size: .65rem;
+      color: var(--muted); background: var(--border);
+      padding: .2rem .55rem; border-radius: 999px;
+    }
+
+    .chevron {
+      font-size: .7rem; color: var(--muted);
+      transition: transform .25s;
+      margin-left: .25rem;
+    }
+    .group.open .chevron { transform: rotate(180deg); }
+
+    /* ── Endpoint rows ── */
+    .endpoints { display: none; }
+    .group.open .endpoints { display: block; }
+
+    .ep {
+      display: grid;
+      grid-template-columns: 56px 1fr auto;
+      align-items: center;
+      gap: .75rem;
+      padding: .75rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .78rem;
+      transition: background .15s;
+    }
+    .ep:last-child { border-bottom: none; }
+    .ep:hover { background: var(--surface2); }
+
+    .method {
+      font-size: .6rem; font-weight: 700;
+      padding: .22rem .5rem;
+      border-radius: 5px;
+      text-align: center; letter-spacing: .06em;
+    }
+
+    .GET    { background: rgba(34,197,94,.15);  color: #4ade80; }
+    .POST   { background: rgba(59,130,246,.15); color: #60a5fa; }
+    .PUT    { background: rgba(251,146,60,.15); color: #fb923c; }
+    .DELETE { background: rgba(248,113,113,.15);color: #f87171; }
+    .PATCH  { background: rgba(167,139,250,.15);color: #a78bfa; }
+
+    [data-theme="light"] .GET    { background: rgba(22,163,74,.12);  color: #15803d; }
+    [data-theme="light"] .POST   { background: rgba(37,99,235,.12);  color: #1d4ed8; }
+    [data-theme="light"] .PUT    { background: rgba(234,88,12,.12);  color: #c2410c; }
+    [data-theme="light"] .DELETE { background: rgba(220,38,38,.12);  color: #b91c1c; }
+    [data-theme="light"] .PATCH  { background: rgba(124,58,237,.12); color: #6d28d9; }
+
+    .ep-path { color: var(--text); }
+    .ep-path span { color: var(--accent); } /* parámetros como {id} */
+
+    .ep-lock {
+      font-size: .7rem; color: var(--muted);
+      display: flex; align-items: center; gap: .25rem;
+    }
+    .ep-lock.secured { color: var(--accent); }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .65rem; color: var(--muted);
+      border-top: 1px solid var(--border);
+      padding-top: 1.25rem;
+    }
+    .footer a { color: var(--accent2); text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="page">
+
+    <!-- Header -->
+    <div class="header">
+      <a class="back-btn" href="/">← Inicio</a>
+      <div class="header-center">
+        <h1>API Reference</h1>
+        <p>Solaris Platform · REST API</p>
+      </div>
+      <div class="header-right">
+        <span class="version-badge">v1.0.0</span>
+        <div class="theme-switch" title="Cambiar tema">
+          <span class="theme-icon">☀️</span>
+          <label class="toggle">
+            <input type="checkbox" id="themeToggle" />
+            <span class="track"></span>
+            <span class="thumb"></span>
+          </label>
+          <span class="theme-icon">🌙</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info chips -->
+    <div class="info-bar">
+      <div class="info-chip">
+        <span class="chip-label">Base URL</span>
+        <span class="chip-value">localhost:5180</span>
+      </div>
+      <div class="info-chip">
+        <span class="chip-label">Autenticación</span>
+        <span class="chip-value">Bearer JWT</span>
+      </div>
+      <div class="info-chip">
+        <span class="chip-label">Formato</span>
+        <span class="chip-value">application/json</span>
+      </div>
+      <div class="info-chip">
+        <span class="chip-label">Documentación</span>
+        <span class="chip-value"><a href="/swagger" style="color:var(--accent2);text-decoration:none;">Swagger UI →</a></span>
+      </div>
+    </div>
+
+    <!-- Grupo: Auth -->
+    <div class="group open" data-group="auth">
+      <div class="group-header" onclick="toggleGroup(this)">
+        <div class="group-icon" style="background:rgba(59,130,246,.15)">🔑</div>
+        <div>
+          <div class="group-title">Auth</div>
+          <div class="group-desc">Autenticación y sesiones</div>
+        </div>
+        <span class="group-count">5 endpoints</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="endpoints">
+        <div class="ep">
+          <span class="method POST">POST</span>
+          <span class="ep-path">/api/Auth/login</span>
+          <span class="ep-lock">🔓 público</span>
+        </div>
+        <div class="ep">
+          <span class="method POST">POST</span>
+          <span class="ep-path">/api/Auth/registro</span>
+          <span class="ep-lock">🔓 público</span>
+        </div>
+        <div class="ep">
+          <span class="method POST">POST</span>
+          <span class="ep-path">/api/Auth/refresh-token</span>
+          <span class="ep-lock">🔓 público</span>
+        </div>
+        <div class="ep">
+          <span class="method POST">POST</span>
+          <span class="ep-path">/api/Auth/logout</span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+        <div class="ep">
+          <span class="method GET">GET</span>
+          <span class="ep-path">/api/Auth/me</span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grupo: Usuarios -->
+    <div class="group open" data-group="usuarios">
+      <div class="group-header" onclick="toggleGroup(this)">
+        <div class="group-icon" style="background:rgba(34,197,94,.15)">👤</div>
+        <div>
+          <div class="group-title">Usuarios</div>
+          <div class="group-desc">Gestión de usuarios del sistema</div>
+        </div>
+        <span class="group-count">7 endpoints</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="endpoints">
+        <div class="ep">
+          <span class="method GET">GET</span>
+          <span class="ep-path">/api/Usuarios</span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+        <div class="ep">
+          <span class="method POST">POST</span>
+          <span class="ep-path">/api/Usuarios</span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+        <div class="ep">
+          <span class="method GET">GET</span>
+          <span class="ep-path">/api/Usuarios/<span>{id}</span></span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+        <div class="ep">
+          <span class="method PUT">PUT</span>
+          <span class="ep-path">/api/Usuarios/<span>{id}</span></span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+        <div class="ep">
+          <span class="method DELETE">DELETE</span>
+          <span class="ep-path">/api/Usuarios/<span>{id}</span></span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+        <div class="ep">
+          <span class="method PATCH">PATCH</span>
+          <span class="ep-path">/api/Usuarios/<span>{id}</span>/activar</span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+        <div class="ep">
+          <span class="method PATCH">PATCH</span>
+          <span class="ep-path">/api/Usuarios/<span>{id}</span>/bloquear</span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grupo: Roles -->
+    <div class="group open" data-group="roles">
+      <div class="group-header" onclick="toggleGroup(this)">
+        <div class="group-icon" style="background:rgba(167,139,250,.15)">🛡️</div>
+        <div>
+          <div class="group-title">Roles</div>
+          <div class="group-desc">Gestión de roles y permisos</div>
+        </div>
+        <span class="group-count">6 endpoints</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="endpoints">
+        <div class="ep">
+          <span class="method GET">GET</span>
+          <span class="ep-path">/api/Roles</span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+        <div class="ep">
+          <span class="method POST">POST</span>
+          <span class="ep-path">/api/Roles</span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+        <div class="ep">
+          <span class="method GET">GET</span>
+          <span class="ep-path">/api/Roles/<span>{id}</span></span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+        <div class="ep">
+          <span class="method PUT">PUT</span>
+          <span class="ep-path">/api/Roles/<span>{id}</span></span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+        <div class="ep">
+          <span class="method DELETE">DELETE</span>
+          <span class="ep-path">/api/Roles/<span>{id}</span></span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+        <div class="ep">
+          <span class="method PUT">PUT</span>
+          <span class="ep-path">/api/Roles/<span>{id}</span>/permisos</span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grupo: Empresas -->
+    <div class="group open" data-group="empresas">
+      <div class="group-header" onclick="toggleGroup(this)">
+        <div class="group-icon" style="background:rgba(251,146,60,.15)">🏢</div>
+        <div>
+          <div class="group-title">Empresas</div>
+          <div class="group-desc">Multi-tenancy y sucursales</div>
+        </div>
+        <span class="group-count">7 endpoints</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="endpoints">
+        <div class="ep">
+          <span class="method GET">GET</span>
+          <span class="ep-path">/api/Empresas</span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+        <div class="ep">
+          <span class="method POST">POST</span>
+          <span class="ep-path">/api/Empresas</span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+        <div class="ep">
+          <span class="method GET">GET</span>
+          <span class="ep-path">/api/Empresas/<span>{id}</span></span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+        <div class="ep">
+          <span class="method PUT">PUT</span>
+          <span class="ep-path">/api/Empresas/<span>{id}</span></span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+        <div class="ep">
+          <span class="method DELETE">DELETE</span>
+          <span class="ep-path">/api/Empresas/<span>{id}</span></span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+        <div class="ep">
+          <span class="method GET">GET</span>
+          <span class="ep-path">/api/Empresas/<span>{id}</span>/sucursales</span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+        <div class="ep">
+          <span class="method POST">POST</span>
+          <span class="ep-path">/api/Empresas/<span>{id}</span>/sucursales</span>
+          <span class="ep-lock secured">🔒 JWT</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grupo: Sistema -->
+    <div class="group open" data-group="sistema">
+      <div class="group-header" onclick="toggleGroup(this)">
+        <div class="group-icon" style="background:rgba(34,197,94,.15)">💚</div>
+        <div>
+          <div class="group-title">Sistema</div>
+          <div class="group-desc">Health checks y estado</div>
+        </div>
+        <span class="group-count">3 endpoints</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="endpoints">
+        <div class="ep">
+          <span class="method GET">GET</span>
+          <span class="ep-path">/health</span>
+          <span class="ep-lock">🔓 público</span>
+        </div>
+        <div class="ep">
+          <span class="method GET">GET</span>
+          <span class="ep-path">/health/db</span>
+          <span class="ep-lock">🔓 público</span>
+        </div>
+        <div class="ep">
+          <span class="method GET">GET</span>
+          <span class="ep-path">/health/full</span>
+          <span class="ep-lock">🔓 público</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      Solaris Platform ERP &nbsp;·&nbsp; Desarrollado por LuisFer &nbsp;·&nbsp;
+      <a href="/swagger">Documentación interactiva en Swagger →</a>
+    </div>
+
+  </div>
+
+  <script>
+    // Theme
+    const html   = document.documentElement;
+    const toggle = document.getElementById('themeToggle');
+    const STORE  = 'solaris-theme';
+    const saved  = localStorage.getItem(STORE) || 'dark';
+    applyTheme(saved);
+    toggle.addEventListener('change', () => {
+      const next = toggle.checked ? 'dark' : 'light';
+      applyTheme(next);
+      localStorage.setItem(STORE, next);
+    });
+    function applyTheme(t) {
+      html.setAttribute('data-theme', t);
+      toggle.checked = (t === 'dark');
+    }
+
+    // Toggle grupos
+    function toggleGroup(header) {
+      const group = header.closest('.group');
+      group.classList.toggle('open');
+    }
+  </script>
+
+</body>
+</html>

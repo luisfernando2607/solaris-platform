@@ -292,8 +292,8 @@ public class KpiService : IKpiService
     public async Task<IEnumerable<AlertaProyectoDto>> GetAlertasAsync(long proyectoId, CancellationToken ct = default)
         => _mapper.Map<IEnumerable<AlertaProyectoDto>>(await _alertaRepo.GetByProyectoAsync(proyectoId, ct));
 
-    public async Task<int> ContarNoLeidasAsync(long proyectoId, CancellationToken ct = default)
-        => await _alertaRepo.CountAsync(a => a.ProyectoId == proyectoId && !a.Leida, ct);
+    public async Task<int> ContarNoLeidasAsync(long usuarioId, CancellationToken ct = default)
+        => await _alertaRepo.ContarNoLeidasAsync(usuarioId, ct);
 
     public async Task<Result> MarcarLeidaAsync(long alertaId, CancellationToken ct = default)
     {

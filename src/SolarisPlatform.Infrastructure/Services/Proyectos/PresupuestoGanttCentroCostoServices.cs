@@ -150,12 +150,17 @@ public class PresupuestoService : IPresupuestoService
         return Result<CostoRealDto>.Success(_mapper.Map<CostoRealDto>(e));
     }
 
-    public async Task<IEnumerable<CostoRealDto>> GetCostosRealesAsync(long presupuestoId, CancellationToken ct = default)
+    public async Task<IEnumerable<CostoRealDto>> GetCostosRealesAsync(long proyectoId, CancellationToken ct = default)
     {
-        var partidas = await _partidaRepo.GetByPresupuestoAsync(presupuestoId, ct);
+        // Obtener todos los presupuestos del proyecto y sus costos reales
+        var presupuestos = await _repo.GetByProyectoAsync(proyectoId, ct);
         var todos = new List<CostoReal>();
-        foreach (var p in partidas)
-            todos.AddRange(await _costoRepo.GetByPartidaAsync(p.Id, ct));
+        foreach (var presupuesto in presupuestos)
+        {
+            var partidas = await _partidaRepo.GetByPresupuestoAsync(presupuesto.Id, ct);
+            foreach (var p in partidas)
+                todos.AddRange(await _costoRepo.GetByPartidaAsync(p.Id, ct));
+        }
         return _mapper.Map<IEnumerable<CostoRealDto>>(todos);
     }
 
@@ -168,7 +173,7 @@ public class PresupuestoService : IPresupuestoService
         await _repo.UpdateAsync(presupuesto, ct);
     }
 
-    public async Task<Result> ActualizarCostoProyectoAsync(long proyectoId, IProyectoRepository proyectoRepo, CancellationToken ct = default)
+    private async Task<Result> ActualizarCostoProyectoAsync(long proyectoId, IProyectoRepository proyectoRepo, CancellationToken ct = default)
     {
         var proyecto = await proyectoRepo.GetByIdAsync(proyectoId, ct);
         if (proyecto == null) return Result.Failure("Proyecto no encontrado");

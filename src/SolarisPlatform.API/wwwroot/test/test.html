@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Tests · Solaris Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/solaris.css" />
+</head>
+<body>
+
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="page">
+
+    <!-- ── Header ── -->
+    <div class="header">
+      <a class="back-btn" href="/">← Inicio</a>
+      <div class="header-center">
+        <h1>🧪 API Test Console</h1>
+        <p>Solaris Platform · Pruebas de integración en tiempo real</p>
+      </div>
+      <div class="header-right">
+        <div class="theme-switch">
+          <span>☀️</span>
+          <label class="toggle">
+            <input type="checkbox" id="themeToggle" />
+            <span class="track"></span><span class="thumb"></span>
+          </label>
+          <span>🌙</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Credenciales ── -->
+    <div class="creds-bar">
+      <div class="field">
+        <label>Email</label>
+        <input type="text" id="email" value="admin@solaris.local" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="password" value="Admin123!#" />
+      </div>
+      <div class="field" style="max-width:220px">
+        <label>Base URL</label>
+        <input type="text" id="baseUrl" value="http://localhost:5180" />
+      </div>
+    </div>
+
+    <!-- ── JWT activo ── -->
+    <div class="token-bar">
+      <span class="token-label">JWT activo →</span>
+      <span class="token-val empty" id="tokenDisplay">Sin token — ejecuta los tests primero</span>
+    </div>
+
+    <!-- ── Barra de progreso ── -->
+    <div class="progress-bar-wrap" id="progressWrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- ── Acciones ── -->
+    <div class="actions">
+      <button class="btn btn-primary"  id="btnRunAll"  onclick="TestUI.runAll()">▶ Ejecutar todos los tests</button>
+      <button class="btn btn-danger"                   onclick="TestUI.clearAll()">✕ Limpiar</button>
+      <button class="btn btn-outline"  id="btnDlAll"   onclick="TestReport.downloadAll()"   disabled>⬇ Resultados</button>
+      <button class="btn btn-dl-fails" id="btnDlFails" onclick="TestReport.downloadFails()" disabled>⬇ Solo fallos</button>
+    </div>
+
+    <!-- ── Nav rápida por suite (generada por test.ui.js) ── -->
+    <div class="suite-nav" id="suiteNav"></div>
+
+    <!-- ── Resumen final ── -->
+    <div class="summary" id="summary">
+      <span id="summaryText">—</span>
+      <span class="summary-detail" id="summaryDetail"></span>
+    </div>
+
+    <!-- ── Suites (generadas por test.ui.js) ── -->
+    <div id="suitesContainer"></div>
+
+  </div><!-- /page -->
+
+  <!--
+  ════════════════════════════════════════════════════════════════════
+    SCRIPTS — orden de carga importante:
+      1. test.config.js  → define TEST_SUITES (datos)
+      2. test.runner.js  → motor de ejecución (depende de TEST_SUITES)
+      3. test.report.js  → generador de reportes (depende de TestRunner)
+      4. test.theme.js   → tema light/dark
+      5. test.ui.js      → UI/DOM (depende de todos los anteriores)
+  ════════════════════════════════════════════════════════════════════
+  -->
+  <script src="test.config.js"></script>
+  <script src="test.runner.js"></script>
+  <script src="test.report.js"></script>
+  <script src="test.theme.js"></script>
+  <script src="test.ui.js"></script>
+  <script>
+    // Inicializar al cargar la página
+    document.addEventListener('DOMContentLoaded', () => {
+      SolarisTheme.init('themeToggle');
+      TestUI.init();
+    });
+  </script>
+
+</body>
+</html>
