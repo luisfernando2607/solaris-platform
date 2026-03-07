@@ -47,7 +47,7 @@ const TestUI = (() => {
         <span class="test-icon">⏳</span>
         <div class="test-body">
           <span class="test-name">${badge} ${esc(nameNoMethod)}</span>
-          <span class="test-desc">${esc(t.desc)}</span>
+          <span class="test-desc">${esc(t.path || "")}</span>
           <div class="test-detail" id="d-${t.id}">
             <div class="detail-tabs">
               <button class="detail-tab active" onclick="TestUI.switchTab('${t.id}','response',this)">Respuesta</button>

@@ -15,7 +15,7 @@ const SolarisTheme = (() => {
   function _apply(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     const toggle = document.getElementById(_toggleId);
-    if (toggle) toggle.checked = (theme === 'dark');
+    if (toggle) toggle.checked = (theme === 'light');
     localStorage.setItem(STORAGE_KEY, theme);
   }
 

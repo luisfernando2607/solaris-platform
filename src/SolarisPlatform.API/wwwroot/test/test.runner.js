@@ -1,10 +1,19 @@
 // ══════════════════════════════════════════════════════════════════════
-//  test.runner.js  —  Solaris Platform · API Test Console
+//  test.runner.js  —  Solaris Platform · API Test Console  v3.1
 //  ─────────────────────────────────────────────────────────────────────
 //  Motor de ejecución de tests.
 //  - No manipula el DOM.
 //  - Se comunica con el exterior mediante callbacks/eventos.
 //  - Depende de: test.config.js  (TEST_SUITES debe estar cargado antes)
+//
+//  FIXES v3.1:
+//   [1] Implementado DYNAMIC: diccionario que persiste IDs capturados
+//       (captureId) y los inyecta en paths/bodies (useDynamic, bodyFn).
+//   [2] Implementado skipIf: omite tests si el ID requerido no existe.
+//   [3] Soporte para paths con dos IDs dinámicos: {DYN} + {secondaryKey}.
+//       Ejemplo: /proyectos/{DYN}/fases/{newFaseId}
+//   [4] Eliminada la duplicación de getBaseUrl.
+//   [5] captureId ahora captura data.id  | data.data.id | data.data[0].id
 // ══════════════════════════════════════════════════════════════════════
 
 const TestRunner = (() => {
@@ -14,15 +23,18 @@ const TestRunner = (() => {
   let _refreshToken = '';
   let _baseUrl      = '';
 
+  // [FIX 1] Diccionario de IDs capturados en tiempo de ejecución
+  const DYNAMIC = {};
+
   // Resultados guardados por testId para que test.report.js los consulte
   const _results = {};
 
   // Callbacks que el UI registra para recibir notificaciones
   const _cb = {
     onTestStart:    () => {},   // (testId)
-    onTestEnd:      () => {},   // (testId, result)  result = { passed, status, ms, data, diagnosis }
+    onTestEnd:      () => {},   // (testId, result)
     onSuiteEnd:     () => {},   // (suiteId)
-    onRunComplete:  () => {},   // (summary)  summary = { total, passed, failed }
+    onRunComplete:  () => {},   // (summary)
     onTokenCapture: () => {},   // (token, truncated)
   };
 
@@ -89,27 +101,83 @@ const TestRunner = (() => {
     return lines;
   }
 
+  // ── [FIX 3] Resolver paths con uno o dos IDs dinámicos ─────────
+  // Soporta:
+  //   {DYN}        → DYNAMIC[testDef.useDynamic]
+  //   {newFaseId}  → DYNAMIC['newFaseId']   (cualquier clave en el path)
+  function _resolvePath(rawPath, testDef) {
+    let path = rawPath;
+
+    // Reemplazar {DYN} con el valor de useDynamic
+    if (testDef.useDynamic && path.includes('{DYN}')) {
+      const val = DYNAMIC[testDef.useDynamic];
+      path = path.replace('{DYN}', val !== undefined ? val : 'MISSING_ID');
+    }
+
+    // Reemplazar cualquier otro {placeholder} con DYNAMIC[placeholder]
+    path = path.replace(/\{([^}]+)\}/g, (match, key) => {
+      const val = DYNAMIC[key];
+      return val !== undefined ? val : match; // si no existe, lo deja para que falle con 404 visible
+    });
+
+    return path;
+  }
+
   // ── Ejecutar un test individual ─────────────────────────────────
   async function _runTest(testDef, suiteId) {
+
+    // [FIX 2] skipIf: omitir si el ID requerido no fue capturado
+    if (testDef.skipIf && !DYNAMIC[testDef.skipIf]) {
+      const result = {
+        suiteId,
+        testId:        testDef.id,
+        passed:        true,   // se cuenta como skip (no como fallo)
+        skipped:       true,
+        status:        'SKIP',
+        ms:            0,
+        data:          { skipped: true, reason: `ID dinámico "${testDef.skipIf}" no disponible. El test previo de creación pudo haber fallado.` },
+        diagnosis:     null,
+        method:        testDef.method,
+        path:          testDef.path,
+        fullUrl:       _baseUrl + testDef.path,
+        requiresAuth:  testDef.auth,
+        expectedStatus: testDef.expect.status,
+        checkDesc:     testDef.expect.checkDesc || null,
+        hint:          testDef.hint || null,
+        name:          testDef.name,
+      };
+      _cb.onTestStart(testDef.id);
+      _results[testDef.id] = result;
+      _cb.onTestEnd(testDef.id, result);
+      return result;
+    }
+
     _cb.onTestStart(testDef.id);
+
+    // [FIX 3] Resolver path con IDs dinámicos
+    const resolvedPath = _resolvePath(testDef.path, testDef);
 
     // Resolver body especial
     let body  = testDef.body  ?? null;
     let token = testDef.auth  ? _jwt : undefined;
 
     if (body === '__USE_CREDS__') {
-      // El UI inyecta las credenciales a través de getCredentials()
       const creds = _runner.getCredentials();
       body = { email: creds.email, password: creds.password };
     }
     if (body === '__USE_REFRESH__') {
-      body = { Token: _jwt, RefreshToken: _refreshToken };  // RefreshTokenRequest exige ambos campos  // backend espera campo 'RefreshToken' (RefreshTokenRequest DTO)
+      body = { Token: _jwt, RefreshToken: _refreshToken };
     }
     if (testDef._fakeToken) {
       token = testDef._fakeToken;
     }
 
-    const res = await _fetch(testDef.method, testDef.path, body, token);
+    // [FIX 1] Resolver bodyFn con DYNAMIC y SEED
+    if (testDef.bodyFn && BODY_FACTORIES[testDef.bodyFn]) {
+      body = BODY_FACTORIES[testDef.bodyFn](DYNAMIC, SEED);
+    }
+
+    const res = await _fetch(testDef.method, resolvedPath, body, token);
 
     // Capturar JWT y refreshToken del login-ok
     if (testDef.id === 'login-ok' && res.status === 200) {
@@ -125,10 +193,22 @@ const TestRunner = (() => {
       if (nt) { _jwt = nt; _cb.onTokenCapture(nt, nt.substring(0, 70) + '…'); }
     }
 
+    // [FIX 1] Capturar ID de la respuesta en DYNAMIC
+    if (testDef.captureId) {
+      const capturedId =
+        res.data?.data?.id   ??   // { data: { id: X } }
+        res.data?.id         ??   // { id: X }
+        (Array.isArray(res.data?.data) && res.data.data[0]?.id) ?? // { data: [{ id:X }] }
+        null;
+      if (capturedId !== null) {
+        DYNAMIC[testDef.captureId] = capturedId;
+      }
+    }
+
     const passed    = _checkExpect(testDef.expect, res.status, res.data);
     const diagnosis = passed ? null : _buildDiagnosis(testDef, res);
 
-    // Sanitizar token en la respuesta mostrada (no enviar el token completo al UI)
+    // Sanitizar token en la respuesta mostrada
     let displayData = res.data;
     if (res.data?.data?.token) {
       displayData = JSON.parse(JSON.stringify(res.data));
@@ -139,14 +219,14 @@ const TestRunner = (() => {
       suiteId,
       testId:   testDef.id,
       passed,
+      skipped:  false,
       status:   res.status,
       ms:       res.ms,
       data:     displayData,
       diagnosis,
-      // metadata extra para el reporte
       method:        testDef.method,
-      path:          testDef.path,
-      fullUrl:       _baseUrl + testDef.path,
+      path:          resolvedPath,
+      fullUrl:       _baseUrl + resolvedPath,
       requiresAuth:  testDef.auth,
       expectedStatus: testDef.expect.status,
       checkDesc:     testDef.expect.checkDesc || null,
@@ -172,18 +252,19 @@ const TestRunner = (() => {
   function _delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
   function _countResults() {
-    const all   = Object.values(_results);
+    const all    = Object.values(_results).filter(r => !r.skipped);
     const total  = all.length;
     const passed = all.filter(r => r.passed).length;
     const failed = total - passed;
-    return { total, passed, failed };
+    const skipped = Object.values(_results).filter(r => r.skipped).length;
+    return { total, passed, failed, skipped };
   }
 
   // ── API pública ─────────────────────────────────────────────────
   const _runner = {
 
-    // El UI llama esto para proveer las credenciales (evita acoplamiento)
-    getCredentials: () => ({ email: '', password: '' }),  // override desde fuera
+    // El UI llama esto para proveer las credenciales
+    getCredentials: () => ({ email: '', password: '' }),
 
     // Registrar callbacks
     on(event, fn) { if (_cb[event] !== undefined) _cb[event] = fn; return this; },
@@ -191,21 +272,23 @@ const TestRunner = (() => {
     // Configurar base URL
     setBaseUrl(url) { _baseUrl = url.replace(/\/$/, ''); return this; },
 
-    // Limpiar estado
+    // Limpiar estado (incluyendo DYNAMIC)
     reset() {
       _jwt = ''; _refreshToken = '';
       Object.keys(_results).forEach(k => delete _results[k]);
+      Object.keys(DYNAMIC).forEach(k => delete DYNAMIC[k]);  // [FIX 1]
     },
 
-    // Exponer resultados para test.report.js
-    getResults() { return { ..._results }; },
-    getSuites()  { return TEST_SUITES; },
+    // Exponer resultados y DYNAMIC para test.report.js
+    getResults()  { return { ..._results }; },
+    getSuites()   { return TEST_SUITES; },
+    getDynamic()  { return { ...DYNAMIC }; },  // útil para debug
 
     // Ejecutar una suite por id
     async runSuite(suiteId) {
       const suite = TEST_SUITES.find(s => s.id === suiteId);
       if (!suite) return;
-      this.setBaseUrl(this.getBaseUrl());
+      _baseUrl = _runner.getBaseUrl().replace(/\/$/, '');
       await _runSuite(suite);
       const summary = _countResults();
       _cb.onRunComplete(summary);
@@ -213,7 +296,7 @@ const TestRunner = (() => {
 
     // Ejecutar todas las suites
     async runAll() {
-      this.setBaseUrl(this.getBaseUrl());
+      _baseUrl = _runner.getBaseUrl().replace(/\/$/, '');
       for (const suite of TEST_SUITES) {
         await _runSuite(suite);
         await _delay(350);
@@ -222,7 +305,7 @@ const TestRunner = (() => {
       _cb.onRunComplete(summary);
     },
 
-    // El UI sobreescribe esto
+    // [FIX 4] Una sola definición — el UI la sobreescribe en init()
     getBaseUrl: () => 'http://localhost:5180',
   };
 

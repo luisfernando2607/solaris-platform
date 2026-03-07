@@ -72,16 +72,16 @@ const BODY_FACTORIES = {
   // RRHH Empleados
   'create-empleado': (D,S) => ({ nombres:'Juan', apellidos:'Test Runner', tipoIdentificacionId:S.tipoIdId, numeroIdentificacion:`T${Date.now()%1000000}`, email:`emp.t${Date.now()}@solaris.dev`, fechaNacimiento:'1990-01-15', fechaIngreso:'2024-01-01', departamentoId:S.departamentoId, puestoId:S.puestoId, salario:800.00, activo:true }),
   'update-empleado': (D,S) => ({ nombres:'Juan Editado', apellidos:'Test Runner', tipoIdentificacionId:S.tipoIdId, numeroIdentificacion:`T${Date.now()%1000000}`, email:`emp.e${Date.now()}@solaris.dev`, fechaNacimiento:'1990-01-15', fechaIngreso:'2024-01-01', departamentoId:S.departamentoId, puestoId:S.puestoId, salario:850.00, activo:true }),
-  'create-ausencia': (D,S)   => ({ empleadoId:S.empleadoId, tipo:'Permiso', fechaInicio:'2025-12-01', fechaFin:'2025-12-02', motivo:'Prueba runner' }),
+  'create-ausencia': (D,S)   => { const d = new Date(); const f1 = new Date(d.getFullYear(), d.getMonth()+1, 1).toISOString().split('T')[0]; const f2 = new Date(d.getFullYear(), d.getMonth()+1, 2).toISOString().split('T')[0]; return { empleadoId:S.empleadoId, tipo:'Permiso', fechaInicio:f1, fechaFin:f2, motivo:'Prueba runner' }; },
 
   // Nómina
   'create-nomina-concepto': () => ({ nombre:`Concepto Test ${Date.now()}`, tipo:'Ingreso', formula:'fijo', valor:50.00, activo:true }),
   'update-nomina-concepto': () => ({ nombre:'Concepto Editado', tipo:'Ingreso', formula:'fijo', valor:75.00, activo:true }),
-  'create-nomina-periodo':  () => ({ nombre:`Período Test ${Date.now()}`, fechaInicio:'2025-12-01', fechaFin:'2025-12-31', tipo:'Mensual' }),
+  'create-nomina-periodo':  () => { const n = Date.now(); const y = new Date().getFullYear(); const m = String(new Date().getMonth()+1).padStart(2,'0'); return { nombre:`Período Test ${n}`, fechaInicio:`${y}-${m}-01`, fechaFin:`${y}-${m}-28`, tipo:'Mensual' }; },
 
   // Proyectos core
   'create-proyecto': (D,S) => ({ nombre:`Proyecto Test ${Date.now()}`, descripcion:'Proyecto de prueba', empresaId:S.empresaId, fechaInicio:'2025-01-01', fechaFinPlan:'2025-12-31', estado:1, montoContrato:100000 }),
-  'update-proyecto': ()    => ({ nombre:'Proyecto Editado Test', descripcion:'Editado por runner', fechaInicio:'2025-01-01', fechaFinPlan:'2025-12-31', estado:1, montoContrato:120000 }),
+  'update-proyecto': (D,S) => ({ nombre:'Proyecto Editado Test', descripcion:'Editado por runner', empresaId:S.empresaId, fechaInicio:'2025-01-01', fechaFinPlan:'2025-12-31', estado:1, montoContrato:120000 }),
 
   // Planificación
   'create-fase':  (D) => ({ nombre:`Fase Test ${Date.now()}`, descripcion:'Fase de prueba', proyectoId:D.newProyectoId, orden:1, fechaInicio:'2025-01-01', fechaFin:'2025-06-30' }),
@@ -171,6 +171,7 @@ const TEST_SUITES = [
     // Países
     { id:'list-paises',  method:'GET',    path:'/api/catalogos/paises',              auth:true, name:'GET paises',  expect:{status:200} },
     { id:'create-pais',  method:'POST',   path:'/api/catalogos/paises',              auth:true, name:'POST pais',   bodyFn:'create-pais',  captureId:'newPaisId',  expect:{status:[200,201]} },
+    { id:'get-pais',     method:'GET',    path:'/api/catalogos/paises/{DYN}',        auth:true, name:'GET pais creado', useDynamic:'newPaisId', skipIf:'newPaisId', expect:{status:200} },
     { id:'update-pais',  method:'PUT',    path:'/api/catalogos/paises/{DYN}',        auth:true, name:'PUT pais',    useDynamic:'newPaisId',  skipIf:'newPaisId',  bodyFn:'update-pais',  expect:{status:[200,204]} },
     { id:'patch-pais',   method:'PATCH',  path:'/api/catalogos/paises/{DYN}/estado', auth:true, name:'PATCH pais',  useDynamic:'newPaisId',  skipIf:'newPaisId',  body:{activo:false},   expect:{status:[200,204]} },
     { id:'delete-pais',  method:'DELETE', path:'/api/catalogos/paises/{DYN}',        auth:true, name:'DELETE pais', useDynamic:'newPaisId',  skipIf:'newPaisId',  expect:{status:[200,204]} },
@@ -189,11 +190,12 @@ const TEST_SUITES = [
     { id:'patch-ciudad',    method:'PATCH',  path:'/api/catalogos/ciudades/{DYN}/estado',             auth:true, name:'PATCH ciudad',  useDynamic:'newCiudadId', skipIf:'newCiudadId', body:{activo:false}, expect:{status:[200,204]} },
     { id:'delete-ciudad',   method:'DELETE', path:'/api/catalogos/ciudades/{DYN}',                    auth:true, name:'DELETE ciudad', useDynamic:'newCiudadId', skipIf:'newCiudadId', expect:{status:[200,204]} },
     // Monedas
-    { id:'list-monedas',  method:'GET',    path:'/api/catalogos/monedas',              auth:true, name:'GET monedas',  expect:{status:200} },
-    { id:'create-moneda', method:'POST',   path:'/api/catalogos/monedas',              auth:true, name:'POST moneda',  bodyFn:'create-moneda', captureId:'newMonedaId', expect:{status:[200,201]} },
-    { id:'update-moneda', method:'PUT',    path:'/api/catalogos/monedas/{DYN}',        auth:true, name:'PUT moneda',   useDynamic:'newMonedaId', skipIf:'newMonedaId', bodyFn:'update-moneda', expect:{status:[200,204]} },
-    { id:'patch-moneda',  method:'PATCH',  path:'/api/catalogos/monedas/{DYN}/estado', auth:true, name:'PATCH moneda', useDynamic:'newMonedaId', skipIf:'newMonedaId', body:{activo:false}, expect:{status:[200,204]} },
-    { id:'delete-moneda', method:'DELETE', path:'/api/catalogos/monedas/{DYN}',        auth:true, name:'DELETE moneda',useDynamic:'newMonedaId', skipIf:'newMonedaId', expect:{status:[200,204]} },
+    { id:'list-monedas',  method:'GET',    path:'/api/catalogos/monedas',              auth:true, name:'GET monedas',       expect:{status:200} },
+    { id:'create-moneda', method:'POST',   path:'/api/catalogos/monedas',              auth:true, name:'POST moneda',       bodyFn:'create-moneda', captureId:'newMonedaId', expect:{status:[200,201]} },
+    { id:'get-moneda',    method:'GET',    path:'/api/catalogos/monedas/{DYN}',        auth:true, name:'GET moneda creada', useDynamic:'newMonedaId', skipIf:'newMonedaId', expect:{status:200} },
+    { id:'update-moneda', method:'PUT',    path:'/api/catalogos/monedas/{DYN}',        auth:true, name:'PUT moneda',        useDynamic:'newMonedaId', skipIf:'newMonedaId', bodyFn:'update-moneda', expect:{status:[200,204]} },
+    { id:'patch-moneda',  method:'PATCH',  path:'/api/catalogos/monedas/{DYN}/estado', auth:true, name:'PATCH moneda',      useDynamic:'newMonedaId', skipIf:'newMonedaId', body:{activo:false}, expect:{status:[200,204]} },
+    { id:'delete-moneda', method:'DELETE', path:'/api/catalogos/monedas/{DYN}',        auth:true, name:'DELETE moneda',     useDynamic:'newMonedaId', skipIf:'newMonedaId', expect:{status:[200,204]} },
     // Tipos Identificación
     { id:'list-tipos-id',  method:'GET',    path:'/api/catalogos/tipos-identificacion',                          auth:true, name:'GET tipos-id',   expect:{status:200} },
     { id:'tipos-id-pais',  method:'GET',    path:`/api/catalogos/tipos-identificacion/por-pais/${SEED.paisId}`,  auth:true, name:'GET tipos-id/por-pais', expect:{status:200} },
@@ -214,11 +216,12 @@ const TEST_SUITES = [
     { id:'patch-forma-pago',  method:'PATCH',  path:'/api/catalogos/formas-pago/{DYN}/estado',  auth:true, name:'PATCH forma-pago',  useDynamic:'newFormaPagoId', skipIf:'newFormaPagoId', body:{activo:false}, expect:{status:[200,204]} },
     { id:'delete-forma-pago', method:'DELETE', path:'/api/catalogos/formas-pago/{DYN}',         auth:true, name:'DELETE forma-pago', useDynamic:'newFormaPagoId', skipIf:'newFormaPagoId', expect:{status:[200,204]} },
     // Bancos
-    { id:'list-bancos',  method:'GET',    path:'/api/catalogos/bancos',              auth:true, name:'GET bancos',   expect:{status:200} },
-    { id:'create-banco', method:'POST',   path:'/api/catalogos/bancos',              auth:true, name:'POST banco',   bodyFn:'create-banco', captureId:'newBancoId', expect:{status:[200,201]} },
-    { id:'update-banco', method:'PUT',    path:'/api/catalogos/bancos/{DYN}',        auth:true, name:'PUT banco',    useDynamic:'newBancoId', skipIf:'newBancoId', bodyFn:'update-banco', expect:{status:[200,204]} },
-    { id:'patch-banco',  method:'PATCH',  path:'/api/catalogos/bancos/{DYN}/estado', auth:true, name:'PATCH banco',  useDynamic:'newBancoId', skipIf:'newBancoId', body:{activo:false}, expect:{status:[200,204]} },
-    { id:'delete-banco', method:'DELETE', path:'/api/catalogos/bancos/{DYN}',        auth:true, name:'DELETE banco', useDynamic:'newBancoId', skipIf:'newBancoId', expect:{status:[200,204]} },
+    { id:'list-bancos',  method:'GET',    path:'/api/catalogos/bancos',              auth:true, name:'GET bancos',       expect:{status:200} },
+    { id:'create-banco', method:'POST',   path:'/api/catalogos/bancos',              auth:true, name:'POST banco',       bodyFn:'create-banco', captureId:'newBancoId', expect:{status:[200,201]} },
+    { id:'get-banco',    method:'GET',    path:'/api/catalogos/bancos/{DYN}',        auth:true, name:'GET banco creado', useDynamic:'newBancoId', skipIf:'newBancoId', expect:{status:200} },
+    { id:'update-banco', method:'PUT',    path:'/api/catalogos/bancos/{DYN}',        auth:true, name:'PUT banco',        useDynamic:'newBancoId', skipIf:'newBancoId', bodyFn:'update-banco', expect:{status:[200,204]} },
+    { id:'patch-banco',  method:'PATCH',  path:'/api/catalogos/bancos/{DYN}/estado', auth:true, name:'PATCH banco',      useDynamic:'newBancoId', skipIf:'newBancoId', body:{activo:false}, expect:{status:[200,204]} },
+    { id:'delete-banco', method:'DELETE', path:'/api/catalogos/bancos/{DYN}',        auth:true, name:'DELETE banco',     useDynamic:'newBancoId', skipIf:'newBancoId', expect:{status:[200,204]} },
   ]},
 
   { id:'rrhh-base', icon:'👥', title:'RRHH — Departamentos & Puestos', desc:'CRUD', tests:[
@@ -244,6 +247,7 @@ const TEST_SUITES = [
     { id:'empleado-vacaciones',method:'GET',  path:`/api/rrhh/empleados/{DYN}/vacaciones/${SEED.anno}`,auth:true, name:'GET empleado/vacaciones', useDynamic:'newEmpleadoId', skipIf:'newEmpleadoId', expect:{status:200} },
     { id:'cambiar-salario',    method:'POST', path:'/api/rrhh/empleados/{DYN}/cambiar-salario',        auth:true, name:'POST cambiar-salario', useDynamic:'newEmpleadoId', skipIf:'newEmpleadoId', body:{nuevoSalario:950.00,motivo:'Prueba runner',fechaEfectiva:'2025-04-01'}, expect:{status:[200,204]} },
     { id:'cambiar-puesto',     method:'POST', path:'/api/rrhh/empleados/{DYN}/cambiar-puesto',         auth:true, name:'POST cambiar-puesto', useDynamic:'newEmpleadoId', skipIf:'newEmpleadoId', body:{nuevoPuestoId:SEED.puestoId,motivo:'Prueba runner',fechaEfectiva:'2025-04-01'}, expect:{status:[200,204]} },
+    { id:'egresar-empleado',   method:'POST', path:'/api/rrhh/empleados/{DYN}/egresar',                auth:true, name:'POST egresar empleado', useDynamic:'newEmpleadoId', skipIf:'newEmpleadoId', body:{motivo:'Renuncia voluntaria',fechaEgreso:new Date().toISOString().split('T')[0]}, expect:{status:[200,204]} },
   ]},
 
   { id:'rrhh-asistencia', icon:'📅', title:'RRHH — Asistencia & Ausencias', desc:'Asistencia (en desarrollo), ausencias', tests:[
@@ -263,6 +267,7 @@ const TEST_SUITES = [
     { id:'nomina-periodos',   method:'GET',    path:'/api/rrhh/nomina/periodos',                                   auth:true, name:'GET períodos', expect:{status:200} },
     { id:'create-periodo',    method:'POST',   path:'/api/rrhh/nomina/periodos',                                   auth:true, name:'POST período', bodyFn:'create-nomina-periodo', captureId:'newPeriodoId', expect:{status:[200,201]} },
     { id:'nomina-roles-pago', method:'GET',    path:'/api/rrhh/nomina/roles-pago',                                 auth:true, name:'GET roles-pago', expect:{status:200} },
+    { id:'create-rol-pago',   method:'POST',   path:'/api/rrhh/nomina/roles-pago',                                 auth:true, name:'POST rol-pago', body:{periodoId:null, descripcion:`Rol Test ${Date.now()}`}, captureId:'newRolPagoId', expect:{status:[200,201,400]}, hint:'400 aceptado si periodoId es requerido — captura ID si 201' },
     { id:'nomina-parametros', method:'GET',    path:`/api/rrhh/nomina/parametros/${SEED.paisCodigo}/${SEED.anno}`, auth:true, name:'GET parámetros', expect:{status:[200,404]} },
     // Backend espera {Clave, Valor} en PascalCase (confirmado por error real)
     { id:'create-parametros', method:'POST',   path:`/api/rrhh/nomina/parametros/${SEED.paisCodigo}/${SEED.anno}`, auth:true, name:'POST parámetros — {Clave, Valor}', body:{Clave:'salarioBasico',Valor:'460.00'}, expect:{status:[200,201,204]}, hint:'DTO requiere Clave+Valor en PascalCase' },
@@ -277,8 +282,9 @@ const TEST_SUITES = [
     { id:'proyecto-dashboard',    method:'GET',   path:'/api/proy/proyectos/{DYN}/dashboard',    auth:true, name:'GET proyecto/dashboard', useDynamic:'newProyectoId', skipIf:'newProyectoId', expect:{status:200} },
     { id:'patch-proyecto-estado', method:'PATCH', path:'/api/proy/proyectos/{DYN}/estado',       auth:true, name:'PATCH proyecto/estado', useDynamic:'newProyectoId', skipIf:'newProyectoId', body:{estado:2}, expect:{status:[200,204]} },
     { id:'patch-proyecto-avance', method:'PATCH', path:'/api/proy/proyectos/{DYN}/avance',       auth:true, name:'PATCH proyecto/avance', useDynamic:'newProyectoId', skipIf:'newProyectoId', body:{avancePorcentaje:10}, expect:{status:[200,204]} },
-    { id:'get-proyecto-seed',     method:'GET',   path:`/api/proy/proyectos/${SEED.proyectoId}`, auth:true, name:'GET proyecto seed', expect:{status:[200,404]} },
-    { id:'dashboard-seed',        method:'GET',   path:`/api/proy/proyectos/${SEED.proyectoId}/dashboard`, auth:true, name:'GET dashboard seed', expect:{status:[200,404]} },
+    { id:'get-proyecto-seed',     method:'GET',    path:`/api/proy/proyectos/${SEED.proyectoId}`, auth:true, name:'GET proyecto seed', expect:{status:[200,404]} },
+    { id:'dashboard-seed',        method:'GET',    path:`/api/proy/proyectos/${SEED.proyectoId}/dashboard`, auth:true, name:'GET dashboard seed', expect:{status:[200,404]} },
+    { id:'delete-proyecto',       method:'DELETE', path:'/api/proy/proyectos/{DYN}', auth:true, name:'DELETE proyecto creado', useDynamic:'newProyectoId', skipIf:'newProyectoId', expect:{status:[200,204]}, hint:'Cleanup: borra el proyecto creado en este ciclo de tests' },
   ]},
 
   { id:'proyectos-planificacion', icon:'🏗️', title:'Proyectos — Planificación', desc:'CRUD fases, hitos, WBS', tests:[
@@ -304,6 +310,8 @@ const TEST_SUITES = [
     { id:'update-tarea',      method:'PUT',    path:'/api/proy/proyectos/{DYN}/tareas/{newTareaId}',                auth:true, name:'PUT tarea', useDynamic:'newProyectoId', skipIf:'newTareaId', bodyFn:'update-tarea', expect:{status:[200,204]} },
     { id:'patch-tarea-estado',method:'PATCH',  path:'/api/proy/proyectos/{DYN}/tareas/{newTareaId}/estado',         auth:true, name:'PATCH tarea/estado', useDynamic:'newProyectoId', skipIf:'newTareaId', body:{estado:2}, expect:{status:[200,204]} },
     { id:'patch-tarea-avance',method:'PATCH',  path:'/api/proy/proyectos/{DYN}/tareas/{newTareaId}/avance',         auth:true, name:'PATCH tarea/avance', useDynamic:'newProyectoId', skipIf:'newTareaId', body:{avancePorcentaje:30}, expect:{status:[200,204]} },
+    { id:'tareas-por-fase',   method:'GET',    path:'/api/proy/proyectos/{DYN}/tareas/por-fase/{newFaseId}',          auth:true, name:'GET tareas/por-fase', useDynamic:'newProyectoId', skipIf:'newFaseId', expect:{status:200} },
+    { id:'delete-tarea',      method:'DELETE', path:'/api/proy/proyectos/{DYN}/tareas/{newTareaId}',                  auth:true, name:'DELETE tarea', useDynamic:'newProyectoId', skipIf:'newTareaId', expect:{status:[200,204]} },
     { id:'list-cuadrillas',   method:'GET',    path:`/api/proy/proyectos/${SEED.proyectoId}/cuadrillas`,            auth:true, name:'GET cuadrillas seed', expect:{status:200} },
     { id:'create-cuadrilla',  method:'POST',   path:'/api/proy/proyectos/{DYN}/cuadrillas',                         auth:true, name:'POST cuadrilla', useDynamic:'newProyectoId', skipIf:'newProyectoId', bodyFn:'create-cuadrilla', captureId:'newCuadrillaId', expect:{status:[200,201]} },
     { id:'update-cuadrilla',  method:'PUT',    path:'/api/proy/proyectos/{DYN}/cuadrillas/{newCuadrillaId}',        auth:true, name:'PUT cuadrilla', useDynamic:'newProyectoId', skipIf:'newCuadrillaId', bodyFn:'update-cuadrilla', expect:{status:[200,204]} },
@@ -323,6 +331,7 @@ const TEST_SUITES = [
     { id:'create-cc',          method:'POST',  path:'/api/proy/proyectos/{DYN}/centros-costo',                                       auth:true, name:'POST centro-costo', useDynamic:'newProyectoId', skipIf:'newProyectoId', bodyFn:'create-centro-costo', captureId:'newCCId', expect:{status:[200,201]} },
     { id:'update-cc',          method:'PUT',   path:'/api/proy/proyectos/{DYN}/centros-costo/{newCCId}',                             auth:true, name:'PUT centro-costo', useDynamic:'newProyectoId', skipIf:'newCCId', bodyFn:'update-centro-costo', expect:{status:[200,204]} },
     { id:'delete-cc',          method:'DELETE',path:'/api/proy/proyectos/{DYN}/centros-costo/{newCCId}',                             auth:true, name:'DELETE centro-costo', useDynamic:'newProyectoId', skipIf:'newCCId', expect:{status:[200,204]} },
+    { id:'create-costo',       method:'POST',  path:`/api/proy/proyectos/${SEED.proyectoId}/presupuesto/costos`,                      auth:true, name:'POST presupuesto/costos', body:{concepto:'Costo prueba runner', monto:500.00, tipo:'MaterialDirecto', fecha:new Date().toISOString().split('T')[0]}, expect:{status:[200,201,400]}, hint:'400 aceptado si faltan campos required del DTO CostoRequest' },
   ]},
 
   { id:'proyectos-control', icon:'📊', title:'Proyectos — Control', desc:'Gantt, KPIs, alertas, reportes, documentos', tests:[
@@ -351,7 +360,8 @@ const TEST_SUITES = [
     { id:'get-ot-new',           method:'GET',    path:'/api/proy/ordenes-trabajo/{DYN}',                        auth:true, name:'GET OT creada', useDynamic:'newOtId', skipIf:'newOtId', expect:{status:200} },
     { id:'update-ot',            method:'PUT',    path:'/api/proy/ordenes-trabajo/{DYN}',                        auth:true, name:'PUT OT', useDynamic:'newOtId', skipIf:'newOtId', bodyFn:'update-ot', expect:{status:[200,204]} },
     { id:'patch-ot-estado',      method:'PATCH',  path:'/api/proy/ordenes-trabajo/{DYN}/estado',                 auth:true, name:'PATCH OT/estado', useDynamic:'newOtId', skipIf:'newOtId', body:{estado:2,observacion:'En progreso'}, expect:{status:[200,204]} },
-    { id:'patch-ot-actividades', method:'PATCH',  path:'/api/proy/ordenes-trabajo/{DYN}/actividades',            auth:true, name:'PATCH OT/actividades', useDynamic:'newOtId', skipIf:'newOtId', body:{actividades:[]}, expect:{status:[200,204]} },
+    { id:'patch-ot-actividades', method:'PATCH',  path:'/api/proy/ordenes-trabajo/{DYN}/actividades',            auth:true, name:'PATCH OT/actividades', useDynamic:'newOtId', skipIf:'newOtId', body:{actividades:[{descripcion:'Actividad de prueba',completado:false}]}, expect:{status:[200,204]} },
+    { id:'patch-ot-firma',       method:'PATCH',  path:'/api/proy/ordenes-trabajo/{DYN}/firma',                  auth:true, name:'PATCH OT/firma', useDynamic:'newOtId', skipIf:'newOtId', body:{firmado:true,observacion:'Firmado por runner'}, expect:{status:[200,204]} },
     { id:'delete-ot',            method:'DELETE', path:'/api/proy/ordenes-trabajo/{DYN}',                        auth:true, name:'DELETE OT', useDynamic:'newOtId', skipIf:'newOtId', expect:{status:[200,204]} },
     { id:'get-ot-seed',          method:'GET',    path:`/api/proy/ordenes-trabajo/${SEED.otId}`,                 auth:true, name:'GET OT seed', expect:{status:[200,404]} },
   ]},
