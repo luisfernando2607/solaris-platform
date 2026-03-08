@@ -1,3 +1,14 @@
+// =====================================================
+// INFRASTRUCTURE LAYER - Servicios de Catálogos
+// FIX TipoIdentificacionService.ActualizarAsync:
+//   Ahora preserva Codigo original si request.Codigo es null.
+//   mapper.Map(request, entity) sobrescribía Codigo con null cuando el body
+//   no lo incluía → TipoIdentificacionRepository.ActualizarAsync fallaba
+//   al intentar Codigo.ToUpper() sobre null → NullReferenceException.
+// FIX ImpuestoService.ActualizarAsync:
+//   Mismo patrón: preserva Codigo y TipoImpuesto originales si son null.
+// =====================================================
+
 using AutoMapper;
 using SolarisPlatform.Application.Common.Interfaces;
 using SolarisPlatform.Application.Common.Models;
@@ -22,10 +33,10 @@ public class PaisService(IPaisRepository repo, IMapper mapper) : IPaisService
     {
         var entity = await repo.ObtenerPorIdAsync(id);
         if (entity == null) return ApiResponse<PaisDto>.Fail("País no encontrado");
-        var codigoOriginal    = entity.Codigo;
+        var codigoOriginal     = entity.Codigo;
         var codigoIso2Original = entity.CodigoIso2;
         mapper.Map(request, entity);
-        if (string.IsNullOrWhiteSpace(entity.Codigo))    entity.Codigo    = codigoOriginal;
+        if (string.IsNullOrWhiteSpace(entity.Codigo))     entity.Codigo     = codigoOriginal;
         if (string.IsNullOrWhiteSpace(entity.CodigoIso2)) entity.CodigoIso2 = codigoIso2Original;
         if (entity.FechaCreacion == default) entity.FechaCreacion = DateTime.UtcNow;
         return ApiResponse<PaisDto>.Ok(mapper.Map<PaisDto>(await repo.ActualizarAsync(entity)));
@@ -143,7 +154,20 @@ public class TipoIdentificacionService(ITipoIdentificacionRepository repo, IMapp
     }
 
     public async Task<ApiResponse<TipoIdentificacionDto>> ActualizarAsync(long id, ActualizarTipoIdentificacionRequest request)
-    { var entity = await repo.ObtenerPorIdAsync(id); if (entity == null) return ApiResponse<TipoIdentificacionDto>.Fail("Tipo de identificación no encontrado"); mapper.Map(request, entity); return ApiResponse<TipoIdentificacionDto>.Ok(mapper.Map<TipoIdentificacionDto>(await repo.ActualizarAsync(entity))); }
+    {
+        var entity = await repo.ObtenerPorIdAsync(id);
+        if (entity == null) return ApiResponse<TipoIdentificacionDto>.Fail("Tipo de identificación no encontrado");
+
+        // FIX: preservar Codigo original si no viene en el request.
+        // mapper.Map(request, entity) sobreescribía entity.Codigo con null
+        // → TipoIdentificacionRepository.ActualizarAsync → tipo.Codigo.ToUpper() → NullRef.
+        var codigoOriginal = entity.Codigo;
+        mapper.Map(request, entity);
+        if (string.IsNullOrWhiteSpace(entity.Codigo)) entity.Codigo = codigoOriginal;
+        if (entity.FechaCreacion == default) entity.FechaCreacion = DateTime.UtcNow;
+
+        return ApiResponse<TipoIdentificacionDto>.Ok(mapper.Map<TipoIdentificacionDto>(await repo.ActualizarAsync(entity)));
+    }
 
     public async Task<ApiResponse<TipoIdentificacionDto>> CambiarEstadoAsync(long id, bool activo)
     { var entity = await repo.ObtenerPorIdAsync(id); if (entity == null) return ApiResponse<TipoIdentificacionDto>.Fail("Tipo de identificación no encontrado"); entity.Activo = activo; if (entity.FechaCreacion == default) entity.FechaCreacion = DateTime.UtcNow; return ApiResponse<TipoIdentificacionDto>.Ok(mapper.Map<TipoIdentificacionDto>(await repo.ActualizarAsync(entity))); }
@@ -171,7 +195,21 @@ public class ImpuestoService(IImpuestoRepository repo, IMapper mapper) : IImpues
     }
 
     public async Task<ApiResponse<ImpuestoDto>> ActualizarAsync(long id, ActualizarImpuestoRequest request)
-    { var entity = await repo.ObtenerPorIdAsync(id); if (entity == null) return ApiResponse<ImpuestoDto>.Fail("Impuesto no encontrado"); mapper.Map(request, entity); return ApiResponse<ImpuestoDto>.Ok(mapper.Map<ImpuestoDto>(await repo.ActualizarAsync(entity))); }
+    {
+        var entity = await repo.ObtenerPorIdAsync(id);
+        if (entity == null) return ApiResponse<ImpuestoDto>.Fail("Impuesto no encontrado");
+
+        // FIX: preservar Codigo y TipoImpuesto originales si no vienen en el request.
+        // Sin este guard, mapper.Map sobrescribía con null → error en repositorio.
+        var codigoOriginal      = entity.Codigo;
+        var tipoImpuestoOriginal = entity.TipoImpuesto;
+        mapper.Map(request, entity);
+        if (string.IsNullOrWhiteSpace(entity.Codigo))       entity.Codigo       = codigoOriginal;
+        if (string.IsNullOrWhiteSpace(entity.TipoImpuesto)) entity.TipoImpuesto = tipoImpuestoOriginal;
+        if (entity.FechaCreacion == default) entity.FechaCreacion = DateTime.UtcNow;
+
+        return ApiResponse<ImpuestoDto>.Ok(mapper.Map<ImpuestoDto>(await repo.ActualizarAsync(entity)));
+    }
 
     public async Task<ApiResponse<ImpuestoDto>> CambiarEstadoAsync(long id, bool activo)
     { var entity = await repo.ObtenerPorIdAsync(id); if (entity == null) return ApiResponse<ImpuestoDto>.Fail("Impuesto no encontrado"); entity.Activo = activo; if (entity.FechaCreacion == default) entity.FechaCreacion = DateTime.UtcNow; return ApiResponse<ImpuestoDto>.Ok(mapper.Map<ImpuestoDto>(await repo.ActualizarAsync(entity))); }
@@ -203,7 +241,7 @@ public class FormaPagoService(IFormaPagoRepository repo, IMapper mapper) : IForm
         var entity = await repo.ObtenerPorIdAsync(id);
         if (entity == null) return ApiResponse<FormaPagoDto>.Fail("Forma de pago no encontrada");
         var codigoOriginal = entity.Codigo;
-        var tipoOriginal = entity.Tipo;
+        var tipoOriginal   = entity.Tipo;
         mapper.Map(request, entity);
         if (string.IsNullOrWhiteSpace(entity.Codigo)) entity.Codigo = codigoOriginal;
         if (string.IsNullOrWhiteSpace(entity.Tipo))   entity.Tipo   = tipoOriginal;

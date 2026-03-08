@@ -1,6 +1,12 @@
 // =====================================================
 // INFRASTRUCTURE LAYER - Repositorios de Catálogos
-// Archivo: Infrastructure/Persistence/Repositories/Catalogos/
+// FIX: Eliminado context.Update(entity) en todos los ActualizarAsync.
+//      ObtenerPorIdAsync usa FirstOrDefaultAsync (con tracking activo).
+//      La entidad ya está en el change tracker → EF detecta cambios
+//      automáticamente. context.Update() sobre una entidad tracked con
+//      nav-props cargadas (Pais, EstadoProvincia, etc.) marcaba el GRAFO
+//      COMPLETO como Modified → EF generaba UPDATE sobre las tablas
+//      relacionadas → DbUpdateException.
 // =====================================================
 
 using Microsoft.EntityFrameworkCore;
@@ -37,7 +43,7 @@ public class PaisRepository(SolarisDbContext context) : IPaisRepository
 
     public async Task<Pais> CrearAsync(Pais pais)
     {
-        pais.Codigo = pais.Codigo.ToUpper();
+        pais.Codigo    = pais.Codigo.ToUpper();
         pais.CodigoIso2 = pais.CodigoIso2.ToUpper();
         context.Paises.Add(pais);
         await context.SaveChangesAsync();
@@ -46,9 +52,10 @@ public class PaisRepository(SolarisDbContext context) : IPaisRepository
 
     public async Task<Pais> ActualizarAsync(Pais pais)
     {
-        pais.Codigo = pais.Codigo.ToUpper();
+        pais.Codigo    = pais.Codigo.ToUpper();
         pais.CodigoIso2 = pais.CodigoIso2.ToUpper();
-        context.Update(pais);
+        // FIX: entidad ya tracked desde ObtenerPorIdAsync → SaveChanges detecta cambios.
+        // context.Update() marcaba el grafo completo como Modified → DbUpdateException.
         await context.SaveChangesAsync();
         return pais;
     }
@@ -102,7 +109,9 @@ public class EstadoProvinciaRepository(SolarisDbContext context) : IEstadoProvin
 
     public async Task<EstadoProvincia> ActualizarAsync(EstadoProvincia estado)
     {
-        context.Update(estado);
+        // FIX: ObtenerPorIdAsync carga con Include(x => x.Pais) → Pais queda tracked.
+        // context.Update() marcaba Pais como Modified también → UPDATE en seg.pais → error.
+        // Solución: solo SaveChanges, EF detecta los cambios escalares del EstadoProvincia.
         await context.SaveChangesAsync();
         return estado;
     }
@@ -136,8 +145,7 @@ public class CiudadRepository(SolarisDbContext context) : ICiudadRepository
     public async Task<IEnumerable<Ciudad>> ObtenerPorEstadoAsync(long estadoId, bool soloActivos = false)
     {
         var query = context.Ciudades
-            .Include(x => x.EstadoProvincia)
-            .ThenInclude(x => x.Pais)
+            .Include(x => x.EstadoProvincia).ThenInclude(x => x.Pais)
             .Where(x => x.EstadoProvinciaId == estadoId);
         if (soloActivos) query = query.Where(x => x.Activo);
         return await query.OrderBy(x => x.Orden).ThenBy(x => x.Nombre).ToListAsync();
@@ -145,8 +153,7 @@ public class CiudadRepository(SolarisDbContext context) : ICiudadRepository
 
     public async Task<Ciudad?> ObtenerPorIdAsync(long id) =>
         await context.Ciudades
-            .Include(x => x.EstadoProvincia)
-            .ThenInclude(x => x.Pais)
+            .Include(x => x.EstadoProvincia).ThenInclude(x => x.Pais)
             .FirstOrDefaultAsync(x => x.Id == id);
 
     public async Task<Ciudad> CrearAsync(Ciudad ciudad)
@@ -158,7 +165,8 @@ public class CiudadRepository(SolarisDbContext context) : ICiudadRepository
 
     public async Task<Ciudad> ActualizarAsync(Ciudad ciudad)
     {
-        context.Update(ciudad);
+        // FIX: EntadoProvincia y Pais quedan tracked desde ObtenerPorIdAsync.
+        // context.Update() los marcaba Modified → doble UPDATE → error de FK.
         await context.SaveChangesAsync();
         return ciudad;
     }
@@ -210,7 +218,7 @@ public class MonedaRepository(SolarisDbContext context) : IMonedaRepository
     public async Task<Moneda> ActualizarAsync(Moneda moneda)
     {
         moneda.Codigo = moneda.Codigo.ToUpper();
-        context.Update(moneda);
+        // FIX: entidad ya tracked → solo SaveChanges.
         await context.SaveChangesAsync();
         return moneda;
     }
@@ -240,7 +248,6 @@ public class TipoIdentificacionRepository(SolarisDbContext context) : ITipoIdent
 
     public async Task<IEnumerable<TipoIdentificacion>> ObtenerPorPaisAsync(long? paisId, bool soloActivos = false)
     {
-        // Devuelve globales (paisId null) + los del país específico
         var query = context.TiposIdentificacion.Include(x => x.Pais)
             .Where(x => x.PaisId == null || x.PaisId == paisId);
         if (soloActivos) query = query.Where(x => x.Activo);
@@ -268,7 +275,7 @@ public class TipoIdentificacionRepository(SolarisDbContext context) : ITipoIdent
     public async Task<TipoIdentificacion> ActualizarAsync(TipoIdentificacion tipo)
     {
         tipo.Codigo = tipo.Codigo.ToUpper();
-        context.Update(tipo);
+        // FIX: Pais tracked desde ObtenerPorIdAsync → solo SaveChanges.
         await context.SaveChangesAsync();
         return tipo;
     }
@@ -292,7 +299,6 @@ public class ImpuestoRepository(SolarisDbContext context) : IImpuestoRepository
     public async Task<IEnumerable<Impuesto>> ObtenerTodosAsync(long? empresaId = null, bool soloActivos = false)
     {
         var query = context.Impuestos.AsQueryable();
-        // Devuelve globales + los de la empresa específica
         if (empresaId.HasValue)
             query = query.Where(x => x.EmpresaId == null || x.EmpresaId == empresaId);
         if (soloActivos) query = query.Where(x => x.Activo);
@@ -318,7 +324,7 @@ public class ImpuestoRepository(SolarisDbContext context) : IImpuestoRepository
 
     public async Task<Impuesto> ActualizarAsync(Impuesto impuesto)
     {
-        context.Update(impuesto);
+        // FIX: entidad ya tracked → solo SaveChanges.
         await context.SaveChangesAsync();
         return impuesto;
     }
@@ -367,7 +373,7 @@ public class FormaPagoRepository(SolarisDbContext context) : IFormaPagoRepositor
 
     public async Task<FormaPago> ActualizarAsync(FormaPago formaPago)
     {
-        context.Update(formaPago);
+        // FIX: entidad ya tracked → solo SaveChanges.
         await context.SaveChangesAsync();
         return formaPago;
     }
@@ -417,7 +423,7 @@ public class BancoRepository(SolarisDbContext context) : IBancoRepository
     public async Task<Banco> ActualizarAsync(Banco banco)
     {
         banco.Codigo = banco.Codigo.ToUpper();
-        context.Update(banco);
+        // FIX: Pais tracked desde ObtenerPorIdAsync → solo SaveChanges.
         await context.SaveChangesAsync();
         return banco;
     }

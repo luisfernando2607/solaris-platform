@@ -1,6 +1,11 @@
 // =====================================================
 // APPLICATION LAYER - Validadores FluentValidation
-// Archivo: Application/Validators/Catalogos/
+// FIX ActualizarTipoIdentificacionValidator:
+//   Codigo tenía NotEmpty() → validación fallaba cuando el body no incluía Codigo.
+//   Ahora es opcional: solo valida formato si viene presente.
+// FIX ActualizarImpuestoValidator:
+//   Codigo y TipoImpuesto tenían NotEmpty() → mismo problema.
+//   Ahora son opcionales con .When().
 // =====================================================
 
 using FluentValidation;
@@ -46,7 +51,7 @@ public class ActualizarPaisValidator : AbstractValidator<ActualizarPaisRequest>
 {
     public ActualizarPaisValidator()
     {
-        // FIX: Codigo y CodigoIso2 opcionales en PUT — se preservan del registro existente si no vienen
+        // Codigo y CodigoIso2 opcionales en PUT — se preservan del registro si no vienen
         RuleFor(x => x.Codigo)
             .Length(3).WithMessage("El código debe tener exactamente 3 caracteres.")
             .Matches("^[A-Z]{3}$").WithMessage("El código debe contener solo letras mayúsculas.")
@@ -90,7 +95,7 @@ public class ActualizarEstadoProvinciaValidator : AbstractValidator<ActualizarEs
         RuleFor(x => x.PaisId)
             .GreaterThan(0).WithMessage("Debe seleccionar un país válido.");
 
-        // FIX: Codigo opcional en PUT
+        // Codigo opcional en PUT
         RuleFor(x => x.Codigo)
             .MaximumLength(10).WithMessage("El código no puede superar 10 caracteres.")
             .When(x => !string.IsNullOrEmpty(x.Codigo));
@@ -163,7 +168,7 @@ public class ActualizarMonedaValidator : AbstractValidator<ActualizarMonedaReque
 {
     public ActualizarMonedaValidator()
     {
-        // FIX: Codigo opcional en PUT — se preserva del registro existente si no viene
+        // Codigo opcional en PUT — se preserva del registro existente si no viene
         RuleFor(x => x.Codigo)
             .Length(3).WithMessage("El código debe tener exactamente 3 caracteres.")
             .Matches("^[A-Z]{3}$").WithMessage("El código debe contener solo letras mayúsculas.")
@@ -189,7 +194,7 @@ public class CrearTipoIdentificacionValidator : AbstractValidator<CrearTipoIdent
 {
     public CrearTipoIdentificacionValidator()
     {
-        // FIX: Codigo opcional en POST — se autogenera en el servicio si no viene
+        // Codigo opcional en POST — se autogenera en el servicio si no viene
         RuleFor(x => x.Codigo)
             .MaximumLength(10).WithMessage("El código no puede superar 10 caracteres.")
             .Matches("^[A-Z0-9_]+$").WithMessage("El código solo puede contener letras mayúsculas, números y guion bajo.")
@@ -218,10 +223,12 @@ public class ActualizarTipoIdentificacionValidator : AbstractValidator<Actualiza
 {
     public ActualizarTipoIdentificacionValidator()
     {
+        // FIX: era NotEmpty() → validación fallaba cuando el body no enviaba Codigo.
+        //      Ahora es opcional: valida formato solo si viene presente.
         RuleFor(x => x.Codigo)
-            .NotEmpty().WithMessage("El código es requerido.")
             .MaximumLength(10).WithMessage("El código no puede superar 10 caracteres.")
-            .Matches("^[A-Z0-9_]+$").WithMessage("El código solo puede contener letras mayúsculas, números y guion bajo.");
+            .Matches("^[A-Z0-9_]+$").WithMessage("El código solo puede contener letras mayúsculas, números y guion bajo.")
+            .When(x => !string.IsNullOrEmpty(x.Codigo));
 
         RuleFor(x => x.Nombre)
             .NotEmpty().WithMessage("El nombre es requerido.")
@@ -243,7 +250,7 @@ public class CrearImpuestoValidator : AbstractValidator<CrearImpuestoRequest>
 
     public CrearImpuestoValidator()
     {
-        // FIX: Codigo y TipoImpuesto opcionales en POST — se autogeneran en el servicio
+        // Codigo y TipoImpuesto opcionales en POST — se autogeneran en el servicio
         RuleFor(x => x.Codigo)
             .MaximumLength(20).WithMessage("El código no puede superar 20 caracteres.")
             .When(x => !string.IsNullOrEmpty(x.Codigo));
@@ -268,9 +275,11 @@ public class ActualizarImpuestoValidator : AbstractValidator<ActualizarImpuestoR
 
     public ActualizarImpuestoValidator()
     {
+        // FIX: era NotEmpty() para Codigo y TipoImpuesto → 400 cuando no venían en el body.
+        //      Ahora son opcionales; el servicio preserva los valores originales si son null.
         RuleFor(x => x.Codigo)
-            .NotEmpty().WithMessage("El código es requerido.")
-            .MaximumLength(20).WithMessage("El código no puede superar 20 caracteres.");
+            .MaximumLength(20).WithMessage("El código no puede superar 20 caracteres.")
+            .When(x => !string.IsNullOrEmpty(x.Codigo));
 
         RuleFor(x => x.Nombre)
             .NotEmpty().WithMessage("El nombre es requerido.")
@@ -280,9 +289,9 @@ public class ActualizarImpuestoValidator : AbstractValidator<ActualizarImpuestoR
             .InclusiveBetween(0, 100).WithMessage("El porcentaje debe estar entre 0 y 100.");
 
         RuleFor(x => x.TipoImpuesto)
-            .NotEmpty().WithMessage("El tipo de impuesto es requerido.")
-            .Must(t => TiposValidos.Contains(t))
-            .WithMessage($"El tipo de impuesto debe ser uno de: {string.Join(", ", TiposValidos)}.");
+            .Must(t => t == null || TiposValidos.Contains(t))
+            .WithMessage($"El tipo de impuesto debe ser uno de: {string.Join(", ", TiposValidos)}.")
+            .When(x => !string.IsNullOrEmpty(x.TipoImpuesto));
     }
 }
 
@@ -295,7 +304,7 @@ public class CrearFormaPagoValidator : AbstractValidator<CrearFormaPagoRequest>
 
     public CrearFormaPagoValidator()
     {
-        // FIX: Codigo y Tipo opcionales en POST — se autogeneran en el servicio
+        // Codigo y Tipo opcionales en POST — se autogeneran en el servicio
         RuleFor(x => x.Codigo)
             .MaximumLength(20).WithMessage("El código no puede superar 20 caracteres.")
             .When(x => !string.IsNullOrEmpty(x.Codigo));
@@ -320,7 +329,7 @@ public class ActualizarFormaPagoValidator : AbstractValidator<ActualizarFormaPag
 
     public ActualizarFormaPagoValidator()
     {
-        // FIX: Codigo y Tipo opcionales en PUT — se preservan del registro si no vienen
+        // Codigo y Tipo opcionales en PUT — se preservan del registro si no vienen
         RuleFor(x => x.Codigo)
             .MaximumLength(20).WithMessage("El código no puede superar 20 caracteres.")
             .When(x => !string.IsNullOrEmpty(x.Codigo));
@@ -346,7 +355,7 @@ public class CrearBancoValidator : AbstractValidator<CrearBancoRequest>
 {
     public CrearBancoValidator()
     {
-        // FIX: Codigo opcional en POST — se autogenera en el servicio si no viene
+        // Codigo opcional en POST — se autogenera en el servicio si no viene
         RuleFor(x => x.Codigo)
             .MaximumLength(20).WithMessage("El código no puede superar 20 caracteres.")
             .When(x => !string.IsNullOrEmpty(x.Codigo));
@@ -365,7 +374,7 @@ public class ActualizarBancoValidator : AbstractValidator<ActualizarBancoRequest
 {
     public ActualizarBancoValidator()
     {
-        // FIX: Codigo opcional en PUT — se preserva del registro si no viene
+        // Codigo opcional en PUT — se preserva del registro si no viene
         RuleFor(x => x.Codigo)
             .MaximumLength(20).WithMessage("El código no puede superar 20 caracteres.")
             .When(x => !string.IsNullOrEmpty(x.Codigo));

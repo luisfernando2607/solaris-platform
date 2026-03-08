@@ -1,6 +1,13 @@
 // =====================================================
 // APPLICATION LAYER - DTOs de Catálogos
-// Archivo: Application/DTOs/Catalogos/
+// FIX ActualizarTipoIdentificacionRequest:
+//   Codigo cambiado de string (requerido) a string? = null (opcional).
+//   El model binder de ASP.NET rechazaba el request con 400
+//   "The Codigo field is required" antes de llegar al servicio.
+// FIX ActualizarImpuestoRequest:
+//   Mismo problema: Codigo y TipoImpuesto eran string requeridos.
+//   Cambiados a string? = null; el servicio los preserva del registro
+//   existente si no vienen en el body.
 // =====================================================
 
 namespace SolarisPlatform.Application.DTOs.Catalogos;
@@ -37,8 +44,8 @@ public record ActualizarPaisRequest(
     string? Bandera,
     bool Activo,
     int Orden,
-    string? Codigo = null,     // FIX: opcional — se preserva si no viene
-    string? CodigoIso2 = null  // FIX: opcional — se preserva si no viene
+    string? Codigo = null,      // opcional — se preserva si no viene
+    string? CodigoIso2 = null   // opcional — se preserva si no viene
 );
 
 // ══════════════════════════════════════════════════════
@@ -66,7 +73,7 @@ public record ActualizarEstadoProvinciaRequest(
     string Nombre,
     bool Activo,
     int Orden,
-    string? Codigo = null  // FIX: opcional — se preserva si no viene
+    string? Codigo = null   // opcional — se preserva si no viene
 );
 
 // ══════════════════════════════════════════════════════
@@ -125,7 +132,7 @@ public record ActualizarMonedaRequest(
     byte DecimalesPermitidos,
     bool Activo,
     int Orden,
-    string? Codigo = null  // FIX: opcional — se preserva si no viene
+    string? Codigo = null   // opcional — se preserva si no viene
 );
 
 // ══════════════════════════════════════════════════════
@@ -153,19 +160,20 @@ public record CrearTipoIdentificacionRequest(
     bool AplicaPersona = true,
     bool AplicaEmpresa = true,
     int Orden = 0,
-    string? Codigo = null  // FIX: opcional — se autogenera si no se envía
+    string? Codigo = null   // opcional — se autogenera si no se envía
 );
 
 public record ActualizarTipoIdentificacionRequest(
     long? PaisId,
-    string Codigo,
     string Nombre,
     int? Longitud,
     string? Patron,
     bool AplicaPersona,
     bool AplicaEmpresa,
     bool Activo,
-    int Orden
+    int Orden,
+    string? Codigo = null   // FIX: era string (requerido) → model binder devolvía 400.
+                            //      Ahora es opcional; el servicio preserva el valor original.
 );
 
 // ══════════════════════════════════════════════════════
@@ -189,18 +197,18 @@ public record CrearImpuestoRequest(
     decimal Porcentaje,
     bool EsRetencion = false,
     int Orden = 0,
-    string? Codigo = null,         // FIX: opcional — se autogenera si no se envía
-    string? TipoImpuesto = null    // FIX: opcional — default "IVA"
+    string? Codigo = null,          // opcional — se autogenera si no se envía
+    string? TipoImpuesto = null     // opcional — default "IVA"
 );
 
 public record ActualizarImpuestoRequest(
-    string Codigo,
     string Nombre,
     decimal Porcentaje,
-    string TipoImpuesto,
     bool EsRetencion,
     bool Activo,
-    int Orden
+    int Orden,
+    string? Codigo = null,          // FIX: era string (requerido) → 400. Ahora opcional.
+    string? TipoImpuesto = null     // FIX: era string (requerido) → 400. Ahora opcional.
 );
 
 // ══════════════════════════════════════════════════════
@@ -226,8 +234,8 @@ public record CrearFormaPagoRequest(
     bool RequiereBanco = false,
     bool RequiereReferencia = false,
     int Orden = 0,
-    string? Codigo = null,   // FIX: opcional — se autogenera si no se envía
-    string? Tipo = null      // FIX: opcional — default "CONTADO"
+    string? Codigo = null,  // opcional — se autogenera si no se envía
+    string? Tipo = null     // opcional — default "CONTADO"
 );
 
 public record ActualizarFormaPagoRequest(
@@ -237,8 +245,8 @@ public record ActualizarFormaPagoRequest(
     bool RequiereReferencia,
     bool Activo,
     int Orden,
-    string? Codigo = null,  // FIX: opcional — no requerido en PUT
-    string? Tipo = null     // FIX: opcional — no requerido en PUT
+    string? Codigo = null,  // opcional — se preserva si no viene
+    string? Tipo = null     // opcional — se preserva si no viene
 );
 
 // ══════════════════════════════════════════════════════
@@ -260,7 +268,7 @@ public record CrearBancoRequest(
     string Nombre,
     string? NombreCorto,
     int Orden = 0,
-    string? Codigo = null  // FIX: opcional — se autogenera si no se envía
+    string? Codigo = null   // opcional — se autogenera si no se envía
 );
 
 public record ActualizarBancoRequest(
@@ -269,5 +277,5 @@ public record ActualizarBancoRequest(
     string? NombreCorto,
     bool Activo,
     int Orden,
-    string? Codigo = null  // FIX: opcional — no requerido en PUT
+    string? Codigo = null   // opcional — se preserva si no viene
 );
