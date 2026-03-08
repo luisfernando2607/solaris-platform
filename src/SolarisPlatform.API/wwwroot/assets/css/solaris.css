@@ -324,28 +324,32 @@ body::before {
   height:   22px;
   cursor:   pointer;
 }
-.toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; z-index: 2; }
 
 .track {
-  position:      absolute;
-  inset:         0;
-  border-radius: 999px;
-  background:    var(--border);
-  border:        1px solid var(--border);
-  transition:    background .3s;
+  position:       absolute;
+  inset:          0;
+  border-radius:  999px;
+  background:     var(--border);
+  border:         1px solid var(--border);
+  transition:     background .3s;
+  pointer-events: none;
+  z-index:        1;
 }
 .toggle input:checked + .track { background: var(--accent2); border-color: var(--accent2); }
 
 .thumb {
-  position:      absolute;
-  top:           3px;
-  left:          3px;
-  width:         14px;
-  height:        14px;
-  border-radius: 50%;
-  background:    #fff;
-  box-shadow:    0 1px 3px rgba(0,0,0,.3);
-  transition:    transform .3s cubic-bezier(.4,0,.2,1);
+  position:       absolute;
+  top:            3px;
+  left:           3px;
+  width:          14px;
+  height:         14px;
+  border-radius:  50%;
+  background:     #fff;
+  box-shadow:     0 1px 3px rgba(0,0,0,.3);
+  transition:     transform .3s cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+  z-index:        1;
 }
 .toggle input:checked ~ .thumb { transform: translateX(18px); }
 
@@ -1313,3 +1317,65 @@ body::before {
 .hbar.empty  { background: var(--border); height: 6px !important; }
 
 .history-meta { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: .62rem; color: var(--muted); }
+/* ── Suite nav cards ───────────────────────── */
+#suiteNav {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.suite-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color .2s, box-shadow .2s;
+}
+.suite-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,.2); }
+
+.sc-header   { display: flex; align-items: center; gap: 8px; }
+.sc-icon     { font-size: 1.2rem; }
+.sc-title    { font-weight: 600; font-size: .85rem; line-height: 1.2; }
+.sc-total    { font-size: .75rem; color: var(--text-muted); }
+
+.sc-stats    { display: flex; gap: 12px; font-size: .78rem; }
+.sc-passed   { color: var(--green); }
+.sc-failed   { color: var(--text-muted); }
+
+.sc-bar-wrap {
+  height: 6px;
+  border-radius: 4px;
+  background: var(--border);
+  overflow: hidden;
+  margin-top: 2px;
+}
+.sc-bar {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--green);
+  transition: width .4s ease;
+}
+.sc-pct { font-size: .72rem; color: var(--text-muted); text-align: right; min-height: 1em; }
+
+.sc-btn {
+  margin-top: 4px;
+  padding: 6px 0;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-size: .78rem;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.sc-btn:hover { background: var(--border); }
+
+/* Estados */
+.sc-has-errors { border-color: var(--red); }
+.sc-has-errors .sc-bar { background: var(--red); }
+.sc-has-errors .sc-failed { color: var(--red); }
+.sc-all-pass  { border-color: var(--green); }

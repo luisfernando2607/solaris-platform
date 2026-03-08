@@ -51,6 +51,7 @@ public class OrdenesTrabajoController : BaseProyectosController
     [ProducesResponseType(typeof(ApiResponse<OrdenTrabajoDto>), 201)]
     public async Task<IActionResult> Create([FromBody] CrearOrdenTrabajoRequest request, CancellationToken ct)
     {
+        request.EmpresaId = EmpresaId;
         var result = await _service.CreateAsync(request, UsuarioId, ct);
         if (!result.Succeeded) return BadRequestResult(result.Error!);
         return CreatedAtAction(nameof(GetById), new { id = result.Data!.Id },
@@ -152,6 +153,7 @@ public class ReportesAvanceController : BaseProyectosController
     public async Task<IActionResult> Create(long proyectoId, [FromBody] CrearReporteAvanceRequest request, CancellationToken ct)
     {
         request.ProyectoId = proyectoId;
+        request.EmpresaId = EmpresaId;
         var result = await _service.CreateAsync(request, UsuarioId, ct);
         if (!result.Succeeded) return BadRequestResult(result.Error!);
         return CreatedAtAction(nameof(GetById), new { proyectoId, id = result.Data!.Id },

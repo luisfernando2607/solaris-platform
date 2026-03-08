@@ -142,6 +142,9 @@ public class RrhhMappingProfile : Profile
 
         CreateMap<CrearEmpleadoRequest, Empleado>();
 
+        // ─── Nómina — PeriodoNomina ─────────────────────────────
+        CreateMap<CrearPeriodoNominaRequest, PeriodoNomina>();
+
         // ─── Historial ──────────────────────────────────────────
         // FIX: ConstructUsing() para el record posicional.
         // DepartamentoAnterior/Nuevo y PuestoAnterior/Nuevo son FKs (ids);

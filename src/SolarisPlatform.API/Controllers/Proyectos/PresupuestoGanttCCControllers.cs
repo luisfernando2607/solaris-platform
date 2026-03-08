@@ -63,6 +63,7 @@ public class PresupuestoController : BaseProyectosController
     public async Task<IActionResult> Create(long proyectoId, [FromBody] CrearPresupuestoRequest request, CancellationToken ct)
     {
         request.ProyectoId = proyectoId;
+        request.EmpresaId = EmpresaId;
         var result = await _service.CreateAsync(request, UsuarioId, ct);
         if (!result.Succeeded) return BadRequestResult(result.Error!);
         return CreatedAtAction(nameof(GetById), new { proyectoId, id = result.Data!.Id },
@@ -172,6 +173,7 @@ public class CentrosCostoController : BaseProyectosController
     public async Task<IActionResult> Create(long proyectoId, [FromBody] CrearCentroCostoRequest request, CancellationToken ct)
     {
         request.ProyectoId = proyectoId;
+        request.EmpresaId = EmpresaId;
         var result = await _service.CreateAsync(request, UsuarioId, ct);
         if (!result.Succeeded) return BadRequestResult(result.Error!);
         return CreatedAtAction(nameof(GetById), new { proyectoId, id = result.Data!.Id },

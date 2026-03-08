@@ -42,7 +42,7 @@ public class RolService : IRolService
     }
 
     public async Task<IEnumerable<RolListDto>> GetAllAsync(
-        long? empresaId = null, 
+        long? empresaId = null,
         CancellationToken cancellationToken = default)
     {
         var roles = await _rolRepository.GetByEmpresaAsync(empresaId, cancellationToken);
@@ -50,7 +50,7 @@ public class RolService : IRolService
     }
 
     public async Task<IEnumerable<RolListDto>> GetDisponiblesAsync(
-        long empresaId, 
+        long empresaId,
         CancellationToken cancellationToken = default)
     {
         var roles = await _rolRepository.GetRolesDisponiblesAsync(empresaId, cancellationToken);
@@ -58,8 +58,8 @@ public class RolService : IRolService
     }
 
     public async Task<Result<RolDto>> CreateAsync(
-        CrearRolRequest request, 
-        long usuarioCreacion, 
+        CrearRolRequest request,
+        long usuarioCreacion,
         CancellationToken cancellationToken = default)
     {
         // Verificar código único
@@ -99,22 +99,22 @@ public class RolService : IRolService
     }
 
     public async Task<Result<RolDto>> UpdateAsync(
-        ActualizarRolRequest request, 
-        long usuarioModificacion, 
+        ActualizarRolRequest request,
+        long usuarioModificacion,
         CancellationToken cancellationToken = default)
     {
-        var rol = await _rolRepository.GetWithPermisosAsync(request.Id, cancellationToken);
+        // ✅ FIX: Buscar directamente con tracking desde _context en lugar del repository
+        // (GetWithPermisosAsync usa AsNoTracking internamente, lo que causaba el 500)
+        var rol = await _context.Roles
+            .FirstOrDefaultAsync(r => r.Id == request.Id, cancellationToken);
+
         if (rol == null)
-        {
             return Result<RolDto>.Failure("Rol no encontrado");
-        }
 
         if (rol.EsSistema)
-        {
             return Result<RolDto>.Failure("No se puede modificar un rol de sistema");
-        }
 
-        // Actualizar campos
+        // Actualizar campos — EF ya trackea este objeto, no hay que hacer Attach ni marcar Modified
         rol.Nombre = request.Nombre;
         rol.Descripcion = request.Descripcion;
         rol.Nivel = request.Nivel;
@@ -124,32 +124,26 @@ public class RolService : IRolService
         rol.UsuarioModificacion = usuarioModificacion;
         rol.FechaModificacion = DateTime.UtcNow;
 
-        await _rolRepository.UpdateAsync(rol, cancellationToken);
+        // Limpiar permisos actuales
+        var permisosActuales = await _context.RolPermisos
+            .Where(rp => rp.RolId == rol.Id)
+            .ToListAsync(cancellationToken);
+        _context.RolPermisos.RemoveRange(permisosActuales);
 
-        // Actualizar permisos
-        if (request.PermisosIds.Any())
+        // Agregar nuevos permisos
+        foreach (var permisoId in request.PermisosIds)
         {
-            // Eliminar permisos actuales
-            var permisosActuales = await _context.RolPermisos
-                .Where(rp => rp.RolId == rol.Id)
-                .ToListAsync(cancellationToken);
-            
-            _context.RolPermisos.RemoveRange(permisosActuales);
-
-            // Agregar nuevos permisos
-            foreach (var permisoId in request.PermisosIds)
+            _context.RolPermisos.Add(new RolPermiso
             {
-                var rolPermiso = new RolPermiso
-                {
-                    RolId = rol.Id,
-                    PermisoId = permisoId,
-                    FechaCreacion = DateTime.UtcNow,
-                    UsuarioCreacion = usuarioModificacion
-                };
-                await _context.RolPermisos.AddAsync(rolPermiso, cancellationToken);
-            }
+                RolId = rol.Id,
+                PermisoId = permisoId,
+                FechaCreacion = DateTime.UtcNow,
+                UsuarioCreacion = usuarioModificacion
+            });
         }
 
+        // ✅ FIX: Un solo SaveChanges — todo en la misma transacción
+        // Antes había dos SaveChanges separados lo que causaba inconsistencias de tracking
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         var rolActualizado = await _rolRepository.GetWithPermisosAsync(rol.Id, cancellationToken);
@@ -157,32 +151,39 @@ public class RolService : IRolService
     }
 
     public async Task<Result> DeleteAsync(
-        long id, 
-        long usuarioEliminacion, 
+        long id,
+        long usuarioEliminacion,
         CancellationToken cancellationToken = default)
     {
-        var rol = await _rolRepository.GetWithPermisosAsync(id, cancellationToken);
+        // ✅ FIX: Buscar con tracking desde _context desde el inicio
+        // Antes se llamaba GetWithPermisosAsync (AsNoTracking) y luego FindAsync por separado,
+        // lo que generaba doble query y posibles conflictos de tracking
+        var rol = await _context.Roles
+            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+
         if (rol == null)
-        {
             return Result.Failure("Rol no encontrado");
-        }
 
         if (rol.EsSistema)
-        {
             return Result.Failure("No se puede eliminar un rol de sistema");
-        }
 
         // Verificar usuarios asignados
         var tieneUsuarios = await _context.UsuarioRoles
             .AnyAsync(ur => ur.RolId == id && ur.Activo, cancellationToken);
 
         if (tieneUsuarios)
-        {
             return Result.Failure("No se puede eliminar el rol porque tiene usuarios asignados");
-        }
 
+        // Eliminar permisos asociados (FK constraint)
+        var permisos = await _context.RolPermisos
+            .Where(rp => rp.RolId == id)
+            .ToListAsync(cancellationToken);
+        _context.RolPermisos.RemoveRange(permisos);
+
+        // ✅ FIX: El rol ya está trackeado — eliminar directo sin segundo FindAsync
+        // Un solo SaveChanges para todo
         rol.UsuarioEliminacion = usuarioEliminacion;
-        await _rolRepository.DeleteAsync(rol, cancellationToken);
+        _context.Roles.Remove(rol);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

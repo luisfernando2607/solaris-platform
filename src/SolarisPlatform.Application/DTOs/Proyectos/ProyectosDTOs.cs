@@ -106,6 +106,7 @@ public record CrearProyectoFaseRequest(
     int Orden, DateOnly? FechaInicioPlan, DateOnly? FechaFinPlan)
 {
     public long ProyectoId { get; set; }
+    public long EmpresaId { get; set; }
 }
 
 public record ActualizarProyectoFaseRequest(
@@ -138,6 +139,7 @@ public record CrearProyectoHitoRequest(
     long? ResponsableId, int Orden)
 {
     public long ProyectoId { get; set; }
+    public long EmpresaId { get; set; }
 }
 
 public record ActualizarProyectoHitoRequest(
@@ -168,6 +170,7 @@ public record CrearProyectoDocumentoRequest(
     string UrlStorage, string? NombreArchivoOriginal, string? Extension, long? TamanoBytes)
 {
     public long ProyectoId { get; set; }
+    public long EmpresaId  { get; set; }  // FIX: propiedad faltante (CS1061)
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -187,6 +190,7 @@ public record CrearWbsNodoRequest(
     long? FaseId, long? PadreId)
 {
     public long ProyectoId { get; set; }
+    public long EmpresaId { get; set; }
 }
 
 public record ActualizarWbsNodoRequest(
@@ -233,6 +237,7 @@ public record CrearTareaRequest(
     decimal? Latitud, decimal? Longitud, string? Ubicacion)
 {
     public long ProyectoId { get; set; }
+    public long EmpresaId { get; set; }
 }
 
 public record ActualizarTareaRequest(
@@ -276,10 +281,12 @@ public record CuadrillaMiembroDto(
     DateOnly FechaIngreso, DateOnly? FechaSalida,
     string? Rol, bool Activo);
 
+// FIX: Agregado EmpresaId — requerido por WbsTareaCuadrillaServices.cs (CS1061)
 public record CrearCuadrillaRequest(
     string Nombre, string? Descripcion, long? LiderId, int CapacidadMax)
 {
     public long ProyectoId { get; set; }
+    public long EmpresaId { get; set; }  // FIX: propiedad faltante
 }
 
 public record ActualizarCuadrillaRequest(
@@ -336,6 +343,7 @@ public record CrearPresupuestoRequest(
     string Nombre, string? Descripcion, decimal Contingencia)
 {
     public long ProyectoId { get; set; }
+    public long EmpresaId { get; set; }
 }
 
 public record AgregarPartidaRequest(
@@ -389,6 +397,7 @@ public record CrearCentroCostoRequest(
     string Codigo, string Nombre, string? Descripcion, decimal PresupuestoAsignado)
 {
     public long ProyectoId { get; set; }
+    public long EmpresaId { get; set; }
 }
 
 public record ActualizarCentroCostoRequest(
@@ -408,25 +417,41 @@ public record AsignarCostoACentroRequest(
 // ÓRDENES DE TRABAJO
 // ═══════════════════════════════════════════════════════════════
 
+// FIX: Alineado con entidad OrdenTrabajo real en BD:
+//   Numero  → Codigo
+//   Titulo  → Descripcion (nullable → string? para evitar CS8604)
+//   TecnicoResponsableId → TecnicoAsignadoId
+//   FechaInicioPlan/FinPlan/InicioReal/FinReal → FechaProgramada/null/FechaInicioEjecucion/FechaFinEjecucion
 public record OrdenTrabajoListDto(
-    long Id, string Numero, string Titulo, EstadoOrdenTrabajo Estado,
+    long Id,
+    string Codigo,              // FIX: era Numero
+    string? Titulo,             // FIX: era string (no nullable) — ahora nullable para evitar CS8604
+    EstadoOrdenTrabajo Estado,
     long ProyectoId, string? ProyectoNombre,
     long? CuadrillaId, string? CuadrillaNombre,
-    long? TecnicoResponsableId, string? TecnicoNombre,
-    DateTime? FechaInicioPlan, DateTime? FechaFinPlan,
-    DateTime? FechaInicioReal, DateTime? FechaFinReal);
+    long? TecnicoAsignadoId,    // FIX: era TecnicoResponsableId
+    string? TecnicoNombre,
+    DateTime? FechaProgramada,      // FIX: era FechaInicioPlan
+    DateTime? FechaFinPlan,         // mantiene null (no existe en BD)
+    DateTime? FechaInicioEjecucion, // FIX: era FechaInicioReal
+    DateTime? FechaFinEjecucion);   // FIX: era FechaFinReal
 
 public record OrdenTrabajoDto(
     long Id, long ProyectoId, string? ProyectoNombre,
     long? TareaId, string? TareaNombre,
     long? CuadrillaId, string? CuadrillaNombre,
-    string Numero, string Titulo, string? Descripcion,
+    string Codigo,              // FIX: era Numero
+    string? Titulo,             // FIX: nullable
+    string? Descripcion,
     EstadoOrdenTrabajo Estado,
     DateTime FechaAsignacion,
-    DateTime? FechaInicioPlan, DateTime? FechaFinPlan,
-    DateTime? FechaInicioReal, DateTime? FechaFinReal,
+    DateTime? FechaProgramada,      // FIX: era FechaInicioPlan
+    DateTime? FechaFinPlan,
+    DateTime? FechaInicioEjecucion, // FIX: era FechaInicioReal
+    DateTime? FechaFinEjecucion,    // FIX: era FechaFinReal
     long? AsignadoPorId, string? AsignadoPorNombre,
-    long? TecnicoResponsableId, string? TecnicoNombre,
+    long? TecnicoAsignadoId,        // FIX: era TecnicoResponsableId
+    string? TecnicoNombre,
     decimal? Latitud, decimal? Longitud, string? DireccionSitio,
     bool RequiereFirma, bool RequiereFotos, int FotosRequeridas,
     string? ObservacionesSupervisor,
@@ -445,13 +470,16 @@ public record OtMaterialDto(
     decimal CostoUnitario, decimal CostoTotal);
 
 public record CrearOrdenTrabajoRequest(
-    long ProyectoId, long? TareaId, long? CuadrillaId, long? TecnicoResponsableId,
-    string Titulo, string? Descripcion,
-    DateTime? FechaInicioPlan, DateTime? FechaFinPlan,
+    long ProyectoId, long? TareaId, long? CuadrillaId, long? TecnicoAsignadoId, // FIX: era TecnicoResponsableId
+    string? Titulo, string? Descripcion,                                          // FIX: Titulo nullable
+    DateTime? FechaProgramada, DateTime? FechaFinPlan,                            // FIX: era FechaInicioPlan
     decimal? Latitud, decimal? Longitud, string? DireccionSitio,
     bool RequiereFirma, bool RequiereFotos, int FotosRequeridas,
     List<CrearOtActividadItem> Actividades,
-    List<CrearOtMaterialItem> Materiales);
+    List<CrearOtMaterialItem> Materiales)
+{
+    public long EmpresaId { get; set; }
+}
 
 public record CrearOtActividadItem(string Nombre, string? Descripcion);
 public record CrearOtMaterialItem(
@@ -459,9 +487,10 @@ public record CrearOtMaterialItem(
     decimal CantidadPlan, decimal CostoUnitario);
 
 public record ActualizarOrdenTrabajoRequest(
-    string Titulo, string? Descripcion,
-    long? CuadrillaId, long? TecnicoResponsableId,
-    DateTime? FechaInicioPlan, DateTime? FechaFinPlan,
+    string? Titulo,                     // FIX: nullable
+    string? Descripcion,
+    long? CuadrillaId, long? TecnicoAsignadoId, // FIX: era TecnicoResponsableId
+    DateTime? FechaProgramada, DateTime? FechaFinPlan, // FIX: era FechaInicioPlan/FinPlan
     decimal? Latitud, decimal? Longitud, string? DireccionSitio,
     bool RequiereFirma, bool RequiereFotos, int FotosRequeridas,
     string? ObservacionesSupervisor)
@@ -521,6 +550,7 @@ public record CrearReporteAvanceRequest(
     long? OrdenTrabajoId)
 {
     public long ProyectoId { get; set; }
+    public long EmpresaId { get; set; }
 }
 
 public record AgregarFotoReporteRequest(

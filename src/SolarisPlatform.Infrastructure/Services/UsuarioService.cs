@@ -51,7 +51,7 @@ public class UsuarioService : IUsuarioService
     }
 
     public async Task<PaginatedList<UsuarioListDto>> GetListAsync(
-        FiltroUsuariosRequest filtro, 
+        FiltroUsuariosRequest filtro,
         CancellationToken cancellationToken = default)
     {
         var query = _context.Usuarios
@@ -88,17 +88,17 @@ public class UsuarioService : IUsuarioService
         // Ordenamiento
         query = filtro.OrdenarPor?.ToLower() switch
         {
-            "email" => filtro.OrdenDescendente 
-                ? query.OrderByDescending(u => u.Email) 
+            "email" => filtro.OrdenDescendente
+                ? query.OrderByDescending(u => u.Email)
                 : query.OrderBy(u => u.Email),
-            "nombres" => filtro.OrdenDescendente 
-                ? query.OrderByDescending(u => u.Nombres) 
+            "nombres" => filtro.OrdenDescendente
+                ? query.OrderByDescending(u => u.Nombres)
                 : query.OrderBy(u => u.Nombres),
-            "ultimoacceso" => filtro.OrdenDescendente 
-                ? query.OrderByDescending(u => u.UltimoAcceso) 
+            "ultimoacceso" => filtro.OrdenDescendente
+                ? query.OrderByDescending(u => u.UltimoAcceso)
                 : query.OrderBy(u => u.UltimoAcceso),
-            "fechacreacion" => filtro.OrdenDescendente 
-                ? query.OrderByDescending(u => u.FechaCreacion) 
+            "fechacreacion" => filtro.OrdenDescendente
+                ? query.OrderByDescending(u => u.FechaCreacion)
                 : query.OrderBy(u => u.FechaCreacion),
             _ => query.OrderBy(u => u.Apellidos).ThenBy(u => u.Nombres)
         };
@@ -118,8 +118,8 @@ public class UsuarioService : IUsuarioService
     }
 
     public async Task<Result<UsuarioDto>> CreateAsync(
-        CrearUsuarioRequest request, 
-        long usuarioCreacion, 
+        CrearUsuarioRequest request,
+        long usuarioCreacion,
         CancellationToken cancellationToken = default)
     {
         // Verificar email único
@@ -128,18 +128,35 @@ public class UsuarioService : IUsuarioService
             return Result<UsuarioDto>.Failure("El email ya está registrado");
         }
 
-        // Crear usuario
+        // ✅ FIX: Validar que todos los roles existen ANTES de insertar
+        // Antes se insertaban los UsuarioRoles sin validar, causando FK violation → 500
+        if (request.RolesIds.Any())
+        {
+            var rolesExistentes = await _context.Roles
+                .Where(r => request.RolesIds.Contains(r.Id) && r.Activo)
+                .Select(r => r.Id)
+                .ToListAsync(cancellationToken);
+
+            var noExisten = request.RolesIds.Except(rolesExistentes).ToList();
+            if (noExisten.Any())
+            {
+                return Result<UsuarioDto>.Failure(
+                    $"Los siguientes roles no existen o están inactivos: {string.Join(", ", noExisten)}");
+            }
+        }
+
+        // Crear usuario usando el contexto directamente para evitar conflictos de tracking
         var usuario = new Usuario
         {
             EmpresaId = request.EmpresaId,
             SucursalId = request.SucursalId,
-            Email = request.Email,
-            NombreUsuario = request.NombreUsuario,
-            Nombres = request.Nombres,
-            Apellidos = request.Apellidos,
-            NumeroIdentificacion = request.NumeroIdentificacion,
-            Telefono = request.Telefono,
-            Celular = request.Celular,
+            Email = request.Email.Trim().ToLower(),
+            NombreUsuario = request.NombreUsuario?.Trim(),
+            Nombres = request.Nombres.Trim(),
+            Apellidos = request.Apellidos.Trim(),
+            NumeroIdentificacion = request.NumeroIdentificacion?.Trim(),
+            Telefono = request.Telefono?.Trim(),
+            Celular = request.Celular?.Trim(),
             FechaNacimiento = request.FechaNacimiento,
             Genero = !string.IsNullOrEmpty(request.Genero) ? request.Genero[0] : null,
             PasswordHash = _passwordService.HashPassword(request.Password),
@@ -149,10 +166,10 @@ public class UsuarioService : IUsuarioService
             UsuarioCreacion = usuarioCreacion
         };
 
-        await _usuarioRepository.AddAsync(usuario, cancellationToken);
+        await _context.Usuarios.AddAsync(usuario, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // Asignar roles
+        // Asignar roles luego de tener el Id generado
         if (request.RolesIds.Any())
         {
             var esPrimero = true;
@@ -173,14 +190,14 @@ public class UsuarioService : IUsuarioService
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
-        // Obtener usuario completo
+        // Obtener usuario completo con roles cargados
         var usuarioCreado = await _usuarioRepository.GetWithRolesAsync(usuario.Id, cancellationToken);
         return Result<UsuarioDto>.Success(_mapper.Map<UsuarioDto>(usuarioCreado!));
     }
 
     public async Task<Result<UsuarioDto>> UpdateAsync(
-        ActualizarUsuarioRequest request, 
-        long usuarioModificacion, 
+        ActualizarUsuarioRequest request,
+        long usuarioModificacion,
         CancellationToken cancellationToken = default)
     {
         var usuario = await _usuarioRepository.GetWithRolesAsync(request.Id, cancellationToken);
@@ -250,8 +267,8 @@ public class UsuarioService : IUsuarioService
     }
 
     public async Task<Result> DeleteAsync(
-        long id, 
-        long usuarioEliminacion, 
+        long id,
+        long usuarioEliminacion,
         CancellationToken cancellationToken = default)
     {
         var usuario = await _usuarioRepository.GetByIdAsync(id, cancellationToken);
@@ -268,8 +285,8 @@ public class UsuarioService : IUsuarioService
     }
 
     public async Task<Result> ActivarAsync(
-        long id, 
-        long usuarioModificacion, 
+        long id,
+        long usuarioModificacion,
         CancellationToken cancellationToken = default)
     {
         var usuario = await _usuarioRepository.GetByIdAsync(id, cancellationToken);
@@ -290,8 +307,8 @@ public class UsuarioService : IUsuarioService
     }
 
     public async Task<Result> DesactivarAsync(
-        long id, 
-        long usuarioModificacion, 
+        long id,
+        long usuarioModificacion,
         CancellationToken cancellationToken = default)
     {
         var usuario = await _usuarioRepository.GetByIdAsync(id, cancellationToken);
@@ -312,9 +329,9 @@ public class UsuarioService : IUsuarioService
     }
 
     public async Task<Result> BloquearAsync(
-        long id, 
-        int minutos, 
-        long usuarioModificacion, 
+        long id,
+        int minutos,
+        long usuarioModificacion,
         CancellationToken cancellationToken = default)
     {
         var usuario = await _usuarioRepository.GetByIdAsync(id, cancellationToken);
@@ -335,8 +352,8 @@ public class UsuarioService : IUsuarioService
     }
 
     public async Task<Result> DesbloquearAsync(
-        long id, 
-        long usuarioModificacion, 
+        long id,
+        long usuarioModificacion,
         CancellationToken cancellationToken = default)
     {
         var usuario = await _usuarioRepository.GetByIdAsync(id, cancellationToken);
@@ -357,8 +374,8 @@ public class UsuarioService : IUsuarioService
     }
 
     public async Task<Result> ResetearPasswordAsync(
-        long id, 
-        long usuarioModificacion, 
+        long id,
+        long usuarioModificacion,
         CancellationToken cancellationToken = default)
     {
         var usuario = await _usuarioRepository.GetByIdAsync(id, cancellationToken);

@@ -43,18 +43,17 @@ public class OrdenTrabajoService : IOrdenTrabajoService
         var codigo = await GenerarCodigoOtAsync(request.ProyectoId, ct);
         var e = new OrdenTrabajo
         {
+            EmpresaId           = request.EmpresaId,
             ProyectoId          = request.ProyectoId,
             TareaId             = request.TareaId,
             CuadrillaId         = request.CuadrillaId,
-            // FIX: TecnicoResponsableId → TecnicoAsignadoId
-            TecnicoAsignadoId   = request.TecnicoResponsableId,
+            TecnicoAsignadoId   = request.TecnicoAsignadoId,
             // FIX: Numero → Codigo, Titulo eliminado (ahora es Descripcion)
             Codigo              = codigo,
             Descripcion         = request.Titulo ?? request.Descripcion,
             Estado              = EstadoOrdenTrabajo.Borrador,
             // FIX: FechaAsignacion eliminada — BD no tiene esa columna
-            // FIX: FechaInicioPlan/FinPlan → FechaProgramada
-            FechaProgramada     = request.FechaInicioPlan,
+            FechaProgramada     = request.FechaProgramada,
             // FIX: AsignadoPorId eliminado — no existe en BD
             Latitud             = request.Latitud,
             Longitud            = request.Longitud,
@@ -95,10 +94,8 @@ public class OrdenTrabajoService : IOrdenTrabajoService
         // FIX: Titulo → Descripcion
         e.Descripcion       = request.Titulo ?? request.Descripcion;
         e.CuadrillaId       = request.CuadrillaId;
-        // FIX: TecnicoResponsableId → TecnicoAsignadoId
-        e.TecnicoAsignadoId = request.TecnicoResponsableId;
-        // FIX: FechaInicioPlan → FechaProgramada
-        e.FechaProgramada   = request.FechaInicioPlan;
+        e.TecnicoAsignadoId = request.TecnicoAsignadoId;
+        e.FechaProgramada   = request.FechaProgramada;
         e.Latitud           = request.Latitud;
         e.Longitud          = request.Longitud;
         // FIX: DireccionSitio → Direccion
@@ -190,6 +187,7 @@ public class ReporteAvanceService : IReporteAvanceService
     {
         var e = new ReporteAvance
         {
+            EmpresaId     = request.EmpresaId,
             ProyectoId    = request.ProyectoId,
             // FIX: OrdenTrabajoId eliminado de ReporteAvance — BD no tiene esa columna
             // FIX: FechaReporte es DateOnly en BD (no DateTime)

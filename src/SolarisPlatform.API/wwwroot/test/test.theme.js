@@ -30,9 +30,13 @@ const SolarisTheme = (() => {
       const toggle = document.getElementById(toggleId);
       if (toggle) {
         toggle.addEventListener('change', () => {
-          _apply(toggle.checked ? 'dark' : 'light');
+          _apply(toggle.checked ? 'light' : 'dark');
         });
       }
+    },
+    toggle() {
+      const current = document.documentElement.getAttribute('data-theme') || DEFAULT;
+      _apply(current === 'dark' ? 'light' : 'dark');
     },
     current() {
       return document.documentElement.getAttribute('data-theme') || DEFAULT;

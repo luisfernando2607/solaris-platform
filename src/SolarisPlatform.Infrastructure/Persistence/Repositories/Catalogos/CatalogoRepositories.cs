@@ -48,7 +48,7 @@ public class PaisRepository(SolarisDbContext context) : IPaisRepository
     {
         pais.Codigo = pais.Codigo.ToUpper();
         pais.CodigoIso2 = pais.CodigoIso2.ToUpper();
-        context.Paises.Update(pais);
+        context.Update(pais);
         await context.SaveChangesAsync();
         return pais;
     }
@@ -102,7 +102,7 @@ public class EstadoProvinciaRepository(SolarisDbContext context) : IEstadoProvin
 
     public async Task<EstadoProvincia> ActualizarAsync(EstadoProvincia estado)
     {
-        context.EstadosProvincias.Update(estado);
+        context.Update(estado);
         await context.SaveChangesAsync();
         return estado;
     }
@@ -158,7 +158,7 @@ public class CiudadRepository(SolarisDbContext context) : ICiudadRepository
 
     public async Task<Ciudad> ActualizarAsync(Ciudad ciudad)
     {
-        context.Ciudades.Update(ciudad);
+        context.Update(ciudad);
         await context.SaveChangesAsync();
         return ciudad;
     }
@@ -210,7 +210,7 @@ public class MonedaRepository(SolarisDbContext context) : IMonedaRepository
     public async Task<Moneda> ActualizarAsync(Moneda moneda)
     {
         moneda.Codigo = moneda.Codigo.ToUpper();
-        context.Monedas.Update(moneda);
+        context.Update(moneda);
         await context.SaveChangesAsync();
         return moneda;
     }
@@ -268,7 +268,7 @@ public class TipoIdentificacionRepository(SolarisDbContext context) : ITipoIdent
     public async Task<TipoIdentificacion> ActualizarAsync(TipoIdentificacion tipo)
     {
         tipo.Codigo = tipo.Codigo.ToUpper();
-        context.TiposIdentificacion.Update(tipo);
+        context.Update(tipo);
         await context.SaveChangesAsync();
         return tipo;
     }
@@ -318,7 +318,7 @@ public class ImpuestoRepository(SolarisDbContext context) : IImpuestoRepository
 
     public async Task<Impuesto> ActualizarAsync(Impuesto impuesto)
     {
-        context.Impuestos.Update(impuesto);
+        context.Update(impuesto);
         await context.SaveChangesAsync();
         return impuesto;
     }
@@ -367,7 +367,7 @@ public class FormaPagoRepository(SolarisDbContext context) : IFormaPagoRepositor
 
     public async Task<FormaPago> ActualizarAsync(FormaPago formaPago)
     {
-        context.FormasPago.Update(formaPago);
+        context.Update(formaPago);
         await context.SaveChangesAsync();
         return formaPago;
     }
@@ -417,7 +417,7 @@ public class BancoRepository(SolarisDbContext context) : IBancoRepository
     public async Task<Banco> ActualizarAsync(Banco banco)
     {
         banco.Codigo = banco.Codigo.ToUpper();
-        context.Bancos.Update(banco);
+        context.Update(banco);
         await context.SaveChangesAsync();
         return banco;
     }

@@ -1,20 +1,28 @@
 // ══════════════════════════════════════════════════════════════════════
-//  test.report.js  —  Solaris Platform · API Test Console
+//  test.report.js  —  Solaris Platform · API Test Console  v2.1
 //  ─────────────────────────────────────────────────────────────────────
 //  Responsabilidad única: construir y descargar reportes JSON.
 //  - No manipula el DOM más allá de crear/remover un <a> temporal.
 //  - No ejecuta fetches.
 //  Depende de: test.config.js, test.runner.js  (para leer resultados)
+//
+//  FIXES v2.1:
+//   [BUG-1] Reemplazado acceso directo a TEST_SUITES global por
+//           TestRunner.getSuites(). Elimina dependencia frágil de orden
+//           de carga de scripts.
+//   [BUG-3] Los tests con skipped:true ya no aparecen en la lista
+//           "passed" del reporte. Se añade una sección "skipped"
+//           separada con su propio conteo en el summary.
 // ══════════════════════════════════════════════════════════════════════
 
 const TestReport = (() => {
 
   // ── Construir el objeto de reporte completo ─────────────────────
   function _buildReport() {
-    const now      = new Date();
-    const baseUrl  = TestRunner.getBaseUrl();
-    const results  = TestRunner.getResults();    // { testId: resultObj }
-    const suites   = TestRunner.getSuites();     // TEST_SUITES
+    const now     = new Date();
+    const baseUrl = TestRunner.getBaseUrl();
+    const results = TestRunner.getResults();    // { testId: resultObj }
+    const suites  = TestRunner.getSuites();     // [BUG-1 FIX] usa getSuites() en vez de TEST_SUITES global
 
     // Todos los resultados ejecutados, en orden de suite
     const allTests = [];
@@ -29,15 +37,16 @@ const TestReport = (() => {
           testId:     t.id,
           name:       t.name,
           // ─ Configuración del test ─
-          method:         t.method,
-          path:           t.path,
-          fullUrl:        baseUrl + t.path,
-          requiresAuth:   t.auth,
-          expectedStatus: t.expect.status,
+          method:           t.method,
+          path:             t.path,
+          fullUrl:          baseUrl + t.path,
+          requiresAuth:     t.auth,
+          expectedStatus:   t.expect.status,
           checkDescription: t.expect.checkDesc || null,
-          hint:           t.hint || null,
+          hint:             t.hint || null,
           // ─ Resultado ─
           passed:     res.passed,
+          skipped:    res.skipped || false,   // [BUG-3 FIX] propagar el flag
           httpStatus: res.status,
           latencyMs:  res.ms,
           response:   res.data,
@@ -47,8 +56,13 @@ const TestReport = (() => {
       });
     });
 
-    const failures = allTests.filter(t => !t.passed);
-    const passed   = allTests.filter(t => t.passed);
+    // [BUG-3 FIX] Separar correctamente passed / failed / skipped
+    const failures = allTests.filter(t => !t.passed && !t.skipped);
+    const passed   = allTests.filter(t =>  t.passed && !t.skipped);
+    const skipped  = allTests.filter(t =>  t.skipped);
+
+    // [BUG-1 FIX] Contar pending usando getSuites() en lugar de TEST_SUITES
+    const totalDefined = suites.reduce((acc, s) => acc + s.tests.length, 0);
 
     return {
       // ──────────────────────────────────────────────────────────
@@ -56,17 +70,19 @@ const TestReport = (() => {
       // ──────────────────────────────────────────────────────────
       _meta: {
         tool:        'Solaris Platform · API Test Console',
-        version:     '2.0',
+        version:     '2.1',
         generatedAt: now.toISOString(),
         generatedAtLocal: now.toLocaleString('es-EC', { timeZone: 'America/Guayaquil' }),
         baseUrl,
         summary: {
-          total:   allTests.length,
-          passed:  passed.length,
-          failed:  failures.length,
-          pending: TEST_SUITES.reduce((acc, s) => acc + s.tests.length, 0) - allTests.length,
+          totalDefined,                           // total de tests definidos en config
+          executed: allTests.length,              // cuántos se ejecutaron (ran + skip)
+          passed:   passed.length,                // pasaron de verdad (no skip)
+          failed:   failures.length,
+          skipped:  skipped.length,               // [BUG-3 FIX] conteo propio de skips
+          pending:  totalDefined - allTests.length,
           passRate: allTests.length > 0
-            ? Math.round((passed.length / allTests.length) * 100) + '%'
+            ? Math.round((passed.length / (allTests.length - skipped.length || 1)) * 100) + '%'
             : '0%'
         }
       },
@@ -77,27 +93,33 @@ const TestReport = (() => {
       suites: suites.map(s => {
         const sTests = allTests.filter(t => t.suiteId === s.id);
         return {
-          id:     s.id,
-          title:  s.title,
+          id:    s.id,
+          title: s.title,
           stats: {
-            total:  sTests.length,
-            passed: sTests.filter(t => t.passed).length,
-            failed: sTests.filter(t => !t.passed).length,
+            total:   sTests.length,
+            passed:  sTests.filter(t =>  t.passed && !t.skipped).length,   // [BUG-3 FIX]
+            failed:  sTests.filter(t => !t.passed && !t.skipped).length,   // [BUG-3 FIX]
+            skipped: sTests.filter(t =>  t.skipped).length,                // [BUG-3 FIX]
           },
           tests: sTests
         };
       }),
 
       // ──────────────────────────────────────────────────────────
-      // failures: lista plana de todos los fallos
+      // failures: lista plana de todos los fallos reales
       // Incluye diagnosis[] para diagnóstico rápido
       // ──────────────────────────────────────────────────────────
       failures,
 
       // ──────────────────────────────────────────────────────────
-      // passed: lista plana de los que sí pasaron
+      // passed: solo tests que realmente pasaron (sin skips)  [BUG-3 FIX]
       // ──────────────────────────────────────────────────────────
-      passed
+      passed,
+
+      // ──────────────────────────────────────────────────────────
+      // skipped: tests omitidos por skipIf (ID dinámico ausente) [BUG-3 FIX]
+      // ──────────────────────────────────────────────────────────
+      skipped
     };
   }
 
@@ -124,6 +146,7 @@ const TestReport = (() => {
 
     /**
      * Descarga el reporte completo (todos los tests ejecutados).
+     * Incluye secciones: passed, failed, skipped.
      * Archivo: solaris-test-results_YYYY-MM-DDTHH-MM-SS.json
      */
     downloadAll() {
@@ -133,7 +156,7 @@ const TestReport = (() => {
     },
 
     /**
-     * Descarga solo los tests fallidos.
+     * Descarga solo los tests fallidos (excluye skips).
      * Ideal para compartir con el equipo de desarrollo o con Claude para diagnóstico.
      * Archivo: solaris-test-fails_YYYY-MM-DDTHH-MM-SS.json
      */
@@ -149,10 +172,11 @@ const TestReport = (() => {
         _meta: {
           ...full._meta,
           mode: 'SOLO_FALLOS',
-          note: 'Este archivo contiene únicamente los tests fallidos. Incluye diagnosis[] por test para facilitar el diagnóstico.'
+          note: 'Este archivo contiene únicamente los tests fallidos (los skipped se omiten). Incluye diagnosis[] por test para facilitar el diagnóstico.'
         },
-        // Resumen de contexto de los que sí pasaron (sin detalle)
-        contextPassed: full._meta.summary.passed + ' tests pasaron correctamente.',
+        // Resumen de contexto de los que sí pasaron y los que fueron skipped
+        contextPassed:  `${full._meta.summary.passed} test(s) pasaron correctamente.`,
+        contextSkipped: `${full._meta.summary.skipped} test(s) fueron omitidos (skipIf).`,  // [BUG-3 FIX]
         // Los fallos con diagnóstico completo
         failures: full.failures,
         // Agrupado por suite para facilitar lectura

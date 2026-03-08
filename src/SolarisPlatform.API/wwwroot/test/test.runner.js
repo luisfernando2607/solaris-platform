@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════════════
-//  test.runner.js  —  Solaris Platform · API Test Console  v3.1
+//  test.runner.js  —  Solaris Platform · API Test Console  v3.2
 //  ─────────────────────────────────────────────────────────────────────
 //  Motor de ejecución de tests.
 //  - No manipula el DOM.
@@ -14,6 +14,12 @@
 //       Ejemplo: /proyectos/{DYN}/fases/{newFaseId}
 //   [4] Eliminada la duplicación de getBaseUrl.
 //   [5] captureId ahora captura data.id  | data.data.id | data.data[0].id
+//
+//  FIXES v3.2:
+//   [BUG-2] _baseUrl se resuelve SIEMPRE desde getBaseUrl() en el momento
+//           de ejecutar, no solo al inicio de runAll/runSuite. Esto elimina
+//           la condición de carrera donde un runSuite() invocado antes del
+//           init() completo del UI usaba el valor hardcodeado por defecto.
 // ══════════════════════════════════════════════════════════════════════
 
 const TestRunner = (() => {
@@ -21,7 +27,13 @@ const TestRunner = (() => {
   // ── Estado interno ──────────────────────────────────────────────
   let _jwt          = '';
   let _refreshToken = '';
-  let _baseUrl      = '';
+
+  // [BUG-2 FIX] _baseUrl ya no se cachea al inicio de cada run.
+  // Se resuelve dinámicamente en cada _fetch() para garantizar que
+  // siempre use el valor actual del input, sin importar el orden de init.
+  function _resolveBaseUrl() {
+    return _runner.getBaseUrl().replace(/\/$/, '');
+  }
 
   // [FIX 1] Diccionario de IDs capturados en tiempo de ejecución
   const DYNAMIC = {};
@@ -40,12 +52,13 @@ const TestRunner = (() => {
 
   // ── API HTTP helper ─────────────────────────────────────────────
   async function _fetch(method, path, body, token) {
+    const baseUrl = _resolveBaseUrl();   // [BUG-2 FIX] siempre fresco
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = 'Bearer ' + token;
 
     const t0 = performance.now();
     try {
-      const res = await fetch(_baseUrl + path, {
+      const res = await fetch(baseUrl + path, {
         method,
         headers,
         body: body ? JSON.stringify(body) : undefined
@@ -53,10 +66,15 @@ const TestRunner = (() => {
       const ms = Math.round(performance.now() - t0);
       let data;
       try { data = await res.json(); } catch { data = null; }
-      return { status: res.status, data, ms };
+      return { status: res.status, data, ms, baseUrl };
     } catch (e) {
       const ms = Math.round(performance.now() - t0);
-      return { status: 'ERR', data: { error: e.message, hint: 'No se pudo conectar. Verifica que el servidor esté corriendo y la Base URL sea correcta.' }, ms };
+      return {
+        status: 'ERR',
+        data: { error: e.message, hint: 'No se pudo conectar. Verifica que el servidor esté corriendo y la Base URL sea correcta.' },
+        ms,
+        baseUrl
+      };
     }
   }
 
@@ -128,23 +146,24 @@ const TestRunner = (() => {
 
     // [FIX 2] skipIf: omitir si el ID requerido no fue capturado
     if (testDef.skipIf && !DYNAMIC[testDef.skipIf]) {
+      const baseUrl = _resolveBaseUrl();  // [BUG-2 FIX]
       const result = {
         suiteId,
-        testId:        testDef.id,
-        passed:        true,   // se cuenta como skip (no como fallo)
-        skipped:       true,
-        status:        'SKIP',
-        ms:            0,
-        data:          { skipped: true, reason: `ID dinámico "${testDef.skipIf}" no disponible. El test previo de creación pudo haber fallado.` },
-        diagnosis:     null,
-        method:        testDef.method,
-        path:          testDef.path,
-        fullUrl:       _baseUrl + testDef.path,
-        requiresAuth:  testDef.auth,
+        testId:         testDef.id,
+        passed:         true,   // se cuenta como skip (no como fallo)
+        skipped:        true,
+        status:         'SKIP',
+        ms:             0,
+        data:           { skipped: true, reason: `ID dinámico "${testDef.skipIf}" no disponible. El test previo de creación pudo haber fallado.` },
+        diagnosis:      null,
+        method:         testDef.method,
+        path:           testDef.path,
+        fullUrl:        baseUrl + testDef.path,
+        requiresAuth:   testDef.auth,
         expectedStatus: testDef.expect.status,
-        checkDesc:     testDef.expect.checkDesc || null,
-        hint:          testDef.hint || null,
-        name:          testDef.name,
+        checkDesc:      testDef.expect.checkDesc || null,
+        hint:           testDef.hint || null,
+        name:           testDef.name,
       };
       _cb.onTestStart(testDef.id);
       _results[testDef.id] = result;
@@ -196,9 +215,9 @@ const TestRunner = (() => {
     // [FIX 1] Capturar ID de la respuesta en DYNAMIC
     if (testDef.captureId) {
       const capturedId =
-        res.data?.data?.id   ??   // { data: { id: X } }
-        res.data?.id         ??   // { id: X }
-        (Array.isArray(res.data?.data) && res.data.data[0]?.id) ?? // { data: [{ id:X }] }
+        res.data?.data?.id   ??                                        // { data: { id: X } }
+        res.data?.id         ??                                        // { id: X }
+        (Array.isArray(res.data?.data) && res.data.data[0]?.id) ??    // { data: [{ id:X }] }
         null;
       if (capturedId !== null) {
         DYNAMIC[testDef.captureId] = capturedId;
@@ -217,21 +236,21 @@ const TestRunner = (() => {
 
     const result = {
       suiteId,
-      testId:   testDef.id,
+      testId:         testDef.id,
       passed,
-      skipped:  false,
-      status:   res.status,
-      ms:       res.ms,
-      data:     displayData,
+      skipped:        false,
+      status:         res.status,
+      ms:             res.ms,
+      data:           displayData,
       diagnosis,
-      method:        testDef.method,
-      path:          resolvedPath,
-      fullUrl:       _baseUrl + resolvedPath,
-      requiresAuth:  testDef.auth,
+      method:         testDef.method,
+      path:           resolvedPath,
+      fullUrl:        res.baseUrl + resolvedPath,   // [BUG-2 FIX] usa la URL real del fetch
+      requiresAuth:   testDef.auth,
       expectedStatus: testDef.expect.status,
-      checkDesc:     testDef.expect.checkDesc || null,
-      hint:          testDef.hint || null,
-      name:          testDef.name,
+      checkDesc:      testDef.expect.checkDesc || null,
+      hint:           testDef.hint || null,
+      name:           testDef.name,
     };
 
     _results[testDef.id] = result;
@@ -252,10 +271,10 @@ const TestRunner = (() => {
   function _delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
   function _countResults() {
-    const all    = Object.values(_results).filter(r => !r.skipped);
-    const total  = all.length;
-    const passed = all.filter(r => r.passed).length;
-    const failed = total - passed;
+    const all     = Object.values(_results).filter(r => !r.skipped);
+    const total   = all.length;
+    const passed  = all.filter(r => r.passed).length;
+    const failed  = total - passed;
     const skipped = Object.values(_results).filter(r => r.skipped).length;
     return { total, passed, failed, skipped };
   }
@@ -269,14 +288,18 @@ const TestRunner = (() => {
     // Registrar callbacks
     on(event, fn) { if (_cb[event] !== undefined) _cb[event] = fn; return this; },
 
-    // Configurar base URL
-    setBaseUrl(url) { _baseUrl = url.replace(/\/$/, ''); return this; },
+    // Configurar base URL (alternativa programática a getBaseUrl)
+    setBaseUrl(url) {
+      // Sobreescribe getBaseUrl con un valor fijo
+      this.getBaseUrl = () => url;
+      return this;
+    },
 
     // Limpiar estado (incluyendo DYNAMIC)
     reset() {
       _jwt = ''; _refreshToken = '';
       Object.keys(_results).forEach(k => delete _results[k]);
-      Object.keys(DYNAMIC).forEach(k => delete DYNAMIC[k]);  // [FIX 1]
+      Object.keys(DYNAMIC).forEach(k => delete DYNAMIC[k]);
     },
 
     // Exponer resultados y DYNAMIC para test.report.js
@@ -285,18 +308,18 @@ const TestRunner = (() => {
     getDynamic()  { return { ...DYNAMIC }; },  // útil para debug
 
     // Ejecutar una suite por id
+    // [BUG-2 FIX] Ya no se cachea _baseUrl aquí; _fetch lo resuelve en caliente
     async runSuite(suiteId) {
       const suite = TEST_SUITES.find(s => s.id === suiteId);
       if (!suite) return;
-      _baseUrl = _runner.getBaseUrl().replace(/\/$/, '');
       await _runSuite(suite);
       const summary = _countResults();
       _cb.onRunComplete(summary);
     },
 
     // Ejecutar todas las suites
+    // [BUG-2 FIX] Ya no se cachea _baseUrl aquí; _fetch lo resuelve en caliente
     async runAll() {
-      _baseUrl = _runner.getBaseUrl().replace(/\/$/, '');
       for (const suite of TEST_SUITES) {
         await _runSuite(suite);
         await _delay(350);
@@ -305,7 +328,7 @@ const TestRunner = (() => {
       _cb.onRunComplete(summary);
     },
 
-    // [FIX 4] Una sola definición — el UI la sobreescribe en init()
+    // Valor por defecto — el UI lo sobreescribe en init() apuntando al input
     getBaseUrl: () => 'http://localhost:5180',
   };
 

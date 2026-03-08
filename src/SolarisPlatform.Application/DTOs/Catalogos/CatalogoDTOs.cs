@@ -31,14 +31,14 @@ public record CrearPaisRequest(
 );
 
 public record ActualizarPaisRequest(
-    string Codigo,
-    string CodigoIso2,
     string Nombre,
     string? NombreIngles,
     string? CodigoTelefonico,
     string? Bandera,
     bool Activo,
-    int Orden
+    int Orden,
+    string? Codigo = null,     // FIX: opcional — se preserva si no viene
+    string? CodigoIso2 = null  // FIX: opcional — se preserva si no viene
 );
 
 // ══════════════════════════════════════════════════════
@@ -63,10 +63,10 @@ public record CrearEstadoProvinciaRequest(
 
 public record ActualizarEstadoProvinciaRequest(
     long PaisId,
-    string Codigo,
     string Nombre,
     bool Activo,
-    int Orden
+    int Orden,
+    string? Codigo = null  // FIX: opcional — se preserva si no viene
 );
 
 // ══════════════════════════════════════════════════════
@@ -120,12 +120,12 @@ public record CrearMonedaRequest(
 );
 
 public record ActualizarMonedaRequest(
-    string Codigo,
     string Nombre,
     string Simbolo,
     byte DecimalesPermitidos,
     bool Activo,
-    int Orden
+    int Orden,
+    string? Codigo = null  // FIX: opcional — se preserva si no viene
 );
 
 // ══════════════════════════════════════════════════════
@@ -147,13 +147,13 @@ public record TipoIdentificacionDto(
 
 public record CrearTipoIdentificacionRequest(
     long? PaisId,
-    string Codigo,
     string Nombre,
     int? Longitud,
     string? Patron,
     bool AplicaPersona = true,
     bool AplicaEmpresa = true,
-    int Orden = 0
+    int Orden = 0,
+    string? Codigo = null  // FIX: opcional — se autogenera si no se envía
 );
 
 public record ActualizarTipoIdentificacionRequest(
@@ -185,12 +185,12 @@ public record ImpuestoDto(
 
 public record CrearImpuestoRequest(
     long? EmpresaId,
-    string Codigo,
     string Nombre,
     decimal Porcentaje,
-    string TipoImpuesto,
     bool EsRetencion = false,
-    int Orden = 0
+    int Orden = 0,
+    string? Codigo = null,         // FIX: opcional — se autogenera si no se envía
+    string? TipoImpuesto = null    // FIX: opcional — default "IVA"
 );
 
 public record ActualizarImpuestoRequest(
@@ -221,24 +221,24 @@ public record FormaPagoDto(
 
 public record CrearFormaPagoRequest(
     long? EmpresaId,
-    string Codigo,
     string Nombre,
-    string Tipo,
     int DiasCredito = 0,
     bool RequiereBanco = false,
     bool RequiereReferencia = false,
-    int Orden = 0
+    int Orden = 0,
+    string? Codigo = null,   // FIX: opcional — se autogenera si no se envía
+    string? Tipo = null      // FIX: opcional — default "CONTADO"
 );
 
 public record ActualizarFormaPagoRequest(
-    string Codigo,
     string Nombre,
-    string Tipo,
     int DiasCredito,
     bool RequiereBanco,
     bool RequiereReferencia,
     bool Activo,
-    int Orden
+    int Orden,
+    string? Codigo = null,  // FIX: opcional — no requerido en PUT
+    string? Tipo = null     // FIX: opcional — no requerido en PUT
 );
 
 // ══════════════════════════════════════════════════════
@@ -257,17 +257,17 @@ public record BancoDto(
 
 public record CrearBancoRequest(
     long? PaisId,
-    string Codigo,
     string Nombre,
     string? NombreCorto,
-    int Orden = 0
+    int Orden = 0,
+    string? Codigo = null  // FIX: opcional — se autogenera si no se envía
 );
 
 public record ActualizarBancoRequest(
     long? PaisId,
-    string Codigo,
     string Nombre,
     string? NombreCorto,
     bool Activo,
-    int Orden
+    int Orden,
+    string? Codigo = null  // FIX: opcional — no requerido en PUT
 );

@@ -3,8 +3,6 @@ using SolarisPlatform.Application.Common.Interfaces.Proyectos;
 using SolarisPlatform.Infrastructure.Services.Proyectos;
 using SolarisPlatform.Infrastructure.Persistence.Repositories.Proyectos;
 using SolarisPlatform.Domain.Interfaces.Proyectos;
-using SolarisPlatform.Application.Common.Interfaces.Proyectos;
-using SolarisPlatform.Infrastructure.Services.Proyectos;
 
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -161,15 +159,6 @@ public static class DependencyInjection
         services.AddScoped<ICapacitacionService,    CapacitacionService>();
         services.AddScoped<IRrhhDashboardService,   RrhhDashboardService>();
 
-        // RRHH — Repositorios
-        services.AddScoped<IDepartamentoRepository, DepartamentoRepository>();
-        services.AddScoped<IPuestoRepository,       PuestoRepository>();
-        services.AddScoped<IEmpleadoRepository,     EmpleadoRepository>();
-
-        // ==========================================
-        // MISC
-        // ==========================================
-        
         // ==========================================
         // RRHH — Repositorios
         // ==========================================

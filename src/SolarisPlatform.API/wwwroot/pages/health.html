@@ -6,7 +6,464 @@
   <title>Health · Solaris Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="../assets/css/solaris.css" />
+  <style>
+
+/* ══════════════════════════════════════════════════
+   RESET
+══════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ══════════════════════════════════════════════════
+   TOKENS
+══════════════════════════════════════════════════ */
+:root, [data-theme="dark"] {
+  --bg:       #07090f;
+  --surface:  #0d1117;
+  --surface2: #111820;
+  --surface3: #0a0f18;
+  --border:   #1e2a3a;
+  --border2:  #253347;
+  --accent:   #f59e0b;
+  --accent2:  #3b82f6;
+  --text:     #e2e8f0;
+  --muted:    #64748b;
+  --green:    #22c55e;
+  --red:      #ef4444;
+  --yellow:   #eab308;
+  --purple:   #a78bfa;
+  --cyan:     #22d3ee;
+  --radius:   12px;
+  --orb-opacity: .15;
+  --grid-color:  rgba(59,130,246,.04);
+}
+
+[data-theme="light"] {
+  --bg:       #f0f4f8;
+  --surface:  #ffffff;
+  --surface2: #f8fafc;
+  --surface3: #eef2f7;
+  --border:   #cbd5e1;
+  --border2:  #b8c9d9;
+  --accent:   #d97706;
+  --accent2:  #2563eb;
+  --text:     #0f172a;
+  --muted:    #64748b;
+  --green:    #16a34a;
+  --red:      #dc2626;
+  --yellow:   #ca8a04;
+  --purple:   #7c3aed;
+  --cyan:     #0891b2;
+  --orb-opacity: .06;
+  --grid-color:  rgba(37,99,235,.05);
+}
+
+/* ══════════════════════════════════════════════════
+   BASE
+══════════════════════════════════════════════════ */
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color:      var(--text);
+  font-family: 'Syne', sans-serif;
+  min-height: 100vh;
+  padding: 2rem;
+  overflow-x: hidden;
+  transition: background .35s, color .35s;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none; z-index: 0;
+}
+
+/* ══════════════════════════════════════════════════
+   ORBS
+══════════════════════════════════════════════════ */
+.orb {
+  position: fixed; border-radius: 50%;
+  filter: blur(110px); pointer-events: none;
+  opacity: var(--orb-opacity);
+  animation: drift 18s ease-in-out infinite alternate;
+  z-index: 0;
+}
+.orb-1 { width: 500px; height: 500px; background: #15803d; top: -150px; left: -120px; }
+.orb-2 { width: 380px; height: 380px; background: #1d4ed8; bottom: -100px; right: -100px; animation-delay: 6s; }
+
+@keyframes drift {
+  from { transform: translate(0, 0); }
+  to   { transform: translate(22px, -28px); }
+}
+
+/* ══════════════════════════════════════════════════
+   PAGE
+══════════════════════════════════════════════════ */
+.page {
+  position: relative; z-index: 1;
+  max-width: 880px; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 2rem;
+  animation: fadeUp .55s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ══════════════════════════════════════════════════
+   HEADER
+══════════════════════════════════════════════════ */
+.header {
+  display: flex; align-items: center; gap: 1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1.5rem;
+  position: relative;
+}
+.header::after {
+  content: '';
+  position: absolute; bottom: -1px; left: 0;
+  height: 1px; width: 0;
+  background: linear-gradient(90deg, var(--green), var(--accent2), transparent);
+  animation: scanline 2s cubic-bezier(.4,0,.2,1) .4s forwards;
+}
+@keyframes scanline { to { width: 100%; } }
+
+.back-btn {
+  display: flex; align-items: center; gap: .4rem;
+  font-family: 'JetBrains Mono', monospace; font-size: .72rem;
+  color: var(--muted); text-decoration: none;
+  border: 1px solid var(--border); padding: .35rem .8rem;
+  border-radius: 8px; transition: border-color .2s, color .2s;
+  white-space: nowrap; flex-shrink: 0;
+}
+.back-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+
+.header-center { flex: 1; min-width: 0; }
+.header-center h1 {
+  font-size: 1.55rem; font-weight: 800; letter-spacing: -.4px;
+  background: linear-gradient(135deg, var(--text) 40%, var(--green));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.header-center p {
+  font-family: 'JetBrains Mono', monospace; font-size: .65rem;
+  color: var(--muted); margin-top: 3px;
+}
+
+.header-right {
+  margin-left: auto; display: flex; align-items: center; gap: .75rem; flex-shrink: 0;
+}
+
+/* Theme switch */
+.theme-switch { display: flex; align-items: center; gap: .4rem; user-select: none; }
+.theme-icon { font-size: .85rem; }
+.toggle { position: relative; width: 40px; height: 22px; cursor: pointer; }
+.toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.track {
+  position: absolute; inset: 0; border-radius: 999px;
+  background: var(--border); border: 1px solid var(--border); transition: background .3s;
+}
+.toggle input:checked + .track { background: var(--accent2); border-color: var(--accent2); }
+.thumb {
+  position: absolute; top: 3px; left: 3px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+}
+.toggle input:checked ~ .thumb { transform: translateX(18px); }
+
+/* Refresh button */
+.refresh-btn {
+  font-family: 'JetBrains Mono', monospace; font-size: .65rem;
+  background: transparent; border: 1px solid var(--border); color: var(--muted);
+  padding: .3rem .8rem; border-radius: 7px; cursor: pointer;
+  transition: all .2s; display: flex; align-items: center; gap: .4rem;
+}
+.refresh-btn:hover { border-color: var(--green); color: var(--green); }
+.refresh-icon { display: inline-block; }
+.refresh-btn.spinning .refresh-icon { animation: spin .6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ══════════════════════════════════════════════════
+   SECTION LABEL
+══════════════════════════════════════════════════ */
+.section-label {
+  font-size: .65rem; font-weight: 700; letter-spacing: .13em;
+  color: var(--muted); text-transform: uppercase; margin-bottom: .75rem;
+  display: flex; align-items: center; gap: .5rem;
+}
+.section-label::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(to right, var(--border), transparent);
+}
+
+/* ══════════════════════════════════════════════════
+   BANNER
+══════════════════════════════════════════════════ */
+.banner {
+  display: flex; align-items: center; gap: 1.25rem;
+  padding: 1.2rem 1.5rem; border-radius: var(--radius); border: 1px solid;
+  transition: background .5s, border-color .5s;
+  position: relative; overflow: hidden;
+  animation: fadeUp .4s ease .1s both;
+}
+.banner::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 90% 50%, var(--banner-glow, transparent) 0%, transparent 60%);
+  pointer-events: none;
+}
+.banner.healthy   { background: rgba(34,197,94,.07);  border-color: rgba(34,197,94,.3);  --banner-glow: rgba(34,197,94,.1); }
+.banner.degraded  { background: rgba(234,179,8,.07);  border-color: rgba(234,179,8,.3);  --banner-glow: rgba(234,179,8,.1); }
+.banner.unhealthy { background: rgba(239,68,68,.07);  border-color: rgba(239,68,68,.3);  --banner-glow: rgba(239,68,68,.1); }
+.banner.loading   { background: var(--surface); border-color: var(--border); }
+
+.banner-icon { font-size: 2.4rem; line-height: 1; flex-shrink: 0; }
+.banner-body { flex: 1; min-width: 0; }
+.banner-body strong { font-size: 1.05rem; font-weight: 800; display: block; margin-bottom: 3px; }
+.banner-body span   { font-family: 'JetBrains Mono', monospace; font-size: .67rem; color: var(--muted); }
+
+.banner-right { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: .45rem; flex-shrink: 0; }
+.banner-ts { font-family: 'JetBrains Mono', monospace; font-size: .62rem; color: var(--muted); text-align: right; line-height: 1.6; }
+.banner-ts strong { color: var(--text); font-weight: 600; }
+
+/* Countdown ring — r=12 → C≈75.4 */
+.countdown-wrap { display: flex; align-items: center; gap: .5rem; }
+.countdown-ring { position: relative; width: 34px; height: 34px; flex-shrink: 0; }
+.countdown-ring svg { transform: rotate(-90deg); }
+.ring-bg   { fill: none; stroke: var(--border); stroke-width: 3; }
+.ring-fill { fill: none; stroke: var(--green); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset .95s linear, stroke .4s; }
+.ring-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: .56rem; font-weight: 700; color: var(--text); }
+.countdown-label { font-family: 'JetBrains Mono', monospace; font-size: .58rem; color: var(--muted); line-height: 1.5; }
+
+/* ══════════════════════════════════════════════════
+   KPI STRIP
+══════════════════════════════════════════════════ */
+.kpi-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem;
+}
+@media (max-width: 640px) { .kpi-strip { grid-template-columns: repeat(2, 1fr); } }
+
+.kpi-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1rem 1.1rem;
+  display: flex; flex-direction: column; gap: .3rem;
+  position: relative; overflow: hidden;
+  transition: border-color .25s, transform .2s;
+  animation: fadeUp .5s ease both;
+}
+.kpi-card:nth-child(1) { animation-delay: .08s; }
+.kpi-card:nth-child(2) { animation-delay: .14s; }
+.kpi-card:nth-child(3) { animation-delay: .20s; }
+.kpi-card:nth-child(4) { animation-delay: .26s; }
+.kpi-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--kpi-color, var(--border)); opacity: .5; transition: opacity .3s;
+}
+.kpi-card:hover { border-color: var(--kpi-color, var(--border)); transform: translateY(-2px); }
+.kpi-card:hover::before { opacity: 1; }
+
+.kpi-label { font-family: 'JetBrains Mono', monospace; font-size: .58rem; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+.kpi-value { font-size: 1.45rem; font-weight: 800; color: var(--kpi-color, var(--text)); line-height: 1.1; transition: color .4s; }
+.kpi-sub   { font-family: 'JetBrains Mono', monospace; font-size: .6rem; color: var(--muted); }
+
+/* ══════════════════════════════════════════════════
+   CHECK CARDS
+══════════════════════════════════════════════════ */
+.checks {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;
+}
+@media (max-width: 640px) { .checks { grid-template-columns: 1fr; } }
+
+.check-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.25rem;
+  display: flex; flex-direction: column; gap: .95rem;
+  transition: border-color .35s, transform .2s, box-shadow .3s;
+  animation: fadeUp .5s ease both;
+}
+.check-card:nth-child(1) { animation-delay: .1s; }
+.check-card:nth-child(2) { animation-delay: .18s; }
+.check-card:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,.25); }
+.check-card.status-ok  { border-color: rgba(34,197,94,.4); }
+.check-card.status-err { border-color: rgba(239,68,68,.4); }
+
+.check-card-header { display: flex; align-items: center; gap: .85rem; }
+
+.check-icon {
+  width: 42px; height: 42px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; flex-shrink: 0;
+}
+
+.check-title-wrap { flex: 1; min-width: 0; }
+.check-name     { font-weight: 800; font-size: 1rem; }
+.check-subtitle { font-family: 'JetBrains Mono', monospace; font-size: .6rem; color: var(--muted); margin-top: 2px; }
+
+.check-status-label {
+  font-family: 'JetBrains Mono', monospace; font-size: .6rem; font-weight: 700;
+  padding: .22rem .65rem; border-radius: 999px; letter-spacing: .05em;
+  display: flex; align-items: center; gap: .35rem; flex-shrink: 0;
+}
+.check-status-label::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.label-healthy   { background: rgba(34,197,94,.12); color: var(--green); }
+.label-unhealthy { background: rgba(239,68,68,.12);  color: var(--red); }
+.label-loading   { background: var(--surface2); color: var(--muted); animation: blink .9s ease infinite alternate; }
+@keyframes blink { from { opacity: .4; } to { opacity: 1; } }
+
+/* Stat rows */
+.check-stats { display: flex; flex-direction: column; gap: .32rem; }
+.stat-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: 'JetBrains Mono', monospace; font-size: .7rem;
+  padding: .4rem .65rem; border-radius: 7px;
+  background: var(--surface2); border: 1px solid transparent;
+  transition: border-color .2s;
+}
+.stat-row:hover { border-color: var(--border); }
+.stat-key { color: var(--muted); }
+.stat-val { color: var(--text); font-weight: 500; }
+.stat-val.good { color: var(--green); }
+.stat-val.warn { color: var(--yellow); }
+.stat-val.bad  { color: var(--red); }
+
+/* Latency bar */
+.latency-bar-wrap  { display: flex; flex-direction: column; gap: .4rem; }
+.latency-bar-label { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: .62rem; color: var(--muted); }
+.latency-bar       { height: 6px; border-radius: 999px; background: var(--surface2); overflow: hidden; border: 1px solid var(--border); }
+.latency-fill      { height: 100%; border-radius: 999px; background: var(--green); transition: width .7s cubic-bezier(.4,0,.2,1), background .4s; }
+
+/* Sparkline */
+.sparkline-wrap  { display: flex; flex-direction: column; gap: .35rem; }
+.sparkline-label { font-family: 'JetBrains Mono', monospace; font-size: .58rem; color: var(--muted); }
+.sparkline       { display: flex; align-items: flex-end; gap: 2px; height: 30px; }
+.spark-bar {
+  flex: 1; border-radius: 2px 2px 0 0; background: var(--accent2);
+  opacity: .38; min-height: 2px;
+  transition: height .45s cubic-bezier(.4,0,.2,1), opacity .3s, background .3s;
+}
+.spark-bar:last-child { opacity: 1; }
+.spark-bar.sp-ok   { background: var(--green); }
+.spark-bar.sp-warn { background: var(--yellow); }
+.spark-bar.sp-bad  { background: var(--red); }
+
+/* ══════════════════════════════════════════════════
+   HISTORY
+══════════════════════════════════════════════════ */
+.history-section { display: flex; flex-direction: column; gap: .85rem; animation: fadeUp .5s ease .28s both; }
+
+.history-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem; }
+.history-stats  { display: flex; gap: 1rem; font-family: 'JetBrains Mono', monospace; font-size: .62rem; }
+.hs-item { display: flex; align-items: center; gap: .35rem; color: var(--muted); }
+.hs-dot  { width: 8px; height: 8px; border-radius: 2px; }
+
+.history-bar { display: flex; gap: 3px; align-items: flex-end; height: 44px; }
+.hbar {
+  flex: 1; border-radius: 3px 3px 0 0; min-height: 6px; cursor: pointer;
+  position: relative;
+  transition: opacity .2s, height .45s cubic-bezier(.4,0,.2,1);
+}
+.hbar.ok    { background: var(--green); opacity: .65; }
+.hbar.ok:hover  { opacity: 1; }
+.hbar.err   { background: var(--red);   opacity: .75; }
+.hbar.err:hover { opacity: 1; }
+.hbar.empty { background: var(--border); height: 6px !important; opacity: .35; cursor: default; }
+
+.hbar::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 7px); left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface2); border: 1px solid var(--border2);
+  color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: .55rem;
+  padding: .25rem .55rem; border-radius: 6px; white-space: nowrap;
+  opacity: 0; pointer-events: none; transition: opacity .15s;
+  box-shadow: 0 4px 14px rgba(0,0,0,.35); z-index: 10;
+}
+.hbar:hover::after { opacity: 1; }
+
+.history-meta { display: flex; justify-content: space-between; align-items: center; font-family: 'JetBrains Mono', monospace; font-size: .62rem; color: var(--muted); }
+.uptime-badge { font-family: 'JetBrains Mono', monospace; font-size: .65rem; font-weight: 700; padding: .18rem .65rem; border-radius: 6px; }
+.uptime-perfect { background: rgba(34,197,94,.12); color: var(--green); }
+.uptime-good    { background: rgba(234,179,8,.12);  color: var(--yellow); }
+.uptime-bad     { background: rgba(239,68,68,.12);  color: var(--red); }
+
+/* ══════════════════════════════════════════════════
+   INCIDENTS
+══════════════════════════════════════════════════ */
+.incidents-section { animation: fadeUp .5s ease .35s both; }
+.incidents-header  { display: flex; align-items: center; justify-content: space-between; margin-bottom: .75rem; flex-wrap: wrap; gap: .5rem; }
+.incidents         { display: flex; flex-direction: column; gap: .35rem; }
+
+.incident-row {
+  display: grid; grid-template-columns: 10px 1fr auto;
+  align-items: center; gap: .75rem;
+  font-family: 'JetBrains Mono', monospace; font-size: .65rem;
+  padding: .5rem .85rem; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface);
+  transition: background .15s, border-color .2s;
+  animation: slideIn .25s ease both;
+}
+@keyframes slideIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+.incident-row:hover { background: var(--surface2); border-color: var(--border2); }
+
+.incident-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.incident-dot.ok  { background: var(--green); box-shadow: 0 0 6px rgba(34,197,94,.5); }
+.incident-dot.err { background: var(--red);   box-shadow: 0 0 6px rgba(239,68,68,.5); }
+.incident-msg  { color: var(--text); }
+.incident-time { color: var(--muted); white-space: nowrap; }
+
+.no-incidents {
+  font-family: 'JetBrains Mono', monospace; font-size: .68rem; color: var(--muted);
+  text-align: center; padding: 1.5rem;
+  border: 1px dashed var(--border); border-radius: var(--radius);
+}
+
+.clear-btn {
+  font-family: 'JetBrains Mono', monospace; font-size: .6rem;
+  background: transparent; border: 1px solid var(--border); color: var(--muted);
+  padding: .22rem .6rem; border-radius: 6px; cursor: pointer; transition: all .2s;
+}
+.clear-btn:hover { border-color: var(--red); color: var(--red); }
+
+/* ══════════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════════ */
+.toast {
+  position: fixed; bottom: 1.5rem; right: 1.5rem;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 11px; padding: .85rem 1.15rem;
+  font-family: 'JetBrains Mono', monospace; font-size: .68rem;
+  display: flex; align-items: center; gap: .65rem;
+  box-shadow: 0 10px 40px rgba(0,0,0,.45);
+  transform: translateY(16px); opacity: 0;
+  transition: transform .35s cubic-bezier(.4,0,.2,1), opacity .35s;
+  z-index: 999; max-width: 310px; pointer-events: none;
+}
+.toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+.toast.toast-ok  { border-color: rgba(34,197,94,.4); }
+.toast.toast-err { border-color: rgba(239,68,68,.45); }
+.toast-icon { font-size: 1.1rem; flex-shrink: 0; }
+.toast-text strong { display: block; color: var(--text); margin-bottom: 2px; font-size: .72rem; }
+.toast-text span   { color: var(--muted); font-size: .6rem; }
+
+/* ══════════════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════════════ */
+.footer {
+  text-align: center; font-family: 'JetBrains Mono', monospace;
+  font-size: .62rem; color: var(--muted);
+  border-top: 1px solid var(--border); padding-top: 1.5rem;
+}
+.footer a { color: var(--accent2); text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+
+  </style>
 </head>
 <body>
 
@@ -33,7 +490,8 @@
       </div>
       <div class="header-right">
         <button class="refresh-btn" id="refreshBtn" onclick="manualRefresh()">
-          <span class="refresh-icon" id="refreshIcon">↻</span> Refrescar
+          <span class="refresh-icon" id="refreshIcon">↻</span>
+          Refrescar
         </button>
         <div class="theme-switch">
           <span class="theme-icon">☀️</span>
@@ -47,7 +505,7 @@
       </div>
     </div>
 
-    <!-- ── Banner general ── -->
+    <!-- ── Banner ── -->
     <div class="banner loading" id="banner">
       <div class="banner-icon" id="bannerIcon">⏳</div>
       <div class="banner-body">
@@ -57,10 +515,10 @@
       <div class="banner-right">
         <div class="countdown-wrap">
           <div class="countdown-ring">
-            <svg width="28" height="28" viewBox="0 0 28 28">
-              <circle class="ring-bg"   cx="14" cy="14" r="11"/>
-              <circle class="ring-fill" id="ringFill" cx="14" cy="14" r="11"
-                stroke-dasharray="69.1" stroke-dashoffset="0"/>
+            <svg width="34" height="34" viewBox="0 0 34 34">
+              <circle class="ring-bg"   cx="17" cy="17" r="13"/>
+              <circle class="ring-fill" id="ringFill" cx="17" cy="17" r="13"
+                stroke-dasharray="81.7" stroke-dashoffset="0"/>
             </svg>
             <div class="ring-text" id="countdownNum">30</div>
           </div>
@@ -72,29 +530,29 @@
 
     <!-- ── KPI Strip ── -->
     <div class="kpi-strip">
-      <div class="kpi-card" style="--kpi-color: var(--green)">
-        <div class="kpi-label">Uptime (sesión)</div>
+      <div class="kpi-card" style="--kpi-color:var(--green)">
+        <div class="kpi-label">Uptime sesión</div>
         <div class="kpi-value" id="kpiUptime">—</div>
-        <div class="kpi-sub" id="kpiUptimeSub">calculando…</div>
+        <div class="kpi-sub"  id="kpiUptimeSub">calculando…</div>
       </div>
-      <div class="kpi-card" style="--kpi-color: var(--accent2)">
+      <div class="kpi-card" style="--kpi-color:var(--accent2)">
         <div class="kpi-label">Latencia DB avg</div>
         <div class="kpi-value" id="kpiLatAvg">—</div>
-        <div class="kpi-sub" id="kpiLatSub">sin datos aún</div>
+        <div class="kpi-sub"  id="kpiLatSub">sin datos aún</div>
       </div>
-      <div class="kpi-card" style="--kpi-color: var(--yellow)">
+      <div class="kpi-card" style="--kpi-color:var(--yellow)">
         <div class="kpi-label">Checks realizados</div>
         <div class="kpi-value" id="kpiChecks">0</div>
-        <div class="kpi-sub" id="kpiChecksSub">esta sesión</div>
+        <div class="kpi-sub">esta sesión</div>
       </div>
-      <div class="kpi-card" style="--kpi-color: var(--purple)">
+      <div class="kpi-card" style="--kpi-color:var(--purple)">
         <div class="kpi-label">Último incidente</div>
-        <div class="kpi-value" id="kpiIncident" style="font-size:.95rem">—</div>
-        <div class="kpi-sub" id="kpiIncidentSub">sin incidentes</div>
+        <div class="kpi-value" id="kpiIncident" style="font-size:.92rem">—</div>
+        <div class="kpi-sub"  id="kpiIncidentSub">sin incidentes</div>
       </div>
     </div>
 
-    <!-- ── Check cards ── -->
+    <!-- ── Servicios ── -->
     <div>
       <p class="section-label">Servicios</p>
       <div class="checks">
@@ -102,7 +560,7 @@
         <!-- API -->
         <div class="check-card" id="cardApi">
           <div class="check-card-header">
-            <div class="check-icon" style="background:rgba(59,130,246,.15)">🚀</div>
+            <div class="check-icon" style="background:rgba(59,130,246,.14)">🚀</div>
             <div class="check-title-wrap">
               <div class="check-name">API</div>
               <div class="check-subtitle">SolarisPlatform.API · .NET 10</div>
@@ -113,23 +571,23 @@
             <div class="stat-row"><span class="stat-key">Servicio</span><span class="stat-val">Solaris Platform API</span></div>
             <div class="stat-row"><span class="stat-key">Versión</span><span class="stat-val" id="apiVersion">—</span></div>
             <div class="stat-row"><span class="stat-key">Entorno</span><span class="stat-val" id="apiEnv">—</span></div>
-            <div class="stat-row"><span class="stat-key">Latencia endpoint</span><span class="stat-val good" id="apiLatency">0 ms</span></div>
+            <div class="stat-row"><span class="stat-key">Latencia endpoint</span><span class="stat-val good" id="apiLatency">— ms</span></div>
           </div>
         </div>
 
         <!-- Base de datos -->
         <div class="check-card" id="cardDb">
           <div class="check-card-header">
-            <div class="check-icon" style="background:rgba(34,197,94,.15)">🗄️</div>
+            <div class="check-icon" style="background:rgba(34,197,94,.14)">🗄️</div>
             <div class="check-title-wrap">
               <div class="check-name">Base de Datos</div>
-              <div class="check-subtitle">PostgreSQL 16 · Entity Framework</div>
+              <div class="check-subtitle">PostgreSQL 16 · EF Core</div>
             </div>
             <span class="check-status-label label-loading" id="dbLabel">···</span>
           </div>
           <div class="check-stats">
             <div class="stat-row"><span class="stat-key">Motor</span><span class="stat-val">PostgreSQL 16</span></div>
-            <div class="stat-row"><span class="stat-key">Base</span><span class="stat-val" id="dbName">—</span></div>
+            <div class="stat-row"><span class="stat-key">Base de datos</span><span class="stat-val" id="dbName">—</span></div>
             <div class="stat-row"><span class="stat-key">Latencia actual</span><span class="stat-val" id="dbLatency">—</span></div>
             <div class="stat-row"><span class="stat-key">Latencia mínima</span><span class="stat-val good" id="dbLatMin">—</span></div>
             <div class="stat-row"><span class="stat-key">Latencia máxima</span><span class="stat-val" id="dbLatMax">—</span></div>
@@ -144,23 +602,16 @@
             </div>
           </div>
           <div class="sparkline-wrap">
-            <div class="sparkline-label">Historial latencia (últimas 15 lecturas)</div>
+            <div class="sparkline-label">Historial últimas 15 lecturas</div>
             <div class="sparkline" id="sparkline">
-              <div class="spark-bar" style="height:20%"></div>
-              <div class="spark-bar" style="height:20%"></div>
-              <div class="spark-bar" style="height:20%"></div>
-              <div class="spark-bar" style="height:20%"></div>
-              <div class="spark-bar" style="height:20%"></div>
-              <div class="spark-bar" style="height:20%"></div>
-              <div class="spark-bar" style="height:20%"></div>
-              <div class="spark-bar" style="height:20%"></div>
-              <div class="spark-bar" style="height:20%"></div>
-              <div class="spark-bar" style="height:20%"></div>
-              <div class="spark-bar" style="height:20%"></div>
-              <div class="spark-bar" style="height:20%"></div>
-              <div class="spark-bar" style="height:20%"></div>
-              <div class="spark-bar" style="height:20%"></div>
-              <div class="spark-bar" style="height:20%"></div>
+              <div class="spark-bar" style="height:15%"></div><div class="spark-bar" style="height:15%"></div>
+              <div class="spark-bar" style="height:15%"></div><div class="spark-bar" style="height:15%"></div>
+              <div class="spark-bar" style="height:15%"></div><div class="spark-bar" style="height:15%"></div>
+              <div class="spark-bar" style="height:15%"></div><div class="spark-bar" style="height:15%"></div>
+              <div class="spark-bar" style="height:15%"></div><div class="spark-bar" style="height:15%"></div>
+              <div class="spark-bar" style="height:15%"></div><div class="spark-bar" style="height:15%"></div>
+              <div class="spark-bar" style="height:15%"></div><div class="spark-bar" style="height:15%"></div>
+              <div class="spark-bar" style="height:15%"></div>
             </div>
           </div>
         </div>
@@ -168,7 +619,7 @@
       </div>
     </div>
 
-    <!-- ── Historial de checks ── -->
+    <!-- ── Historial ── -->
     <div class="history-section">
       <div class="history-header">
         <p class="section-label" style="margin-bottom:0">Historial de checks — últimos 30</p>
@@ -186,11 +637,11 @@
       </div>
     </div>
 
-    <!-- ── Log de incidentes ── -->
-    <div>
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem; flex-wrap:wrap; gap:.5rem;">
+    <!-- ── Incidentes ── -->
+    <div class="incidents-section">
+      <div class="incidents-header">
         <p class="section-label" style="margin-bottom:0">Registro de incidentes</p>
-        <button class="refresh-btn" style="font-size:.58rem; padding:.2rem .55rem" onclick="clearIncidents()">✕ Limpiar</button>
+        <button class="clear-btn" onclick="clearIncidents()">✕ Limpiar</button>
       </div>
       <div class="incidents" id="incidentsList">
         <div class="no-incidents" id="noIncidents">✅ Sin incidentes registrados en esta sesión</div>
@@ -200,16 +651,17 @@
     <!-- ── Footer ── -->
     <div class="footer">
       Solaris Platform ERP &nbsp;·&nbsp; Desarrollado por LuisFer &nbsp;·&nbsp;
+      <a href="/">← Inicio</a> &nbsp;·&nbsp;
       <a href="/swagger">Swagger →</a> &nbsp;·&nbsp;
       <a href="/api.html">API Reference →</a>
     </div>
 
-  </div><!-- /page -->
+  </div>
 
   <script>
-  /* ══════════════════════════════════════════════════════
+  /* ══════════════════════════════
      THEME
-  ══════════════════════════════════════════════════════ */
+  ══════════════════════════════ */
   const html   = document.documentElement;
   const toggle = document.getElementById('themeToggle');
   const STORE  = 'solaris-theme';
@@ -223,27 +675,27 @@
     toggle.checked = (t === 'dark');
   }
 
-  /* ══════════════════════════════════════════════════════
+  /* ══════════════════════════════
      STATE
-  ══════════════════════════════════════════════════════ */
-  const checkHistory  = [];   // { ok, ts, latencyMs }
-  const latencyHist   = [];   // últimas 15 latencias DB
-  let   totalChecks   = 0;
-  let   lastStatus    = null; // 'healthy' | 'degraded' | 'unhealthy' | null
-  let   lastIncident  = null; // timestamp del último error
-  let   latMin        = Infinity;
-  let   latMax        = 0;
-  let   incidents     = [];   // { ok, msg, ts }
+  ══════════════════════════════ */
+  const checkHistory = [];
+  const latencyHist  = [];
+  let totalChecks  = 0;
+  let lastStatus   = null;
+  let lastIncident = null;
+  let latMin       = Infinity;
+  let latMax       = 0;
+  let incidents    = [];
 
-  /* ══════════════════════════════════════════════════════
-     COUNTDOWN RING
-  ══════════════════════════════════════════════════════ */
-  const INTERVAL = 30;
-  let   countdown = INTERVAL;
-  const CIRCUMFERENCE = 2 * Math.PI * 11; // r=11 → ~69.1
+  /* ══════════════════════════════
+     COUNTDOWN RING  r=13 → C≈81.7
+  ══════════════════════════════ */
+  const INTERVAL      = 30;
+  const CIRCUMFERENCE = 2 * Math.PI * 13; // ≈ 81.7
+  let countdown = INTERVAL;
 
-  const ringFill  = document.getElementById('ringFill');
-  const countNum  = document.getElementById('countdownNum');
+  const ringFill = document.getElementById('ringFill');
+  const countNum = document.getElementById('countdownNum');
 
   function updateRing() {
     const pct    = countdown / INTERVAL;
@@ -258,25 +710,22 @@
     if (countdown <= 0) { countdown = INTERVAL; doCheck(); }
     updateRing();
   }, 1000);
-
   updateRing();
 
-  /* ══════════════════════════════════════════════════════
+  /* ══════════════════════════════
      MANUAL REFRESH
-  ══════════════════════════════════════════════════════ */
+  ══════════════════════════════ */
   function manualRefresh() {
     countdown = INTERVAL;
     updateRing();
-    const btn  = document.getElementById('refreshBtn');
-    const icon = document.getElementById('refreshIcon');
+    const btn = document.getElementById('refreshBtn');
     btn.classList.add('spinning');
-    icon.style.display = 'inline-block';
     doCheck().finally(() => btn.classList.remove('spinning'));
   }
 
-  /* ══════════════════════════════════════════════════════
+  /* ══════════════════════════════
      TOAST
-  ══════════════════════════════════════════════════════ */
+  ══════════════════════════════ */
   let toastTimer = null;
   function showToast(ok, title, desc) {
     const el = document.getElementById('toast');
@@ -285,20 +734,20 @@
     document.getElementById('toastDesc').textContent  = desc;
     el.className = 'toast show ' + (ok ? 'toast-ok' : 'toast-err');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { el.classList.remove('show'); }, 4500);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 4500);
   }
 
-  /* ══════════════════════════════════════════════════════
-     CHECK
-  ══════════════════════════════════════════════════════ */
+  /* ══════════════════════════════
+     MAIN CHECK
+  ══════════════════════════════ */
   async function doCheck() {
     totalChecks++;
     document.getElementById('kpiChecks').textContent = totalChecks;
 
     const t0 = Date.now();
     try {
-      const res  = await fetch('/health/data');
-      const data = await res.json();
+      const res   = await fetch('/health/data');
+      const data  = await res.json();
       const apiMs = Date.now() - t0;
 
       render(data, apiMs);
@@ -307,16 +756,13 @@
       const db = data.checks?.find(c => c.name === 'database');
       const ms = db?.latencyMs ?? 0;
 
-      // Actualiza historial
       checkHistory.push({ ok, ts: new Date(), latencyMs: ms });
       if (checkHistory.length > 30) checkHistory.shift();
 
-      // Sparkline
       latencyHist.push(ms);
       if (latencyHist.length > 15) latencyHist.shift();
       updateSparkline();
 
-      // min/max
       if (ms > 0) {
         latMin = Math.min(latMin, ms);
         latMax = Math.max(latMax, ms);
@@ -325,18 +771,16 @@
         document.getElementById('dbLatMax').className   = 'stat-val ' + (latMax > 200 ? 'warn' : 'good');
       }
 
-      // KPI latencia avg
       const avg = latencyHist.length
-        ? Math.round(latencyHist.reduce((a,b)=>a+b,0) / latencyHist.length)
+        ? Math.round(latencyHist.reduce((a, b) => a + b, 0) / latencyHist.length)
         : 0;
       document.getElementById('kpiLatAvg').textContent = avg ? avg + ' ms' : '—';
       document.getElementById('kpiLatSub').textContent = latencyHist.length + ' muestras';
 
-      // Cambio de estado → toast
       const newStatus = ok ? 'healthy' : 'unhealthy';
       if (lastStatus !== null && lastStatus !== newStatus) {
         if (newStatus === 'healthy') {
-          showToast(true, 'Sistema recuperado', 'Todos los servicios operativos');
+          showToast(true,  'Sistema recuperado', 'Todos los servicios operativos');
           addIncident(true, 'Sistema recuperado — todos los servicios OK');
         } else {
           showToast(false, 'Falla detectada', 'Uno o más servicios con problemas');
@@ -352,7 +796,7 @@
       renderHistory();
       updateKPIs();
 
-    } catch(e) {
+    } catch (e) {
       renderError();
       checkHistory.push({ ok: false, ts: new Date(), latencyMs: 0 });
       if (checkHistory.length > 30) checkHistory.shift();
@@ -363,49 +807,41 @@
         lastIncident = new Date();
       }
       lastStatus = 'unhealthy';
-
       renderHistory();
       updateKPIs();
     }
   }
 
-  /* ══════════════════════════════════════════════════════
-     RENDER HEALTHY
-  ══════════════════════════════════════════════════════ */
+  /* ══════════════════════════════
+     RENDER OK
+  ══════════════════════════════ */
   function render(data, apiMs) {
     const isHealthy  = data.status === 'Healthy';
     const isDegraded = data.status === 'Degraded';
-    const statusKey  = isHealthy ? 'healthy' : isDegraded ? 'degraded' : 'unhealthy';
+    const key        = isHealthy ? 'healthy' : isDegraded ? 'degraded' : 'unhealthy';
 
-    // Banner
     const banner = document.getElementById('banner');
-    banner.className = 'banner ' + statusKey;
+    banner.className = 'banner ' + key;
     document.getElementById('bannerIcon').textContent  = isHealthy ? '✅' : isDegraded ? '⚠️' : '❌';
     document.getElementById('bannerTitle').textContent = isHealthy
       ? 'Todos los sistemas operativos'
-      : isDegraded ? 'Sistema degradado'
-      : 'Sistema con fallas';
-    document.getElementById('bannerDesc').textContent = isHealthy
+      : isDegraded ? 'Sistema degradado' : 'Sistema con fallas';
+    document.getElementById('bannerDesc').textContent  = isHealthy
       ? 'API y base de datos funcionando correctamente'
       : 'Uno o más servicios con problemas — revisa los detalles abajo';
-
     const ts = new Date(data.timestamp);
     document.getElementById('bannerTs').innerHTML =
       `Último check<br><strong>${ts.toLocaleTimeString('es-EC')}</strong>`;
 
-    // Card API
-    const cardApi = document.getElementById('cardApi');
-    cardApi.className = 'check-card ' + (isHealthy ? 'status-ok' : 'status-err');
+    document.getElementById('cardApi').className      = 'check-card ' + (isHealthy ? 'status-ok' : 'status-err');
     document.getElementById('apiVersion').textContent = data.version || '1.0.0';
     document.getElementById('apiEnv').textContent     = data.environment || '—';
     document.getElementById('apiLatency').textContent = apiMs + ' ms';
     document.getElementById('apiLatency').className   = 'stat-val ' + (apiMs < 100 ? 'good' : apiMs < 400 ? 'warn' : 'bad');
 
-    // Card DB
     const db   = data.checks?.find(c => c.name === 'database');
     const dbOk = db?.status === 'Healthy';
-    const cardDb = document.getElementById('cardDb');
-    cardDb.className = 'check-card ' + (dbOk ? 'status-ok' : 'status-err');
+    document.getElementById('cardDb').className = 'check-card ' + (dbOk ? 'status-ok' : 'status-err');
 
     const lbl = document.getElementById('dbLabel');
     lbl.textContent = dbOk ? 'HEALTHY' : 'UNHEALTHY';
@@ -421,26 +857,21 @@
       document.getElementById('dbLatency').className   = 'stat-val ' + msClass;
       document.getElementById('dbLatencyLabel').textContent = ms + ' ms';
 
-      // barra (0ms = 0%, 500ms = 100%)
       const pct = Math.min(100, (ms / 500) * 100);
       const bar = document.getElementById('dbLatencyBar');
       bar.style.width      = pct + '%';
       bar.style.background = ms < 50 ? 'var(--green)' : ms < 200 ? 'var(--yellow)' : 'var(--red)';
-
-      // Arch badge update (si existe index.html en la misma pestaña — no aplica pero es buena práctica)
-      const archEl = document.getElementById('dbArchBadge');
-      if (archEl) archEl.textContent = `PostgreSQL · ${ms}ms`;
     }
   }
 
-  /* ══════════════════════════════════════════════════════
+  /* ══════════════════════════════
      RENDER ERROR
-  ══════════════════════════════════════════════════════ */
+  ══════════════════════════════ */
   function renderError() {
     document.getElementById('banner').className        = 'banner unhealthy';
     document.getElementById('bannerIcon').textContent  = '❌';
     document.getElementById('bannerTitle').textContent = 'No se puede conectar con la API';
-    document.getElementById('bannerDesc').textContent  = 'Verifica que el servidor esté corriendo en el puerto correcto';
+    document.getElementById('bannerDesc').textContent  = 'Verifica que el servidor esté corriendo';
     document.getElementById('bannerTs').innerHTML      = '—';
     document.getElementById('dbLabel').textContent     = 'ERROR';
     document.getElementById('dbLabel').className       = 'check-status-label label-unhealthy';
@@ -448,85 +879,76 @@
     document.getElementById('cardApi').className       = 'check-card status-err';
   }
 
-  /* ══════════════════════════════════════════════════════
+  /* ══════════════════════════════
      SPARKLINE
-  ══════════════════════════════════════════════════════ */
+  ══════════════════════════════ */
   function updateSparkline() {
-    const bars = document.getElementById('sparkline').querySelectorAll('.spark-bar');
+    const bars  = document.getElementById('sparkline').querySelectorAll('.spark-bar');
     const maxMs = Math.max(...latencyHist, 10);
-
     latencyHist.forEach((ms, i) => {
-      const bar = bars[i];
-      if (!bar) return;
-      const pct   = Math.max(8, Math.min(100, (ms / maxMs) * 100));
-      bar.style.height = pct + '%';
-      bar.className = 'spark-bar ' + (ms < 50 ? 'sp-ok' : ms < 200 ? 'sp-warn' : 'sp-bad');
+      if (!bars[i]) return;
+      bars[i].style.height = Math.max(8, Math.min(100, (ms / maxMs) * 100)) + '%';
+      bars[i].className    = 'spark-bar ' + (ms < 50 ? 'sp-ok' : ms < 200 ? 'sp-warn' : 'sp-bad');
     });
   }
 
-  /* ══════════════════════════════════════════════════════
+  /* ══════════════════════════════
      HISTORY BAR
-  ══════════════════════════════════════════════════════ */
+  ══════════════════════════════ */
   function renderHistory() {
     const bar    = document.getElementById('historyBar');
     const padded = Array(30 - checkHistory.length).fill(null).concat(checkHistory);
     bar.innerHTML = '';
-
     padded.forEach(item => {
       const div = document.createElement('div');
       if (!item) {
-        div.className      = 'hbar empty';
-        div.style.height   = '6px';
+        div.className = 'hbar empty';
+        div.style.height = '6px';
       } else {
-        div.className      = 'hbar ' + (item.ok ? 'ok' : 'err');
-        div.style.height   = (item.ok ? 40 : 16) + 'px';
-        const timeStr      = item.ts.toLocaleTimeString('es-EC', { hour12: false });
-        const latStr       = item.latencyMs ? ` · ${item.latencyMs}ms` : '';
-        div.setAttribute('data-tip', `${timeStr}${latStr} · ${item.ok ? 'OK' : 'ERROR'}`);
+        div.className = 'hbar ' + (item.ok ? 'ok' : 'err');
+        div.style.height = (item.ok ? 44 : 18) + 'px';
+        const t = item.ts.toLocaleTimeString('es-EC', { hour12: false });
+        const l = item.latencyMs ? ` · ${item.latencyMs}ms` : '';
+        div.setAttribute('data-tip', `${t}${l} · ${item.ok ? 'OK' : 'ERROR'}`);
       }
       bar.appendChild(div);
     });
   }
 
-  /* ══════════════════════════════════════════════════════
+  /* ══════════════════════════════
      KPIs
-  ══════════════════════════════════════════════════════ */
+  ══════════════════════════════ */
   function updateKPIs() {
-    const total  = checkHistory.length;
-    const okCnt  = checkHistory.filter(h => h.ok).length;
-    const pct    = total > 0 ? (okCnt / total * 100).toFixed(1) : null;
+    const total = checkHistory.length;
+    const okCnt = checkHistory.filter(h => h.ok).length;
+    const pct   = total > 0 ? (okCnt / total * 100).toFixed(1) : null;
 
-    // Uptime
-    const kpiUptime = document.getElementById('kpiUptime');
-    const kpiSub    = document.getElementById('kpiUptimeSub');
     if (pct !== null) {
-      kpiUptime.textContent = pct + '%';
-      kpiUptime.style.color = pct >= 100 ? 'var(--green)' : pct >= 90 ? 'var(--yellow)' : 'var(--red)';
-      kpiSub.textContent    = `${okCnt} / ${total} checks OK`;
+      const kpiUp = document.getElementById('kpiUptime');
+      kpiUp.textContent = pct + '%';
+      kpiUp.style.color = pct >= 100 ? 'var(--green)' : pct >= 90 ? 'var(--yellow)' : 'var(--red)';
+      document.getElementById('kpiUptimeSub').textContent = `${okCnt} / ${total} checks OK`;
 
-      // Uptime badge en historial
-      const upEl  = document.getElementById('historyUptime');
-      const cls   = pct >= 100 ? 'uptime-perfect' : pct >= 90 ? 'uptime-good' : 'uptime-bad';
-      upEl.innerHTML = `<span class="uptime-badge ${cls}">Uptime ${pct}%</span>`;
+      const cls = pct >= 100 ? 'uptime-perfect' : pct >= 90 ? 'uptime-good' : 'uptime-bad';
+      document.getElementById('historyUptime').innerHTML =
+        `<span class="uptime-badge ${cls}">Uptime ${pct}%</span>`;
     }
 
-    // Último incidente
-    const kpiInc    = document.getElementById('kpiIncident');
-    const kpiIncSub = document.getElementById('kpiIncidentSub');
+    const kpiInc = document.getElementById('kpiIncident');
     if (lastIncident) {
-      kpiInc.textContent    = lastIncident.toLocaleTimeString('es-EC', { hour12: false });
-      kpiInc.style.color    = 'var(--red)';
-      kpiIncSub.textContent = lastIncident.toLocaleDateString('es-EC');
+      kpiInc.textContent = lastIncident.toLocaleTimeString('es-EC', { hour12: false });
+      kpiInc.style.color = 'var(--red)';
+      document.getElementById('kpiIncidentSub').textContent = lastIncident.toLocaleDateString('es-EC');
     } else {
-      kpiInc.textContent    = '—';
-      kpiInc.style.color    = 'var(--green)';
-      kpiIncSub.textContent = 'sin incidentes';
+      kpiInc.textContent = '—';
+      kpiInc.style.color = 'var(--green)';
+      document.getElementById('kpiIncidentSub').textContent = 'sin incidentes';
     }
   }
 
-  /* ══════════════════════════════════════════════════════
-     INCIDENTS LOG
-  ══════════════════════════════════════════════════════ */
+  /* ══════════════════════════════
+     INCIDENTS
+  ══════════════════════════════ */
   function addIncident(ok, msg) {
     incidents.unshift({ ok, msg, ts: new Date() });
     if (incidents.length > 20) incidents.pop();
@@ -534,17 +956,11 @@
   }
 
   function renderIncidents() {
-    const list    = document.getElementById('incidentsList');
-    const noEl    = document.getElementById('noIncidents');
-
+    const list = document.getElementById('incidentsList');
+    const noEl = document.getElementById('noIncidents');
     list.querySelectorAll('.incident-row').forEach(el => el.remove());
-
-    if (incidents.length === 0) {
-      noEl.style.display = 'block';
-      return;
-    }
+    if (incidents.length === 0) { noEl.style.display = 'block'; return; }
     noEl.style.display = 'none';
-
     incidents.forEach(inc => {
       const div = document.createElement('div');
       div.className = 'incident-row';
@@ -558,18 +974,17 @@
   }
 
   function clearIncidents() {
-    incidents   = [];
+    incidents    = [];
     lastIncident = null;
     renderIncidents();
     updateKPIs();
   }
 
-  /* ══════════════════════════════════════════════════════
+  /* ══════════════════════════════
      INIT
-  ══════════════════════════════════════════════════════ */
+  ══════════════════════════════ */
   renderHistory();
   doCheck();
   </script>
-
 </body>
 </html>

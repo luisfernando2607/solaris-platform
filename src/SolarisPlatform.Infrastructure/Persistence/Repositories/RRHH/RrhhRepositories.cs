@@ -50,7 +50,7 @@ public class DepartamentoRepository : IDepartamentoRepository
 
     public async Task<Departamento> ActualizarAsync(Departamento departamento)
     {
-        _db.Departamentos.Update(departamento);
+        _db.Entry(departamento).State = EntityState.Modified;
         await _db.SaveChangesAsync();
         return departamento;
     }
@@ -99,7 +99,7 @@ public class PuestoRepository : IPuestoRepository
 
     public async Task<Puesto> ActualizarAsync(Puesto puesto)
     {
-        _db.Puestos.Update(puesto);
+        _db.Entry(puesto).State = EntityState.Modified;
         await _db.SaveChangesAsync();
         return puesto;
     }
@@ -197,7 +197,7 @@ public class EmpleadoRepository : IEmpleadoRepository
 
     public async Task<Empleado> ActualizarAsync(Empleado empleado)
     {
-        _db.Empleados.Update(empleado);
+        _db.Entry(empleado).State = EntityState.Modified;
         await _db.SaveChangesAsync();
         return empleado;
     }

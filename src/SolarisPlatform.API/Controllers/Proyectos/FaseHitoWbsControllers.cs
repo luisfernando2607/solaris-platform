@@ -41,6 +41,7 @@ public class FasesController : BaseProyectosController
     public async Task<IActionResult> Create(long proyectoId, [FromBody] CrearProyectoFaseRequest request, CancellationToken ct)
     {
         request.ProyectoId = proyectoId;
+        request.EmpresaId = EmpresaId;
         var result = await _service.CreateAsync(request, UsuarioId, ct);
         if (!result.Succeeded) return BadRequestResult(result.Error!);
         return CreatedAtAction(nameof(GetById), new { proyectoId, id = result.Data!.Id },
@@ -97,6 +98,7 @@ public class HitosController : BaseProyectosController
     public async Task<IActionResult> Create(long proyectoId, [FromBody] CrearProyectoHitoRequest request, CancellationToken ct)
     {
         request.ProyectoId = proyectoId;
+        request.EmpresaId = EmpresaId;
         var result = await _service.CreateAsync(request, UsuarioId, ct);
         if (!result.Succeeded) return BadRequestResult(result.Error!);
         return CreatedAtAction(nameof(GetById), new { proyectoId, id = result.Data!.Id },
@@ -150,6 +152,7 @@ public class DocumentosController : BaseProyectosController
     public async Task<IActionResult> Create(long proyectoId, [FromBody] CrearProyectoDocumentoRequest request, CancellationToken ct)
     {
         request.ProyectoId = proyectoId;
+        request.EmpresaId = EmpresaId;
         var result = await _service.CreateAsync(request, UsuarioId, ct);
         return FromResult(result);
     }
@@ -195,6 +198,7 @@ public class WbsController : BaseProyectosController
     public async Task<IActionResult> CreateNodo(long proyectoId, [FromBody] CrearWbsNodoRequest request, CancellationToken ct)
     {
         request.ProyectoId = proyectoId;
+        request.EmpresaId = EmpresaId;
         var result = await _service.CreateNodoAsync(request, UsuarioId, ct);
         if (!result.Succeeded) return BadRequestResult(result.Error!);
         return CreatedAtAction(nameof(GetById), new { proyectoId, id = result.Data!.Id },

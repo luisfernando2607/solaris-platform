@@ -1,11 +1,26 @@
 // ══════════════════════════════════════════════════════════════════════
-//  test.ui.js  —  Solaris Platform · API Test Console
+//  test.ui.js  —  Solaris Platform · API Test Console  v1.2
 //  ─────────────────────────────────────────────────────────────────────
 //  Responsabilidad única: manipular el DOM.
 //  - Genera el HTML de suites y test-rows dinámicamente desde TEST_SUITES.
 //  - Escucha los callbacks del TestRunner para actualizar la UI.
 //  - No ejecuta fetches ni conoce lógica de negocio.
 //  Depende de: test.config.js, test.runner.js
+//
+//  FIXES v1.1:
+//   [BUG-4] La barra de progreso ya no se desfasa cuando el usuario
+//           corre suites individuales de forma acumulada sin hacer
+//           clearAll(). Se introdujo _progressScope para trackear
+//           cuántos tests pertenecen a la ejecución actual,
+//           independientemente de cuántos tests hay en total.
+//
+//  CAMBIOS v1.2:
+//   [NAV-CARDS] Los pills de navegación fueron reemplazados por cards
+//               con contador de passed/failed, barra de progreso por
+//               módulo y botón "Ejecutar módulo" individual.
+//               _updateSuiteStats() ahora actualiza tanto los stats
+//               internos de la suite como el card de navegación.
+//               clearAll() resetea los cards al estado inicial.
 // ══════════════════════════════════════════════════════════════════════
 
 const TestUI = (() => {
@@ -82,19 +97,32 @@ const TestUI = (() => {
     TEST_SUITES.forEach(suite => {
       _counters[suite.id] = { ok: 0, err: 0, skip: suite.tests.length };
 
-      // Nav pill
-      const pill = document.createElement('button');
-      pill.className = 'suite-pill';
-      pill.id        = `nav-${suite.id}`;
-      pill.innerHTML = `${suite.icon} ${esc(suite.title)} <span class="pill-count" id="pill-count-${suite.id}">·${suite.tests.length}</span>`;
-      pill.onclick   = () => TestUI.runSuite(suite.id);
-      nav.appendChild(pill);
+      // ── [NAV-CARDS] Card de navegación (reemplaza pill) ────────
+      const navCard = document.createElement('div');
+      navCard.className = 'suite-card';
+      navCard.id        = `nav-${suite.id}`;
+      navCard.innerHTML = `
+        <div class="sc-header">
+          <span class="sc-icon">${suite.icon}</span>
+          <span class="sc-title">${esc(suite.title)}</span>
+        </div>
+        <div class="sc-total">${suite.tests.length} tests</div>
+        <div class="sc-stats">
+          <span class="sc-passed" id="sc-passed-${suite.id}">✔ 0 passed</span>
+          <span class="sc-failed" id="sc-failed-${suite.id}">✖ 0 failed</span>
+        </div>
+        <div class="sc-bar-wrap">
+          <div class="sc-bar" id="sc-bar-${suite.id}" style="width:0%"></div>
+        </div>
+        <div class="sc-pct" id="sc-pct-${suite.id}"></div>
+        <button class="sc-btn" onclick="TestUI.runSuite('${suite.id}')">▶ Ejecutar módulo</button>
+      `;
+      nav.appendChild(navCard);
 
-      // Suite card
+      // ── Suite card (lista de tests, colapsada por defecto) ─────
       const card = document.createElement('div');
-      card.className = 'suite';
+      card.className = 'suite collapsed';
       card.id        = `suite-${suite.id}`;
-
       card.innerHTML = `
         <div class="suite-header" onclick="TestUI.toggleSuite('${suite.id}')">
           <span class="suite-icon">${suite.icon}</span>
@@ -119,7 +147,7 @@ const TestUI = (() => {
 
   // ── Actualizar fila de test ─────────────────────────────────────
   function _applyResult(testId, result, testDef) {
-    const row    = document.getElementById(`t-${testId}`);
+    const row = document.getElementById(`t-${testId}`);
     if (!row) return;
 
     row.className = 'test-row ' + (result.passed ? 'state-ok' : 'state-fail');
@@ -149,8 +177,8 @@ const TestUI = (() => {
         : testDef.expect.status;
       let html = `<b>❌ Fallo — HTTP ${result.status} (esperado: ${expectedStr})</b>`;
       result.diagnosis.forEach(line => { html += `<br>• ${esc(line)}`; });
-      hintEl.innerHTML      = html;
-      hintEl.style.display  = '';
+      hintEl.innerHTML     = html;
+      hintEl.style.display = '';
     } else {
       hintEl.style.display = 'none';
     }
@@ -169,8 +197,11 @@ const TestUI = (() => {
   }
 
   // ── Actualizar contadores de suite ──────────────────────────────
+  // [NAV-CARDS] Actualiza stats internos de la suite Y el nav card.
   function _updateSuiteStats(suiteId) {
-    const c    = _counters[suiteId];
+    const c = _counters[suiteId];
+
+    // Stats internos de la suite (cabecera colapsable)
     const okEl   = document.getElementById(`${suiteId}-ok`);
     const errEl  = document.getElementById(`${suiteId}-err`);
     const skipEl = document.getElementById(`${suiteId}-skip`);
@@ -178,25 +209,48 @@ const TestUI = (() => {
     if (errEl)  errEl.textContent  = `✗${c.err}`;
     if (skipEl) skipEl.textContent = `—${c.skip}`;
 
-    // Color nav pill
-    const pill = document.getElementById(`nav-${suiteId}`);
-    if (pill) {
-      if (c.err > 0) {
-        pill.style.borderColor = 'var(--red)';   pill.style.color = 'var(--red)';
-      } else if (c.ok > 0) {
-        pill.style.borderColor = 'var(--green)'; pill.style.color = 'var(--green)';
-      }
+    // ── [NAV-CARDS] Actualizar nav card ──────────────────────────
+    const total    = c.ok + c.err + c.skip;
+    const executed = c.ok + c.err;
+    const pct      = total > 0 ? Math.round((c.ok / total) * 100) : 0;
+
+    const scPassed = document.getElementById(`sc-passed-${suiteId}`);
+    const scFailed = document.getElementById(`sc-failed-${suiteId}`);
+    const scBar    = document.getElementById(`sc-bar-${suiteId}`);
+    const scPct    = document.getElementById(`sc-pct-${suiteId}`);
+    const scCard   = document.getElementById(`nav-${suiteId}`);
+
+    if (scPassed) scPassed.textContent = `✔ ${c.ok} passed`;
+    if (scFailed) scFailed.textContent = `✖ ${c.err} failed`;
+    if (scBar)    scBar.style.width    = pct + '%';
+    if (scPct)    scPct.textContent    = executed > 0 ? pct + '%' : '';
+
+    // Color borde del card según estado
+    if (scCard) {
+      scCard.classList.remove('sc-has-errors', 'sc-all-pass');
+      if (c.err > 0)     scCard.classList.add('sc-has-errors');
+      else if (c.ok > 0) scCard.classList.add('sc-all-pass');
     }
   }
 
-  // ── Barra de progreso ───────────────────────────────────────────
-  let _progressTotal = 0;
+  // ── Barra de progreso global ────────────────────────────────────
+  // [BUG-4 FIX] _progressScope reemplaza _progressTotal.
+  let _progressScope = 0;
   let _progressDone  = 0;
   let _progressFails = 0;
 
+  function _startProgress(totalForThisRun) {
+    _progressScope = totalForThisRun;
+    _progressDone  = 0;
+    _progressFails = 0;
+    _updateProgress();
+  }
+
   function _updateProgress() {
-    const pct = _progressTotal > 0 ? Math.round((_progressDone / _progressTotal) * 100) : 0;
-    const bar  = document.getElementById('progressBar');
+    const pct = _progressScope > 0
+      ? Math.min(100, Math.round((_progressDone / _progressScope) * 100))
+      : 0;
+    const bar = document.getElementById('progressBar');
     if (!bar) return;
     bar.style.width = pct + '%';
     bar.className   = 'progress-bar' + (_progressFails > 0 ? ' has-errors' : '');
@@ -204,7 +258,7 @@ const TestUI = (() => {
 
   // ── Resumen final ───────────────────────────────────────────────
   function _showSummary(summary) {
-    const el  = document.getElementById('summary');
+    const el = document.getElementById('summary');
     if (!el) return;
     const allOk = summary.failed === 0;
     el.className = 'summary show ' + (allOk ? 'pass' : 'fail');
@@ -213,7 +267,7 @@ const TestUI = (() => {
         ? `✅ Todos los tests pasaron (${summary.passed}/${summary.total})`
         : `❌ ${summary.failed} test(s) fallaron`;
     document.getElementById('summaryDetail').textContent =
-      `${summary.passed} correctos · ${summary.failed} fallidos · ${summary.total} total`;
+      `${summary.passed} correctos · ${summary.failed} fallidos · ${summary.skipped} skipped · ${summary.total} total`;
 
     // Habilitar botones de descarga
     const btnAll   = document.getElementById('btnDlAll');
@@ -229,10 +283,7 @@ const TestUI = (() => {
     init() {
       render();
 
-      // Contar total de tests para la barra de progreso
-      _progressTotal = TEST_SUITES.reduce((acc, s) => acc + s.tests.length, 0);
-
-      // Obtener el mapa testId → testDef para los callbacks
+      // Mapa testId → testDef para los callbacks
       const testMap = {};
       TEST_SUITES.forEach(s => s.tests.forEach(t => { testMap[t.id] = { ...t, suiteId: s.id }; }));
 
@@ -273,14 +324,25 @@ const TestUI = (() => {
     // Limpiar toda la UI
     clearAll() {
       TestRunner.reset();
-      _progressDone = 0; _progressFails = 0;
+      _progressDone = 0; _progressFails = 0; _progressScope = 0;
 
       TEST_SUITES.forEach(s => {
         _counters[s.id] = { ok: 0, err: 0, skip: s.tests.length };
         _updateSuiteStats(s.id);
-        // Reset color pill
-        const pill = document.getElementById(`nav-${s.id}`);
-        if (pill) { pill.style.borderColor = ''; pill.style.color = ''; }
+
+        // [NAV-CARDS] Resetear estado visual del card completamente
+        const scCard = document.getElementById(`nav-${s.id}`);
+        if (scCard) {
+          scCard.classList.remove('sc-has-errors', 'sc-all-pass');
+          const scPassed = document.getElementById(`sc-passed-${s.id}`);
+          const scFailed = document.getElementById(`sc-failed-${s.id}`);
+          const scBar    = document.getElementById(`sc-bar-${s.id}`);
+          const scPct    = document.getElementById(`sc-pct-${s.id}`);
+          if (scPassed) scPassed.textContent = '✔ 0 passed';
+          if (scFailed) scFailed.textContent = '✖ 0 failed';
+          if (scBar)    scBar.style.width    = '0%';
+          if (scPct)    scPct.textContent    = '';
+        }
       });
 
       document.querySelectorAll('.test-row').forEach(el => {
@@ -313,6 +375,10 @@ const TestUI = (() => {
     // Ejecutar desde el botón Run All
     async runAll() {
       this.clearAll();
+
+      // [BUG-4 FIX] Scope = total global de tests
+      _startProgress(TEST_SUITES.reduce((acc, s) => acc + s.tests.length, 0));
+
       const btn = document.getElementById('btnRunAll');
       if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Ejecutando…'; }
       document.getElementById('progressWrap')?.classList.add('visible');
@@ -324,10 +390,24 @@ const TestUI = (() => {
 
     // Ejecutar una sola suite
     async runSuite(suiteId) {
+      const suite = TEST_SUITES.find(s => s.id === suiteId);
+      if (!suite) return;
+
+      // [BUG-4 FIX] Acumular scope para suites individuales
+      const alreadyCounted = _progressDone >= _progressScope;
+      if (alreadyCounted || _progressScope === 0) {
+        _progressScope += suite.tests.length;
+      }
+      if (_progressDone >= _progressScope) {
+        _progressDone = Math.max(0, _progressDone - suite.tests.length);
+      }
+
       const btn = document.getElementById('btnRunAll');
       if (btn) btn.disabled = true;
       document.getElementById('progressWrap')?.classList.add('visible');
+
       await TestRunner.runSuite(suiteId);
+
       if (btn) btn.disabled = false;
     },
 

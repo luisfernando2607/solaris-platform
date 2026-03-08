@@ -50,9 +50,10 @@ public class EmpleadoService : IEmpleadoService
 
         var historial = new EmpleadoHistorial
         {
-            TipoCambio = 1,
+            EmpresaId     = empresaId,
+            TipoCambio    = 1,
             FechaEfectiva = request.FechaIngreso,
-            SalarioNuevo = request.SalarioBase
+            SalarioNuevo  = request.SalarioBase
         };
         emp.Historial.Add(historial);
 

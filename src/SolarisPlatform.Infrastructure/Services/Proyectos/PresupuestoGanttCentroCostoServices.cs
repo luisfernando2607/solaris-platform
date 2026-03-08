@@ -68,6 +68,7 @@ public class PresupuestoService : IPresupuestoService
         var version = (short)((await _repo.GetByProyectoAsync(request.ProyectoId, ct)).Count() + 1);
         var e = new Presupuesto
         {
+            EmpresaId   = request.EmpresaId,
             ProyectoId  = request.ProyectoId,
             Version     = version,
             // FIX: Nombre, Contingencia, EsActivo, EsAprobado, TotalIngresos/Egresos/Neto
@@ -299,6 +300,7 @@ public class CentroCostoService : ICentroCostoService
     {
         var e = new CentroCosto
         {
+            EmpresaId      = request.EmpresaId,
             ProyectoId     = request.ProyectoId,
             Codigo         = request.Codigo,
             Nombre         = request.Nombre,

@@ -30,6 +30,7 @@ public class WbsService : IWbsService
     {
         var e = new WbsNodo
         {
+            EmpresaId        = request.EmpresaId,
             ProyectoId       = request.ProyectoId,
             FaseId           = request.FaseId,
             PadreId          = request.PadreId,
@@ -100,6 +101,7 @@ public class TareaService : ITareaService
     {
         var e = new Tarea
         {
+            EmpresaId        = request.EmpresaId,
             ProyectoId       = request.ProyectoId,
             WbsNodoId        = request.WbsNodoId,
             // FIX: FaseId eliminado de entidad Tarea — ignorado
@@ -228,6 +230,7 @@ public class CuadrillaService : ICuadrillaService
     {
         var e = new Cuadrilla
         {
+            EmpresaId       = request.EmpresaId,
             ProyectoId      = request.ProyectoId,
             Nombre          = request.Nombre,
             Descripcion     = request.Descripcion,

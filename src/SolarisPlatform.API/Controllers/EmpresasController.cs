@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SolarisPlatform.Application.Common.Interfaces;
 using SolarisPlatform.Application.Common.Models;
 using SolarisPlatform.Domain.Entities.Empresas;
 using SolarisPlatform.Domain.Interfaces;
+using SolarisPlatform.Infrastructure.Persistence.Context;
 
 namespace SolarisPlatform.API.Controllers;
 
@@ -20,19 +22,23 @@ public class EmpresasController : ControllerBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<EmpresasController> _logger;
+    // ✅ FIX: Inyectar SolarisDbContext para manejar el tracking en Update/Delete de sucursales
+    private readonly SolarisDbContext _context;
 
     public EmpresasController(
         IEmpresaRepository empresaRepository,
         ISucursalRepository sucursalRepository,
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        ILogger<EmpresasController> logger)
+        ILogger<EmpresasController> logger,
+        SolarisDbContext context)
     {
         _empresaRepository = empresaRepository;
         _sucursalRepository = sucursalRepository;
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _logger = logger;
+        _context = context;
     }
 
     #region Empresas
@@ -76,7 +82,7 @@ public class EmpresasController : ControllerBase
         CancellationToken cancellationToken)
     {
         // Verificar acceso
-        if (!_currentUserService.TieneRol("SUPER_ADMIN") && 
+        if (!_currentUserService.TieneRol("SUPER_ADMIN") &&
             id != _currentUserService.EmpresaId)
         {
             return Forbid();
@@ -155,13 +161,14 @@ public class EmpresasController : ControllerBase
         [FromBody] ActualizarEmpresaRequest request,
         CancellationToken cancellationToken)
     {
+        request.Id = id;
         if (id != request.Id)
         {
             return BadRequest(ApiResponse<EmpresaDto>.Fail("El ID no coincide"));
         }
 
         // Verificar acceso
-        if (!_currentUserService.TieneRol("SUPER_ADMIN") && 
+        if (!_currentUserService.TieneRol("SUPER_ADMIN") &&
             id != _currentUserService.EmpresaId)
         {
             return Forbid();
@@ -204,7 +211,7 @@ public class EmpresasController : ControllerBase
         CancellationToken cancellationToken)
     {
         // Verificar acceso
-        if (!_currentUserService.TieneRol("SUPER_ADMIN") && 
+        if (!_currentUserService.TieneRol("SUPER_ADMIN") &&
             empresaId != _currentUserService.EmpresaId)
         {
             return Forbid();
@@ -225,7 +232,7 @@ public class EmpresasController : ControllerBase
         CancellationToken cancellationToken)
     {
         // Verificar acceso
-        if (!_currentUserService.TieneRol("SUPER_ADMIN") && 
+        if (!_currentUserService.TieneRol("SUPER_ADMIN") &&
             empresaId != _currentUserService.EmpresaId)
         {
             return Forbid();
@@ -250,7 +257,7 @@ public class EmpresasController : ControllerBase
         CancellationToken cancellationToken)
     {
         // Verificar acceso
-        if (!_currentUserService.TieneRol("SUPER_ADMIN") && 
+        if (!_currentUserService.TieneRol("SUPER_ADMIN") &&
             empresaId != _currentUserService.EmpresaId)
         {
             return Forbid();
@@ -263,7 +270,13 @@ public class EmpresasController : ControllerBase
             return NotFound(ApiResponse<SucursalDto>.Fail("Empresa no encontrada"));
         }
 
-        // ✅ CORREGIDO: Verificar código único manualmente
+        // Auto-generar Codigo si no viene en el request
+        if (string.IsNullOrWhiteSpace(request.Codigo))
+        {
+            request.Codigo = $"SUC-{empresaId:D3}-{DateTime.UtcNow:yyMMddHHmm}";
+        }
+
+        // Verificar código único
         var sucursales = await _sucursalRepository.GetByEmpresaAsync(empresaId, cancellationToken);
         if (sucursales.Any(s => s.Codigo == request.Codigo && s.Activo))
         {
@@ -315,32 +328,39 @@ public class EmpresasController : ControllerBase
         [FromBody] ActualizarSucursalRequest request,
         CancellationToken cancellationToken)
     {
+        request.Id = id;
         if (id != request.Id)
         {
             return BadRequest(ApiResponse<SucursalDto>.Fail("El ID no coincide"));
         }
 
         // Verificar acceso
-        if (!_currentUserService.TieneRol("SUPER_ADMIN") && 
+        if (!_currentUserService.TieneRol("SUPER_ADMIN") &&
             empresaId != _currentUserService.EmpresaId)
         {
             return Forbid();
         }
 
-        var sucursal = await _sucursalRepository.GetByIdAsync(id, cancellationToken);
-        if (sucursal == null || sucursal.EmpresaId != empresaId)
+        // ✅ FIX: Buscar con tracking directo desde _context en lugar del repository (que usa AsNoTracking)
+        // Antes: _sucursalRepository.GetByIdAsync devolvía entidad sin tracking → SaveChanges fallaba con 500
+        var sucursal = await _context.Sucursales
+            .FirstOrDefaultAsync(s => s.Id == id && s.EmpresaId == empresaId, cancellationToken);
+
+        if (sucursal == null)
         {
             return NotFound(ApiResponse<SucursalDto>.Fail("Sucursal no encontrada"));
         }
 
-        // Si se marca como principal, desmarcar las demás
+        // Si se marca como principal, desmarcar las demás usando _context para tracking consistente
         if (request.EsPrincipal && !sucursal.EsPrincipal)
         {
-            var sucursales = await _sucursalRepository.GetByEmpresaAsync(empresaId, cancellationToken);
-            foreach (var s in sucursales.Where(s => s.EsPrincipal && s.Id != id))
+            var otrasPrincipales = await _context.Sucursales
+                .Where(s => s.EmpresaId == empresaId && s.EsPrincipal && s.Id != id)
+                .ToListAsync(cancellationToken);
+
+            foreach (var s in otrasPrincipales)
             {
                 s.EsPrincipal = false;
-                await _sucursalRepository.UpdateAsync(s, cancellationToken);
             }
         }
 
@@ -354,7 +374,8 @@ public class EmpresasController : ControllerBase
         sucursal.FechaModificacion = DateTime.UtcNow;
         sucursal.UsuarioModificacion = _currentUserService.UsuarioId;
 
-        await _sucursalRepository.UpdateAsync(sucursal, cancellationToken);
+        // ✅ FIX: La entidad ya está trackeada por _context — SaveChanges la detecta automáticamente
+        // No hay que llamar _sucursalRepository.UpdateAsync (evita doble tracking)
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Sucursal {Id} actualizada", id);
@@ -371,14 +392,17 @@ public class EmpresasController : ControllerBase
         CancellationToken cancellationToken)
     {
         // Verificar acceso
-        if (!_currentUserService.TieneRol("SUPER_ADMIN") && 
+        if (!_currentUserService.TieneRol("SUPER_ADMIN") &&
             empresaId != _currentUserService.EmpresaId)
         {
             return Forbid();
         }
 
-        var sucursal = await _sucursalRepository.GetByIdAsync(id, cancellationToken);
-        if (sucursal == null || sucursal.EmpresaId != empresaId)
+        // ✅ FIX: Buscar con tracking directo desde _context
+        var sucursal = await _context.Sucursales
+            .FirstOrDefaultAsync(s => s.Id == id && s.EmpresaId == empresaId, cancellationToken);
+
+        if (sucursal == null)
         {
             return NotFound(ApiResponse.Fail("Sucursal no encontrada"));
         }
@@ -389,7 +413,9 @@ public class EmpresasController : ControllerBase
         }
 
         sucursal.UsuarioEliminacion = _currentUserService.UsuarioId;
-        await _sucursalRepository.DeleteAsync(sucursal, cancellationToken);
+
+        // ✅ FIX: Eliminar directo desde _context — la entidad ya está trackeada
+        _context.Sucursales.Remove(sucursal);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Sucursal {Id} eliminada", id);
@@ -493,7 +519,7 @@ public class ActualizarEmpresaRequest
 
 public class CrearSucursalRequest
 {
-    public string Codigo { get; set; } = null!;
+    public string? Codigo { get; set; }   // opcional: se auto-genera si no se envía
     public string Nombre { get; set; } = null!;
     public string? Direccion { get; set; }
     public long? CiudadId { get; set; }

@@ -66,7 +66,13 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
 
     public virtual Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
     {
-        _dbSet.Update(entity);
+        // Usar Entry.State = Modified en lugar de _dbSet.Update(entity).
+        // _dbSet.Update() marca el grafo completo (navigations incluidas) como Modified,
+        // lo que provoca DbUpdateException cuando navigations no cargadas tienen campos NOT NULL.
+        // Entry.State = Modified solo marca la entidad raíz sin tocar navigations.
+        if (_context.Entry(entity).State == EntityState.Detached)
+            _dbSet.Attach(entity);
+        _context.Entry(entity).State = EntityState.Modified;
         return Task.CompletedTask;
     }
 

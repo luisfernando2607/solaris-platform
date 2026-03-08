@@ -50,6 +50,7 @@ public class TareasController : BaseProyectosController
     public async Task<IActionResult> Create(long proyectoId, [FromBody] CrearTareaRequest request, CancellationToken ct)
     {
         request.ProyectoId = proyectoId;
+        request.EmpresaId = EmpresaId;
         var result = await _service.CreateAsync(request, UsuarioId, ct);
         if (!result.Succeeded) return BadRequestResult(result.Error!);
         return CreatedAtAction(nameof(GetById), new { proyectoId, id = result.Data!.Id },
@@ -139,6 +140,7 @@ public class CuadrillasController : BaseProyectosController
     public async Task<IActionResult> Create(long proyectoId, [FromBody] CrearCuadrillaRequest request, CancellationToken ct)
     {
         request.ProyectoId = proyectoId;
+        request.EmpresaId = EmpresaId;
         var result = await _service.CreateAsync(request, UsuarioId, ct);
         if (!result.Succeeded) return BadRequestResult(result.Error!);
         return CreatedAtAction(nameof(GetById), new { proyectoId, id = result.Data!.Id },

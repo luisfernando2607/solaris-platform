@@ -120,6 +120,7 @@ public class RolesController : ControllerBase
         [FromBody] ActualizarRolRequest request,
         CancellationToken cancellationToken)
     {
+        request.Id = id;
         if (id != request.Id)
         {
             return BadRequest(ApiResponse<RolDto>.Fail("El ID no coincide"));

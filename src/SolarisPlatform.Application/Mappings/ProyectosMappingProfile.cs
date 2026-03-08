@@ -145,20 +145,26 @@ public class ProyectosMappingProfile : Profile
         CreateMap<CentroCosto, CentroCostoDto>();
 
         // ─── Orden de Trabajo ────────────────────────────────────
-        // FIX: Numero→Codigo, Titulo eliminado, TecnicoResponsableId→TecnicoAsignadoId
-        //      Fechas: FechaInicioPlan/FinPlan/InicioReal/FinReal → FechaProgramada/Ejecucion
+        // FIX: Alineado con entidad real en BD y con OrdenTrabajoListDto actualizado:
+        //   s.Codigo           → param Codigo        (era s.Numero)
+        //   s.Descripcion      → param Titulo        (era s.Titulo; ahora nullable → sin CS8604)
+        //   s.TecnicoAsignadoId→ param TecnicoAsignadoId (era s.TecnicoResponsableId)
+        //   s.FechaProgramada  → param FechaProgramada    (era FechaInicioPlan)
+        //   null               → param FechaFinPlan       (no existe en BD)
+        //   s.FechaInicioEjecucion → param FechaInicioEjecucion (era FechaInicioReal)
+        //   s.FechaFinEjecucion    → param FechaFinEjecucion    (era FechaFinReal)
         CreateMap<OrdenTrabajo, OrdenTrabajoListDto>()
             .ConstructUsing((s, ctx) => new OrdenTrabajoListDto(
                 s.Id,
-                s.Codigo,           // FIX: era s.Numero
-                s.Descripcion,      // FIX: era s.Titulo (ahora Descripcion)
+                s.Codigo,
+                s.Descripcion,          // FIX: nullable — elimina CS8604
                 s.Estado,
                 s.ProyectoId, null,
                 s.CuadrillaId, null,
                 s.TecnicoAsignadoId,    // FIX: era s.TecnicoResponsableId
                 null,
                 s.FechaProgramada,      // FIX: era FechaInicioPlan
-                null,                   // FIX: FechaFinPlan no existe en BD — null
+                null,                   // FIX: FechaFinPlan no existe en BD
                 s.FechaInicioEjecucion, // FIX: era FechaInicioReal
                 s.FechaFinEjecucion))   // FIX: era FechaFinReal
             .ForAllMembers(o => o.Ignore());

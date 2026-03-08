@@ -18,8 +18,11 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
+        // CamelCase en respuestas (serialización)
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+        // Acepta tanto camelCase como PascalCase en requests (deserialización)
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     });
 
 // Swagger con autenticación JWT
@@ -108,8 +111,8 @@ app.MapControllers();
 // ============================================================
 
 // Rutas visuales — redirigen al dashboard HTML
-app.MapGet("/health",      () => Results.Redirect("/health.html"));
-app.MapGet("/health/full", () => Results.Redirect("/health.html"));
+app.MapGet("/health",      () => Results.Redirect("/pages/health.html"));
+app.MapGet("/health/full", () => Results.Redirect("/pages/health.html"));
 
 // ── /health/data — JSON completo (consumido por health.html e index.html) ──
 // IMPORTANTE: Este es el único endpoint que devuelve datos reales de ambos servicios

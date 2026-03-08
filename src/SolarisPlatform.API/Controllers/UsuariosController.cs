@@ -110,6 +110,7 @@ public class UsuariosController : ControllerBase
         [FromBody] ActualizarUsuarioRequest request,
         CancellationToken cancellationToken)
     {
+        request.Id = id;
         if (id != request.Id)
         {
             return BadRequest(ApiResponse<UsuarioDto>.Fail("El ID no coincide"));

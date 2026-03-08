@@ -129,7 +129,7 @@ public class ProyectoFaseService : IProyectoFaseService
             return Result<ProyectoFaseDto>.Failure($"Ya existe una fase con código '{request.Codigo}'");
         var e = new ProyectoFase
         {
-            ProyectoId = request.ProyectoId, Codigo = request.Codigo, Nombre = request.Nombre,
+            EmpresaId = request.EmpresaId, ProyectoId = request.ProyectoId, Codigo = request.Codigo, Nombre = request.Nombre,
             Descripcion = request.Descripcion, Orden = request.Orden,
             FechaInicioPlan = request.FechaInicioPlan, FechaFinPlan = request.FechaFinPlan,
             Estado = EstadoFase.Pendiente, PorcentajeAvance = 0
@@ -183,7 +183,7 @@ public class ProyectoHitoService : IProyectoHitoService
     {
         var e = new ProyectoHito
         {
-            ProyectoId = request.ProyectoId, Nombre = request.Nombre, Descripcion = request.Descripcion,
+            EmpresaId = request.EmpresaId, ProyectoId = request.ProyectoId, Nombre = request.Nombre, Descripcion = request.Descripcion,
             FechaCompromiso = request.FechaCompromiso, PorcentajePeso = request.PorcentajePeso,
             ResponsableId = request.ResponsableId, Orden = request.Orden, Estado = EstadoHito.Pendiente
         };
