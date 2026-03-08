@@ -59,7 +59,6 @@ public class UsuarioService : IUsuarioService
                 .ThenInclude(ur => ur.Rol)
             .AsQueryable();
 
-        // Filtros
         if (filtro.EmpresaId.HasValue)
             query = query.Where(u => u.EmpresaId == filtro.EmpresaId);
 
@@ -85,35 +84,23 @@ public class UsuarioService : IUsuarioService
         if (filtro.RolId.HasValue)
             query = query.Where(u => u.UsuarioRoles.Any(ur => ur.RolId == filtro.RolId && ur.Activo));
 
-        // Ordenamiento
         query = filtro.OrdenarPor?.ToLower() switch
         {
-            "email" => filtro.OrdenDescendente
-                ? query.OrderByDescending(u => u.Email)
-                : query.OrderBy(u => u.Email),
-            "nombres" => filtro.OrdenDescendente
-                ? query.OrderByDescending(u => u.Nombres)
-                : query.OrderBy(u => u.Nombres),
-            "ultimoacceso" => filtro.OrdenDescendente
-                ? query.OrderByDescending(u => u.UltimoAcceso)
-                : query.OrderBy(u => u.UltimoAcceso),
-            "fechacreacion" => filtro.OrdenDescendente
-                ? query.OrderByDescending(u => u.FechaCreacion)
-                : query.OrderBy(u => u.FechaCreacion),
-            _ => query.OrderBy(u => u.Apellidos).ThenBy(u => u.Nombres)
+            "email"        => filtro.OrdenDescendente ? query.OrderByDescending(u => u.Email)        : query.OrderBy(u => u.Email),
+            "nombres"      => filtro.OrdenDescendente ? query.OrderByDescending(u => u.Nombres)      : query.OrderBy(u => u.Nombres),
+            "ultimoacceso" => filtro.OrdenDescendente ? query.OrderByDescending(u => u.UltimoAcceso) : query.OrderBy(u => u.UltimoAcceso),
+            "fechacreacion"=> filtro.OrdenDescendente ? query.OrderByDescending(u => u.FechaCreacion): query.OrderBy(u => u.FechaCreacion),
+            _              => query.OrderBy(u => u.Apellidos).ThenBy(u => u.Nombres)
         };
 
-        // Contar total
         var total = await query.CountAsync(cancellationToken);
 
-        // Paginar
         var items = await query
             .Skip((filtro.Pagina - 1) * filtro.ElementosPorPagina)
             .Take(filtro.ElementosPorPagina)
             .ToListAsync(cancellationToken);
 
         var dtos = _mapper.Map<List<UsuarioListDto>>(items);
-
         return new PaginatedList<UsuarioListDto>(dtos, total, filtro.Pagina, filtro.ElementosPorPagina);
     }
 
@@ -122,14 +109,9 @@ public class UsuarioService : IUsuarioService
         long usuarioCreacion,
         CancellationToken cancellationToken = default)
     {
-        // Verificar email único
         if (await _usuarioRepository.EmailExisteAsync(request.Email, null, cancellationToken))
-        {
             return Result<UsuarioDto>.Failure("El email ya está registrado");
-        }
 
-        // ✅ FIX: Validar que todos los roles existen ANTES de insertar
-        // Antes se insertaban los UsuarioRoles sin validar, causando FK violation → 500
         if (request.RolesIds.Any())
         {
             var rolesExistentes = await _context.Roles
@@ -139,37 +121,32 @@ public class UsuarioService : IUsuarioService
 
             var noExisten = request.RolesIds.Except(rolesExistentes).ToList();
             if (noExisten.Any())
-            {
-                return Result<UsuarioDto>.Failure(
-                    $"Los siguientes roles no existen o están inactivos: {string.Join(", ", noExisten)}");
-            }
+                return Result<UsuarioDto>.Failure($"Los siguientes roles no existen o están inactivos: {string.Join(", ", noExisten)}");
         }
 
-        // Crear usuario usando el contexto directamente para evitar conflictos de tracking
         var usuario = new Usuario
         {
-            EmpresaId = request.EmpresaId,
-            SucursalId = request.SucursalId,
-            Email = request.Email.Trim().ToLower(),
-            NombreUsuario = request.NombreUsuario?.Trim(),
-            Nombres = request.Nombres.Trim(),
-            Apellidos = request.Apellidos.Trim(),
-            NumeroIdentificacion = request.NumeroIdentificacion?.Trim(),
-            Telefono = request.Telefono?.Trim(),
-            Celular = request.Celular?.Trim(),
-            FechaNacimiento = request.FechaNacimiento,
-            Genero = !string.IsNullOrEmpty(request.Genero) ? request.Genero[0] : null,
-            PasswordHash = _passwordService.HashPassword(request.Password),
-            Estado = EstadoUsuario.Activo,
-            Activo = true,
-            FechaCreacion = DateTime.UtcNow,
-            UsuarioCreacion = usuarioCreacion
+            EmpresaId             = request.EmpresaId,
+            SucursalId            = request.SucursalId,
+            Email                 = request.Email.Trim().ToLower(),
+            NombreUsuario         = request.NombreUsuario?.Trim(),
+            Nombres               = request.Nombres.Trim(),
+            Apellidos             = request.Apellidos.Trim(),
+            NumeroIdentificacion  = request.NumeroIdentificacion?.Trim(),
+            Telefono              = request.Telefono?.Trim(),
+            Celular               = request.Celular?.Trim(),
+            FechaNacimiento       = request.FechaNacimiento,
+            Genero                = !string.IsNullOrEmpty(request.Genero) ? request.Genero[0] : null,
+            PasswordHash          = _passwordService.HashPassword(request.Password),
+            Estado                = EstadoUsuario.Activo,
+            Activo                = true,
+            FechaCreacion         = DateTime.UtcNow,
+            UsuarioCreacion       = usuarioCreacion
         };
 
         await _context.Usuarios.AddAsync(usuario, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // Asignar roles luego de tener el Id generado
         if (request.RolesIds.Any())
         {
             var esPrimero = true;
@@ -177,11 +154,11 @@ public class UsuarioService : IUsuarioService
             {
                 var usuarioRol = new UsuarioRol
                 {
-                    UsuarioId = usuario.Id,
-                    RolId = rolId,
-                    EsPrincipal = esPrimero,
-                    Activo = true,
-                    FechaCreacion = DateTime.UtcNow,
+                    UsuarioId       = usuario.Id,
+                    RolId           = rolId,
+                    EsPrincipal     = esPrimero,
+                    Activo          = true,
+                    FechaCreacion   = DateTime.UtcNow,
                     UsuarioCreacion = usuarioCreacion
                 };
                 await _context.UsuarioRoles.AddAsync(usuarioRol, cancellationToken);
@@ -190,7 +167,6 @@ public class UsuarioService : IUsuarioService
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
 
-        // Obtener usuario completo con roles cargados
         var usuarioCreado = await _usuarioRepository.GetWithRolesAsync(usuario.Id, cancellationToken);
         return Result<UsuarioDto>.Success(_mapper.Map<UsuarioDto>(usuarioCreado!));
     }
@@ -200,65 +176,70 @@ public class UsuarioService : IUsuarioService
         long usuarioModificacion,
         CancellationToken cancellationToken = default)
     {
-        var usuario = await _usuarioRepository.GetWithRolesAsync(request.Id, cancellationToken);
+        // ── Cargar entidad por su PK sin navegaciones para evitar que EF marque
+        //    Empresa / Sucursal / Rol como Modified al hacer SaveChanges. ─────────
+        var usuario = await _context.Usuarios
+            .FirstOrDefaultAsync(u => u.Id == request.Id, cancellationToken);
+
         if (usuario == null)
-        {
             return Result<UsuarioDto>.Failure("Usuario no encontrado");
-        }
 
-        // Actualizar campos
-        usuario.SucursalId = request.SucursalId;
-        usuario.NombreUsuario = request.NombreUsuario;
-        usuario.Nombres = request.Nombres;
-        usuario.Apellidos = request.Apellidos;
+        usuario.SucursalId           = request.SucursalId;
+        usuario.NombreUsuario        = request.NombreUsuario;
+        usuario.Nombres              = request.Nombres;
+        usuario.Apellidos            = request.Apellidos;
         usuario.NumeroIdentificacion = request.NumeroIdentificacion;
-        usuario.Telefono = request.Telefono;
-        usuario.Celular = request.Celular;
-        usuario.FechaNacimiento = request.FechaNacimiento;
-        usuario.Genero = !string.IsNullOrEmpty(request.Genero) ? request.Genero[0] : null;
-        usuario.FotoUrl = request.FotoUrl;
-        usuario.IdiomaPreferido = request.IdiomaPreferido;
-        usuario.TemaPreferido = request.TemaPreferido;
-        usuario.UsuarioModificacion = usuarioModificacion;
-        usuario.FechaModificacion = DateTime.UtcNow;
+        usuario.Telefono             = request.Telefono;
+        usuario.Celular              = request.Celular;
+        usuario.FechaNacimiento      = request.FechaNacimiento;
+        usuario.Genero               = !string.IsNullOrEmpty(request.Genero) ? request.Genero[0] : null;
+        usuario.FotoUrl              = request.FotoUrl;
+        usuario.IdiomaPreferido      = request.IdiomaPreferido;
+        usuario.TemaPreferido        = request.TemaPreferido;
+        usuario.UsuarioModificacion  = usuarioModificacion;
+        usuario.FechaModificacion    = DateTime.UtcNow;
 
-        // ✅ FIX: No llamar _usuarioRepository.UpdateAsync.
-        // GetWithRolesAsync ya trackea la entidad; llamar UpdateAsync después forzaba
-        // EntityState.Modified sobre el grafo completo (incluyendo nav props Empresa,
-        // Sucursal, UsuarioRoles) → DbUpdateException por conflictos de FK al guardar.
         // EF detecta los cambios automáticamente desde el change tracker.
+        // NO llamar _usuarioRepository.UpdateAsync → evita EntityState.Modified
+        // sobre el grafo completo (causa DbUpdateException por FK a Empresa/Sucursal).
 
-        // Actualizar roles si se proporcionaron
+        // ── Actualizar roles ───────────────────────────────────────────────────
         if (request.RolesIds.Any())
         {
-            // Desactivar roles actuales
-            foreach (var ur in usuario.UsuarioRoles.Where(ur => ur.Activo))
-            {
-                ur.Activo = false;
-            }
+            // FIX: buscar en la BD con IgnoreQueryFilters para encontrar registros
+            // previamente desactivados — evita violar el UNIQUE(usuario_id, rol_id).
+            var rolesActuales = await _context.UsuarioRoles
+                .IgnoreQueryFilters()
+                .Where(ur => ur.UsuarioId == usuario.Id)
+                .ToListAsync(cancellationToken);
 
-            // Asignar nuevos roles
+            // Desactivar todos los roles actuales
+            foreach (var ur in rolesActuales.Where(ur => ur.Activo))
+                ur.Activo = false;
+
             var esPrimero = true;
             foreach (var rolId in request.RolesIds)
             {
-                var existente = usuario.UsuarioRoles.FirstOrDefault(ur => ur.RolId == rolId);
+                var existente = rolesActuales.FirstOrDefault(ur => ur.RolId == rolId);
                 if (existente != null)
                 {
-                    existente.Activo = true;
+                    // Reactivar el registro existente
+                    existente.Activo      = true;
                     existente.EsPrincipal = esPrimero;
                 }
                 else
                 {
-                    var usuarioRol = new UsuarioRol
+                    // Solo crear si realmente no existe ningún registro previo
+                    var nuevoRol = new UsuarioRol
                     {
-                        UsuarioId = usuario.Id,
-                        RolId = rolId,
-                        EsPrincipal = esPrimero,
-                        Activo = true,
-                        FechaCreacion = DateTime.UtcNow,
+                        UsuarioId       = usuario.Id,
+                        RolId           = rolId,
+                        EsPrincipal     = esPrimero,
+                        Activo          = true,
+                        FechaCreacion   = DateTime.UtcNow,
                         UsuarioCreacion = usuarioModificacion
                     };
-                    await _context.UsuarioRoles.AddAsync(usuarioRol, cancellationToken);
+                    await _context.UsuarioRoles.AddAsync(nuevoRol, cancellationToken);
                 }
                 esPrimero = false;
             }
@@ -275,20 +256,19 @@ public class UsuarioService : IUsuarioService
         long usuarioEliminacion,
         CancellationToken cancellationToken = default)
     {
-        var usuario = await _usuarioRepository.GetByIdAsync(id, cancellationToken);
-        if (usuario == null)
-        {
-            return Result.Failure("Usuario no encontrado");
-        }
+        // FIX: cargar solo escalares — evita que UpdateAsync marque nav-props como Modified.
+        var usuario = await _context.Usuarios
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
-        // ✅ FIX: Soft delete en lugar de hard delete.
-        // Usuario extiende SoftDeletableEntity — _usuarioRepository.DeleteAsync hacía
-        // _dbSet.Remove() generando un hard DELETE que fallaba con DbUpdateException
-        // (FK constraints desde SesionesUsuario, UsuarioRoles, etc.).
-        usuario.Eliminado = true;
-        usuario.FechaEliminacion = DateTime.UtcNow;
+        if (usuario == null)
+            return Result.Failure("Usuario no encontrado");
+
+        // Soft delete — no usar _dbSet.Remove() que genera hard-DELETE
+        // y falla por FK desde SesionUsuario, UsuarioRoles, etc.
+        usuario.Eliminado          = true;
+        usuario.FechaEliminacion   = DateTime.UtcNow;
         usuario.UsuarioEliminacion = usuarioEliminacion;
-        usuario.Activo = false;
+        usuario.Activo             = false;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
@@ -299,18 +279,16 @@ public class UsuarioService : IUsuarioService
         long usuarioModificacion,
         CancellationToken cancellationToken = default)
     {
-        var usuario = await _usuarioRepository.GetByIdAsync(id, cancellationToken);
-        if (usuario == null)
-        {
-            return Result.Failure("Usuario no encontrado");
-        }
+        var usuario = await _context.Usuarios
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
-        usuario.Estado = EstadoUsuario.Activo;
-        usuario.Activo = true;
+        if (usuario == null)
+            return Result.Failure("Usuario no encontrado");
+
+        usuario.Estado              = EstadoUsuario.Activo;
+        usuario.Activo              = true;
         usuario.UsuarioModificacion = usuarioModificacion;
-        usuario.FechaModificacion = DateTime.UtcNow;
-        // ✅ FIX: GetByIdAsync (FindAsync) ya trackea la entidad. EF detecta los cambios
-        // automáticamente — llamar UpdateAsync forzaba EntityState.Modified innecesariamente.
+        usuario.FechaModificacion   = DateTime.UtcNow;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
@@ -321,17 +299,16 @@ public class UsuarioService : IUsuarioService
         long usuarioModificacion,
         CancellationToken cancellationToken = default)
     {
-        var usuario = await _usuarioRepository.GetByIdAsync(id, cancellationToken);
-        if (usuario == null)
-        {
-            return Result.Failure("Usuario no encontrado");
-        }
+        var usuario = await _context.Usuarios
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
-        usuario.Estado = EstadoUsuario.Inactivo;
-        usuario.Activo = false;
+        if (usuario == null)
+            return Result.Failure("Usuario no encontrado");
+
+        usuario.Estado              = EstadoUsuario.Inactivo;
+        usuario.Activo              = false;
         usuario.UsuarioModificacion = usuarioModificacion;
-        usuario.FechaModificacion = DateTime.UtcNow;
-        // ✅ FIX: EF change tracking automático — no se necesita UpdateAsync explícito.
+        usuario.FechaModificacion   = DateTime.UtcNow;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
@@ -343,17 +320,15 @@ public class UsuarioService : IUsuarioService
         long usuarioModificacion,
         CancellationToken cancellationToken = default)
     {
-        var usuario = await _usuarioRepository.GetByIdAsync(id, cancellationToken);
-        if (usuario == null)
-        {
-            return Result.Failure("Usuario no encontrado");
-        }
+        var usuario = await _context.Usuarios
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
-        // ✅ Usar el método helper de la entidad Usuario
+        if (usuario == null)
+            return Result.Failure("Usuario no encontrado");
+
         usuario.Bloquear(minutos);
         usuario.UsuarioModificacion = usuarioModificacion;
-        usuario.FechaModificacion = DateTime.UtcNow;
-        // ✅ FIX: EF change tracking automático — no se necesita UpdateAsync explícito.
+        usuario.FechaModificacion   = DateTime.UtcNow;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
@@ -364,17 +339,15 @@ public class UsuarioService : IUsuarioService
         long usuarioModificacion,
         CancellationToken cancellationToken = default)
     {
-        var usuario = await _usuarioRepository.GetByIdAsync(id, cancellationToken);
-        if (usuario == null)
-        {
-            return Result.Failure("Usuario no encontrado");
-        }
+        var usuario = await _context.Usuarios
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
-        // ✅ Usar el método helper de la entidad Usuario
+        if (usuario == null)
+            return Result.Failure("Usuario no encontrado");
+
         usuario.Desbloquear();
         usuario.UsuarioModificacion = usuarioModificacion;
-        usuario.FechaModificacion = DateTime.UtcNow;
-        // ✅ FIX: EF change tracking automático — no se necesita UpdateAsync explícito.
+        usuario.FechaModificacion   = DateTime.UtcNow;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
@@ -385,22 +358,20 @@ public class UsuarioService : IUsuarioService
         long usuarioModificacion,
         CancellationToken cancellationToken = default)
     {
-        var usuario = await _usuarioRepository.GetByIdAsync(id, cancellationToken);
+        var usuario = await _context.Usuarios
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+
         if (usuario == null)
-        {
             return Result.Failure("Usuario no encontrado");
-        }
 
         var passwordTemporal = _passwordService.GenerarPasswordTemporal();
-        usuario.PasswordHash = _passwordService.HashPassword(passwordTemporal);
+        usuario.PasswordHash         = _passwordService.HashPassword(passwordTemporal);
         usuario.RequiereCambioPassword = true;
-        usuario.UsuarioModificacion = usuarioModificacion;
-        usuario.FechaModificacion = DateTime.UtcNow;
-        // ✅ FIX: EF change tracking automático — no se necesita UpdateAsync explícito.
+        usuario.UsuarioModificacion  = usuarioModificacion;
+        usuario.FechaModificacion    = DateTime.UtcNow;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // TODO: Enviar email con password temporal
-        // await _emailService.EnviarPasswordTemporalAsync(usuario.Email, usuario.Nombres, passwordTemporal);
+        // TODO: await _emailService.EnviarPasswordTemporalAsync(usuario.Email, usuario.Nombres, passwordTemporal);
 
         return Result.Success();
     }

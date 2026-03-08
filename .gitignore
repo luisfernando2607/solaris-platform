@@ -1,69 +1,139 @@
-# Build results
+############################################
+# Build folders
+############################################
+
 bin/
 obj/
+out/
+publish/
+artifacts/
 
+############################################
+# Compiled files
+############################################
+
+*.dll
+*.exe
+*.app
+*.pdb
+*.cache
+*.obj
+
+############################################
+# Logs
+############################################
+
+*.log
+logs/
+Log/
+log/
+
+############################################
 # Visual Studio
+############################################
+
 .vs/
-*.user
 *.suo
+*.user
 *.userosscache
 *.sln.docstates
 
-# Rider / JetBrains
+############################################
+# JetBrains Rider
+############################################
+
 .idea/
 *.sln.iml
 
+############################################
 # VS Code
-.vscode/
+############################################
 
-# Logs
-*.log
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 
+############################################
 # OS files
+############################################
+
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# NuGet packages
+############################################
+# NuGet
+############################################
+
 *.nupkg
 *.snupkg
 packages/
+.nuget/
 
-# Environment files
-.env
-.env.*
+############################################
+# Entity Framework
+############################################
 
-# ASP.NET settings (local overrides)
-appsettings.Development.json
-appsettings.Local.json
+*.bak
+*.backup
 
-# Publish folder
-publish/
-out/
-
+############################################
 # Test results
-TestResults/
+############################################
 
+TestResults/
+*.trx
+
+############################################
 # Coverage
+############################################
+
 coverage/
 *.coverage
 *.coveragexml
 
-# Resharper
-_ReSharper*/
-*.DotSettings.user
+############################################
+# Environment variables
+############################################
 
+.env
+.env.*
+appsettings.Development.json
+appsettings.Local.json
+
+############################################
 # Temporary files
+############################################
+
 *.tmp
 *.temp
+*.swp
+*~
 
-# Entity Framework migrations snapshot backups
-*.bak
+############################################
+# Node (por si el backend usa scripts)
+############################################
 
-# Node (por si usas algo frontend dentro del backend)
 node_modules/
 
+############################################
 # Generated files
+############################################
+
 Generated/
 
-# Logs folder
-logs/
+############################################
+# Docker
+############################################
+
+docker-compose.override.yml
+
+############################################
+# Misc
+############################################
+
+*.pid
+*.seed
+*.pid.lock
