@@ -1,0 +1,69 @@
+# Build results
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider / JetBrains
+.idea/
+*.sln.iml
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# NuGet packages
+*.nupkg
+*.snupkg
+packages/
+
+# Environment files
+.env
+.env.*
+
+# ASP.NET settings (local overrides)
+appsettings.Development.json
+appsettings.Local.json
+
+# Publish folder
+publish/
+out/
+
+# Test results
+TestResults/
+
+# Coverage
+coverage/
+*.coverage
+*.coveragexml
+
+# Resharper
+_ReSharper*/
+*.DotSettings.user
+
+# Temporary files
+*.tmp
+*.temp
+
+# Entity Framework migrations snapshot backups
+*.bak
+
+# Node (por si usas algo frontend dentro del backend)
+node_modules/
+
+# Generated files
+Generated/
+
+# Logs folder
+logs/

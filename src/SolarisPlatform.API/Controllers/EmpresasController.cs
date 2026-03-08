@@ -412,10 +412,23 @@ public class EmpresasController : ControllerBase
             return BadRequest(ApiResponse.Fail("No se puede eliminar la sucursal principal"));
         }
 
-        sucursal.UsuarioEliminacion = _currentUserService.UsuarioId;
+        // ✅ FIX: Verificar usuarios asignados a esta sucursal
+        var tieneUsuarios = await _context.Usuarios
+            .AnyAsync(u => u.SucursalId == id && u.Activo, cancellationToken);
+        if (tieneUsuarios)
+        {
+            return BadRequest(ApiResponse.Fail("No se puede eliminar la sucursal: tiene usuarios asignados"));
+        }
 
-        // ✅ FIX: Eliminar directo desde _context — la entidad ya está trackeada
-        _context.Sucursales.Remove(sucursal);
+        // ✅ FIX: Soft delete en lugar de Remove().
+        // Sucursal extiende SoftDeletableEntity — el diseño exige soft delete.
+        // _context.Sucursales.Remove() generaba un hard DELETE que fallaba con
+        // DbUpdateException si cualquier FK (Usuarios.SucursalId, etc.) apuntaba
+        // a esta sucursal, incluso en registros inactivos.
+        sucursal.Eliminado = true;
+        sucursal.FechaEliminacion = DateTime.UtcNow;
+        sucursal.UsuarioEliminacion = _currentUserService.UsuarioId;
+        sucursal.Activo = false;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Sucursal {Id} eliminada", id);

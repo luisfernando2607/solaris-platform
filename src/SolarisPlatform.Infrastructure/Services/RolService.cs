@@ -174,16 +174,21 @@ public class RolService : IRolService
         if (tieneUsuarios)
             return Result.Failure("No se puede eliminar el rol porque tiene usuarios asignados");
 
-        // Eliminar permisos asociados (FK constraint)
+        // Eliminar permisos asociados (RolPermisos tiene FK a Roles — debe ir primero)
         var permisos = await _context.RolPermisos
             .Where(rp => rp.RolId == id)
             .ToListAsync(cancellationToken);
         _context.RolPermisos.RemoveRange(permisos);
 
-        // ✅ FIX: El rol ya está trackeado — eliminar directo sin segundo FindAsync
-        // Un solo SaveChanges para todo
+        // ✅ FIX: Soft delete en lugar de Remove().
+        // Rol extiende SoftDeletableEntity — el diseño exige soft delete.
+        // _context.Roles.Remove() generaba un hard DELETE en la BD que fallaba con
+        // DbUpdateException (FK constraint de UsuarioRoles → Roles, incluso registros inactivos).
+        // Con soft delete EF genera un UPDATE limpio sin tocar las FK dependientes.
+        rol.Eliminado = true;
+        rol.FechaEliminacion = DateTime.UtcNow;
         rol.UsuarioEliminacion = usuarioEliminacion;
-        _context.Roles.Remove(rol);
+        rol.Activo = false;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

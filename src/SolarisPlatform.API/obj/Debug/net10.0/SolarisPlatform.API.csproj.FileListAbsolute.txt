@@ -432,10 +432,10 @@
 /home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/ijwb14h8nf-{0}-cpm8qfssun-cpm8qfssun.gz
 /home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/4yit0xer6e-{0}-dhh7im9766-dhh7im9766.gz
 /home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/zh9ywbojti-{0}-620vof2u12-620vof2u12.gz
-/home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/fjcetyc561-{0}-xgjyhd7bfp-xgjyhd7bfp.gz
-/home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/xirms6amwm-{0}-d9rbvfopkv-d9rbvfopkv.gz
 /home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/dbp8604aae-{0}-ueti1prk7n-ueti1prk7n.gz
 /home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/o3sd5qjmpc-{0}-papk15d5h3-papk15d5h3.gz
 /home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/m5semjinr7-{0}-nvrmz7ca43-nvrmz7ca43.gz
-/home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/kuvxin8sda-{0}-woux8yk2rt-woux8yk2rt.gz
 /home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/h79wdjv80j-{0}-vcpzca14r3-vcpzca14r3.gz
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/fjcetyc561-{0}-8io577jjhv-8io577jjhv.gz
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/kuvxin8sda-{0}-em6iug9lq6-em6iug9lq6.gz
+/home/devstar/projects/solaris_platform/src/SolarisPlatform.API/obj/Debug/net10.0/compressed/xirms6amwm-{0}-enn8q7x6bm-enn8q7x6bm.gz

@@ -222,7 +222,11 @@ public class UsuarioService : IUsuarioService
         usuario.UsuarioModificacion = usuarioModificacion;
         usuario.FechaModificacion = DateTime.UtcNow;
 
-        await _usuarioRepository.UpdateAsync(usuario, cancellationToken);
+        // ✅ FIX: No llamar _usuarioRepository.UpdateAsync.
+        // GetWithRolesAsync ya trackea la entidad; llamar UpdateAsync después forzaba
+        // EntityState.Modified sobre el grafo completo (incluyendo nav props Empresa,
+        // Sucursal, UsuarioRoles) → DbUpdateException por conflictos de FK al guardar.
+        // EF detecta los cambios automáticamente desde el change tracker.
 
         // Actualizar roles si se proporcionaron
         if (request.RolesIds.Any())
@@ -277,8 +281,14 @@ public class UsuarioService : IUsuarioService
             return Result.Failure("Usuario no encontrado");
         }
 
+        // ✅ FIX: Soft delete en lugar de hard delete.
+        // Usuario extiende SoftDeletableEntity — _usuarioRepository.DeleteAsync hacía
+        // _dbSet.Remove() generando un hard DELETE que fallaba con DbUpdateException
+        // (FK constraints desde SesionesUsuario, UsuarioRoles, etc.).
+        usuario.Eliminado = true;
+        usuario.FechaEliminacion = DateTime.UtcNow;
         usuario.UsuarioEliminacion = usuarioEliminacion;
-        await _usuarioRepository.DeleteAsync(usuario, cancellationToken);
+        usuario.Activo = false;
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
@@ -299,8 +309,8 @@ public class UsuarioService : IUsuarioService
         usuario.Activo = true;
         usuario.UsuarioModificacion = usuarioModificacion;
         usuario.FechaModificacion = DateTime.UtcNow;
-
-        await _usuarioRepository.UpdateAsync(usuario, cancellationToken);
+        // ✅ FIX: GetByIdAsync (FindAsync) ya trackea la entidad. EF detecta los cambios
+        // automáticamente — llamar UpdateAsync forzaba EntityState.Modified innecesariamente.
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
@@ -321,8 +331,7 @@ public class UsuarioService : IUsuarioService
         usuario.Activo = false;
         usuario.UsuarioModificacion = usuarioModificacion;
         usuario.FechaModificacion = DateTime.UtcNow;
-
-        await _usuarioRepository.UpdateAsync(usuario, cancellationToken);
+        // ✅ FIX: EF change tracking automático — no se necesita UpdateAsync explícito.
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
@@ -344,8 +353,7 @@ public class UsuarioService : IUsuarioService
         usuario.Bloquear(minutos);
         usuario.UsuarioModificacion = usuarioModificacion;
         usuario.FechaModificacion = DateTime.UtcNow;
-
-        await _usuarioRepository.UpdateAsync(usuario, cancellationToken);
+        // ✅ FIX: EF change tracking automático — no se necesita UpdateAsync explícito.
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
@@ -366,8 +374,7 @@ public class UsuarioService : IUsuarioService
         usuario.Desbloquear();
         usuario.UsuarioModificacion = usuarioModificacion;
         usuario.FechaModificacion = DateTime.UtcNow;
-
-        await _usuarioRepository.UpdateAsync(usuario, cancellationToken);
+        // ✅ FIX: EF change tracking automático — no se necesita UpdateAsync explícito.
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
@@ -389,8 +396,7 @@ public class UsuarioService : IUsuarioService
         usuario.RequiereCambioPassword = true;
         usuario.UsuarioModificacion = usuarioModificacion;
         usuario.FechaModificacion = DateTime.UtcNow;
-
-        await _usuarioRepository.UpdateAsync(usuario, cancellationToken);
+        // ✅ FIX: EF change tracking automático — no se necesita UpdateAsync explícito.
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         // TODO: Enviar email con password temporal

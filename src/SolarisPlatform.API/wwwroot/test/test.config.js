@@ -35,8 +35,8 @@ const SEED = {
 const BODY_FACTORIES = {
 
   // Auth / Usuarios
-  'create-usuario':        (D,S) => ({ nombres:'Test', apellidos:'Runner', email:`test.r${Date.now()}@solaris.dev`, password:'Solaris123!', confirmPassword:'Solaris123!', rolId:S.rolId }),
-  'update-usuario':        (D,S) => ({ nombres:'Test Editado', apellidos:'Runner', email:`test.e${Date.now()}@solaris.dev`, rolId:S.rolId }),
+  'create-usuario':        (D,S) => ({ nombres:'Test', apellidos:'Runner', email:`test.r${Date.now()}@solaris.dev`, password:'Solaris123!', confirmPassword:'Solaris123!', empresaId:S.empresaId, rolesIds:[S.rolId] }),
+  'update-usuario':        (D,S) => ({ nombres:'Test Editado', apellidos:'Runner', empresaId:S.empresaId, rolesIds:[S.rolId] }),
   'registro':              ()    => ({ nombres:'Reg', apellidos:'Runner', email:`reg.r${Date.now()}@solaris.dev`, password:'Solaris123!', confirmPassword:'Solaris123!' }),
 
   // Roles
