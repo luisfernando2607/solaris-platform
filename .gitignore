@@ -117,4 +117,5 @@ Properties/launchSettings.json
 # DOTNET LOCAL
 ############################################
 
-.dotnet/
+.dotnet/**/DependencyInjection_*.cs
+*.REVISAR.cs

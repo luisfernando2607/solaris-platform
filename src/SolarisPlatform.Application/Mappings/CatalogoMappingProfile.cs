@@ -1,5 +1,5 @@
 // =====================================================
-// FIX: CatalogosMappingProfile.cs
+// FIX: CatalogoMappingProfile.cs
 // PROBLEMA: CiudadDto es un record posicional → AutoMapper no puede instanciarlo
 //           sin ConstructUsing(). El error era:
 //           "CiudadDto needs to have a constructor with 0 args or only optional args"
@@ -14,9 +14,9 @@ using SolarisPlatform.Domain.Entities.Catalogos;
 
 namespace SolarisPlatform.Application.Mappings;
 
-public class CatalogosMappingProfile : Profile
+public class CatalogoMappingProfile : Profile
 {
-    public CatalogosMappingProfile()
+    public CatalogoMappingProfile()
     {
         // ─── País ────────────────────────────────────────────────
         // PaisDto no tiene campos calculados → mapeo directo funciona

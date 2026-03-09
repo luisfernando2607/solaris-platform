@@ -7,15 +7,15 @@ namespace SolarisPlatform.API.Middleware;
 /// <summary>
 /// Middleware para manejo global de excepciones
 /// </summary>
-public class ExceptionHandlingMiddleware
+public class GlobalExceptionMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly ILogger<ExceptionHandlingMiddleware> _logger;
+    private readonly ILogger<GlobalExceptionMiddleware> _logger;
     private readonly IWebHostEnvironment _env;
 
-    public ExceptionHandlingMiddleware(
+    public GlobalExceptionMiddleware(
         RequestDelegate next,
-        ILogger<ExceptionHandlingMiddleware> logger,
+        ILogger<GlobalExceptionMiddleware> logger,
         IWebHostEnvironment env)
     {
         _next = next;
@@ -150,10 +150,10 @@ public class ExceptionHandlingMiddleware
 /// <summary>
 /// Extensión para registrar el middleware de manejo de excepciones
 /// </summary>
-public static class ExceptionHandlingMiddlewareExtensions
+public static class GlobalExceptionMiddlewareExtensions
 {
     public static IApplicationBuilder UseExceptionHandling(this IApplicationBuilder builder)
     {
-        return builder.UseMiddleware<ExceptionHandlingMiddleware>();
+        return builder.UseMiddleware<GlobalExceptionMiddleware>();
     }
 }

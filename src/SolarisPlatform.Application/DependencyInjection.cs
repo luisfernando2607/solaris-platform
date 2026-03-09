@@ -13,9 +13,9 @@ public static class DependencyInjection
         services.AddAutoMapper(cfg => 
         {
             cfg.AddProfile<MappingProfile>();
-            cfg.AddProfile<RrhhMappingProfile>();
-            cfg.AddProfile<CatalogosMappingProfile>();
-            cfg.AddProfile<ProyectosMappingProfile>();
+            cfg.AddProfile<EmpleadoMappingProfile>();
+            cfg.AddProfile<CatalogoMappingProfile>();
+            cfg.AddProfile<ProyectoMappingProfile>();
         });
 
         // FluentValidation

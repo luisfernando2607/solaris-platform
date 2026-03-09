@@ -1,5 +1,5 @@
 // =====================================================
-// FIX: RrhhMappingProfile.cs
+// FIX: EmpleadoMappingProfile.cs
 // PROBLEMAS CORREGIDOS:
 //
 // 1. EmpleadoFichaDto (record posicional de 40+ campos):
@@ -27,9 +27,9 @@ using SolarisPlatform.Domain.Entities.RRHH;
 
 namespace SolarisPlatform.Application.Mappings;
 
-public class RrhhMappingProfile : Profile
+public class EmpleadoMappingProfile : Profile
 {
-    public RrhhMappingProfile()
+    public EmpleadoMappingProfile()
     {
         // ─── Departamento ───────────────────────────────────────
         CreateMap<Departamento, DepartamentoDto>()

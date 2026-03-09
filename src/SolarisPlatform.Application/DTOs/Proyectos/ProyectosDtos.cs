@@ -281,7 +281,7 @@ public record CuadrillaMiembroDto(
     DateOnly FechaIngreso, DateOnly? FechaSalida,
     string? Rol, bool Activo);
 
-// FIX: Agregado EmpresaId — requerido por WbsTareaCuadrillaServices.cs (CS1061)
+// FIX: Agregado EmpresaId — requerido por WbsTareaService.cs (CS1061)
 public record CrearCuadrillaRequest(
     string Nombre, string? Descripcion, long? LiderId, int CapacidadMax)
 {

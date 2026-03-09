@@ -4,9 +4,9 @@ using SolarisPlatform.Domain.Entities.Proyectos;
 
 namespace SolarisPlatform.Application.Mappings;
 
-public class ProyectosMappingProfile : Profile
+public class ProyectoMappingProfile : Profile
 {
-    public ProyectosMappingProfile()
+    public ProyectoMappingProfile()
     {
         // ─── Proyecto ────────────────────────────────────────────
         CreateMap<Proyecto, ProyectoListDto>()
