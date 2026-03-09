@@ -69,18 +69,27 @@ public class OrdenTrabajoService : IOrdenTrabajoService
         {
             await _actRepo.AddAsync(new OtActividad
             {
-                OrdenTrabajoId = e.Id, Nombre = act.Nombre,
-                Descripcion = act.Descripcion, Orden = i + 1, Completada = false
+                OrdenTrabajoId = e.Id,
+                EmpresaId      = request.EmpresaId,  // FIX: NOT NULL en BD
+                Nombre         = act.Nombre,
+                Descripcion    = act.Descripcion,
+                Orden          = i + 1,
+                Completada     = false
             }, ct);
         }
         foreach (var mat in request.Materiales)
         {
             await _matRepo.AddAsync(new OtMaterial
             {
-                OrdenTrabajoId = e.Id, NombreMaterial = mat.NombreMaterial,
-                CodigoMaterial = mat.CodigoMaterial, UnidadMedida = mat.UnidadMedida,
-                CantidadPlan = mat.CantidadPlan, CantidadReal = 0,
-                CostoUnitario = mat.CostoUnitario, CostoTotal = mat.CantidadPlan * mat.CostoUnitario
+                OrdenTrabajoId = e.Id,
+                EmpresaId      = request.EmpresaId,  // FIX: NOT NULL en BD si existe la columna
+                NombreMaterial = mat.NombreMaterial,
+                CodigoMaterial = mat.CodigoMaterial,
+                UnidadMedida   = mat.UnidadMedida,
+                CantidadPlan   = mat.CantidadPlan,
+                CantidadReal   = 0,
+                CostoUnitario  = mat.CostoUnitario,
+                CostoTotal     = mat.CantidadPlan * mat.CostoUnitario
             }, ct);
         }
         await _uow.SaveChangesAsync(ct);

@@ -142,6 +142,53 @@ public class RrhhMappingProfile : Profile
 
         CreateMap<CrearEmpleadoRequest, Empleado>();
 
+        // FIX: Mapeo para update — _mapper.Map(request, emp) fallaba porque no existía
+        CreateMap<ActualizarEmpleadoRequest, Empleado>()
+            .ForMember(d => d.PrimerNombre,         o => o.MapFrom(s => s.PrimerNombre))
+            .ForMember(d => d.SegundoNombre,         o => o.MapFrom(s => s.SegundoNombre))
+            .ForMember(d => d.PrimerApellido,        o => o.MapFrom(s => s.PrimerApellido))
+            .ForMember(d => d.SegundoApellido,       o => o.MapFrom(s => s.SegundoApellido))
+            .ForMember(d => d.FechaNacimiento,       o => o.MapFrom(s => s.FechaNacimiento))
+            .ForMember(d => d.Genero,                o => o.MapFrom(s => s.Genero))
+            .ForMember(d => d.EstadoCivil,           o => o.MapFrom(s => s.EstadoCivil))
+            .ForMember(d => d.EmailPersonal,         o => o.MapFrom(s => s.EmailPersonal))
+            .ForMember(d => d.EmailCorporativo,      o => o.MapFrom(s => s.EmailCorporativo))
+            .ForMember(d => d.TelefonoCelular,       o => o.MapFrom(s => s.TelefonoCelular))
+            .ForMember(d => d.TelefonoFijo,          o => o.MapFrom(s => s.TelefonoFijo))
+            .ForMember(d => d.PaisId,                o => o.MapFrom(s => s.PaisId))
+            .ForMember(d => d.EstadoProvinciaId,     o => o.MapFrom(s => s.EstadoProvinciaId))
+            .ForMember(d => d.CiudadId,              o => o.MapFrom(s => s.CiudadId))
+            .ForMember(d => d.Direccion,             o => o.MapFrom(s => s.Direccion))
+            .ForMember(d => d.DepartamentoId,        o => o.MapFrom(s => s.DepartamentoId))
+            .ForMember(d => d.PuestoId,              o => o.MapFrom(s => s.PuestoId))
+            .ForMember(d => d.JefeDirectoId,         o => o.MapFrom(s => s.JefeDirectoId))
+            .ForMember(d => d.TipoContrato,          o => o.MapFrom(s => s.TipoContrato))
+            .ForMember(d => d.ModalidadTrabajo,      o => o.MapFrom(s => s.ModalidadTrabajo))
+            .ForMember(d => d.HorasSemanales,        o => o.MapFrom(s => s.HorasSemanales))
+            .ForMember(d => d.NumeroSeguroSocial,    o => o.MapFrom(s => s.NumeroSeguroSocial))
+            .ForMember(d => d.NumeroAfiliacion,      o => o.MapFrom(s => s.NumeroAfiliacion))
+            .ForMember(d => d.BancoId,               o => o.MapFrom(s => s.BancoId))
+            .ForMember(d => d.TipoCuentaBancaria,    o => o.MapFrom(s => s.TipoCuentaBancaria))
+            .ForMember(d => d.NumeroCuentaBancaria,  o => o.MapFrom(s => s.NumeroCuentaBancaria))
+            .ForMember(d => d.FotoUrl,               o => o.MapFrom(s => s.FotoUrl))
+            // Campos que NO se deben sobrescribir en un update
+            .ForMember(d => d.Id,                    o => o.Ignore())
+            .ForMember(d => d.EmpresaId,             o => o.Ignore())
+            .ForMember(d => d.Codigo,                o => o.Ignore())
+            .ForMember(d => d.TipoIdentificacion,    o => o.Ignore())
+            .ForMember(d => d.NumeroIdentificacion,  o => o.Ignore())
+            .ForMember(d => d.FechaIngreso,          o => o.Ignore())
+            .ForMember(d => d.SalarioBase,           o => o.Ignore())
+            .ForMember(d => d.Estado,                o => o.Ignore())
+            .ForMember(d => d.FechaEgreso,           o => o.Ignore())
+            .ForMember(d => d.MotivoEgreso,          o => o.Ignore())
+            .ForMember(d => d.JornadaLaboral,        o => o.Ignore())
+            .ForMember(d => d.Historial,             o => o.Ignore())
+            .ForMember(d => d.Documentos,            o => o.Ignore())
+            .ForMember(d => d.Departamento,          o => o.Ignore())
+            .ForMember(d => d.Puesto,                o => o.Ignore())
+            .ForMember(d => d.JefeDirecto,           o => o.Ignore());
+
         // ─── Nómina — PeriodoNomina ─────────────────────────────
         CreateMap<CrearPeriodoNominaRequest, PeriodoNomina>();
 
@@ -213,9 +260,14 @@ public class RrhhMappingProfile : Profile
 
         CreateMap<CrearConceptoNominaRequest, ConceptoNomina>();
 
+        // FIX: PeriodoNominaDto es record posicional → ConstructUsing obligatorio
         CreateMap<PeriodoNomina, PeriodoNominaDto>()
-            .ForMember(d => d.EstadoNombre,
-                o => o.MapFrom(s => ObtenerEstadoPeriodoNombre(s.Estado)));
+            .ConstructUsing((s, _) => new PeriodoNominaDto(
+                s.Id, s.Anno, s.NumeroPeriodo, s.TipoPeriodo,
+                s.Descripcion, s.FechaInicio, s.FechaFin,
+                s.FechaPago, s.Estado,
+                ObtenerEstadoPeriodoNombre(s.Estado)))
+            .ForAllMembers(o => o.Ignore());
 
         CreateMap<RolPago, RolPagoDto>()
             .ForMember(d => d.PeriodoDescripcion,

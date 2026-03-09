@@ -232,6 +232,8 @@ public class CuadrillaService : ICuadrillaService
         {
             EmpresaId       = request.EmpresaId,
             ProyectoId      = request.ProyectoId,
+            // FIX: Codigo es NOT NULL en BD — se genera automáticamente si no viene en el request
+            Codigo          = $"CUA-{request.ProyectoId:D4}-{DateTime.UtcNow:yyyyMMddHHmmss}",
             Nombre          = request.Nombre,
             Descripcion     = request.Descripcion,
             LiderId         = request.LiderId,
