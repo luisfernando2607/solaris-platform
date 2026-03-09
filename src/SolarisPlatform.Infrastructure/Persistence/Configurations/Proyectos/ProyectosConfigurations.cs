@@ -399,15 +399,13 @@ public class AsignacionCentroCostoConfiguration : IEntityTypeConfiguration<Asign
         b.Property(e => e.Id).HasColumnName("id").UseIdentityColumn();
         b.Property(e => e.EmpresaId).HasColumnName("empresa_id").IsRequired();
         b.Property(e => e.CentroCostoId).HasColumnName("centro_costo_id").IsRequired();
-        b.Property(e => e.CostoRealId).HasColumnName("costo_real_id");
-        b.Property(e => e.OrdenTrabajoId).HasColumnName("orden_trabajo_id");
-        b.Property(e => e.Porcentaje).HasColumnName("porcentaje").HasColumnType("decimal(5,2)");
-        b.Property(e => e.Monto).HasColumnName("monto").HasColumnType("decimal(18,2)");
-        b.Property(e => e.Concepto).HasColumnName("concepto").HasMaxLength(300);
-        b.Property(e => e.FechaAsignacion).HasColumnName("fecha_asignacion");
+        b.Property(e => e.TipoOrigen).HasColumnName("tipo_origen").IsRequired();
+        b.Property(e => e.OrigenId).HasColumnName("origen_id").IsRequired();
+        b.Property(e => e.Monto).HasColumnName("monto").HasColumnType("decimal(18,2)").IsRequired();
+        b.Property(e => e.Fecha).HasColumnName("fecha").IsRequired();
+        b.Property(e => e.Descripcion).HasColumnName("descripcion").HasMaxLength(500);
+        b.Property(e => e.RegistradoPorId).HasColumnName("registrado_por_id");
         b.HasOne(e => e.CentroCosto).WithMany(c => c.Asignaciones).HasForeignKey(e => e.CentroCostoId).OnDelete(DeleteBehavior.Cascade);
-        b.HasOne(e => e.CostoReal).WithMany().HasForeignKey(e => e.CostoRealId).OnDelete(DeleteBehavior.SetNull);
-        b.HasOne(e => e.OrdenTrabajo).WithMany(o => o.Asignaciones).HasForeignKey(e => e.OrdenTrabajoId).OnDelete(DeleteBehavior.SetNull);
     }
 }
 
@@ -463,13 +461,14 @@ public class OtActividadConfiguration : IEntityTypeConfiguration<OtActividad>
         b.Property(e => e.Id).HasColumnName("id").UseIdentityColumn();
         b.Property(e => e.EmpresaId).HasColumnName("empresa_id").IsRequired();
         b.Property(e => e.OrdenTrabajoId).HasColumnName("orden_trabajo_id").IsRequired();
-        b.Property(e => e.Nombre).HasColumnName("nombre").HasMaxLength(300).IsRequired();
-        b.Property(e => e.Descripcion).HasColumnName("descripcion");
+        b.Property(e => e.Descripcion).HasColumnName("descripcion").HasMaxLength(500).IsRequired();
         b.Property(e => e.Orden).HasColumnName("orden");
-        b.Property(e => e.Completada).HasColumnName("completado");
-        b.Property(e => e.FechaComplecion).HasColumnName("fecha_completado");
-        b.Property(e => e.CompletadaPorId).HasColumnName("completada_por_id");
-        b.Property(e => e.Observaciones).HasColumnName("observaciones");
+        b.Property(e => e.Completado).HasColumnName("completado");
+        b.Property(e => e.FechaCompletado).HasColumnName("fecha_completado");
+        b.Property(e => e.ObservacionTecnico).HasColumnName("observacion_tecnico");
+        b.Property(e => e.TipoActividad).HasColumnName("tipo_actividad");
+        b.Property(e => e.RequiereFoto).HasColumnName("requiere_foto");
+        b.Property(e => e.UrlFoto).HasColumnName("url_foto").HasMaxLength(1000);
         b.HasOne(e => e.OrdenTrabajo).WithMany(o => o.Actividades).HasForeignKey(e => e.OrdenTrabajoId).OnDelete(DeleteBehavior.Cascade);
     }
 }

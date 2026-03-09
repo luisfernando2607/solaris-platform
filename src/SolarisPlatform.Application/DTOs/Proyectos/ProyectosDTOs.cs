@@ -406,11 +406,16 @@ public record ActualizarCentroCostoRequest(
     public long Id { get; set; }
 }
 
+// FIX F6: Mantenemos campos originales para no romper la interface
+// TipoOrigen/OrigenId se derivan internamente en el servicio
 public record AsignarCostoACentroRequest(
     long? CostoRealId, long? OrdenTrabajoId,
     decimal Porcentaje, decimal Monto, string? Concepto)
 {
     public long CentroCostoId { get; set; }
+    // F6: TipoOrigen y OrigenId para el servicio
+    public short TipoOrigen  { get; set; } = 1;
+    public long  OrigenId    { get; set; } = 1;
 }
 
 // ═══════════════════════════════════════════════════════════════

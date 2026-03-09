@@ -79,7 +79,7 @@ const BODY_FACTORIES = {
   // FIX: departamentoId y puestoId omitidos — al correr rrhh-empleados, esos registros
   // ya fueron eliminados por delete-depto/delete-puesto. Son nullable en la entidad Empleado.
   'create-empleado':       (D,S) => ({ tipoIdentificacion:'CED', numeroIdentificacion:`T${Date.now()%1000000}`, primerNombre:'Juan', primerApellido:'TestRunner', fechaIngreso:'2024-01-01', tipoContrato:1, modalidadTrabajo:1, jornadaLaboral:1, horasSemanales:40, salarioBase:800.00 }),
-  'update-empleado':       (D,S) => ({ primerNombre:'Juan Editado', primerApellido:'TestRunner', emailCorporativo:`emp.e${Date.now()}@solaris.dev`, departamentoId:D.newDeptoId||S.departamentoId, puestoId:D.newPuestoId||S.puestoId, tipoContrato:1, modalidadTrabajo:1, horasSemanales:40 }),
+  'update-empleado':       (D,S) => ({ primerNombre:'Juan Editado', primerApellido:'TestRunner', emailCorporativo:`emp.e${Date.now()}@solaris.dev`, departamentoId:S.departamentoId, puestoId:S.puestoId, tipoContrato:1, modalidadTrabajo:1, horasSemanales:40 }),
   'create-ausencia':       (D,S) => { const d = new Date(); const f1 = new Date(d.getFullYear(), d.getMonth()+1, 1).toISOString().split('T')[0]; const f2 = new Date(d.getFullYear(), d.getMonth()+1, 2).toISOString().split('T')[0]; return { empleadoId:S.empleadoId, tipo:'Permiso', fechaInicio:f1, fechaFin:f2, motivo:'Prueba runner' }; },
 
   // Nómina
@@ -94,10 +94,10 @@ const BODY_FACTORIES = {
   'update-proyecto':        (D,S) => ({ nombre:'Proyecto Editado Test', descripcion:'Editado por runner', empresaId:S.empresaId, tipoProyecto:1, prioridad:2, fechaInicioPlan:'2025-01-01', fechaFinPlan:'2025-12-31', presupuestoTotal:120000 }),
 
   // Planificación
-  'create-fase':            (D)   => ({ nombre:`Fase Test ${Date.now()}`, descripcion:'Fase de prueba', proyectoId:D.newProyectoId, orden:1, fechaInicio:'2025-01-01', fechaFin:'2025-06-30' }),
-  'update-fase':            (D)   => ({ nombre:'Fase Editada Test', descripcion:'Editada', proyectoId:D.newProyectoId, orden:1, fechaInicio:'2025-01-01', fechaFin:'2025-07-31' }),
+  'create-fase':            (D)   => ({ codigo:`FSE${Date.now().toString().slice(-4)}`, nombre:`Fase Test ${Date.now()}`, descripcion:'Fase de prueba', proyectoId:D.newProyectoId, orden:1, fechaInicioPlan:'2025-01-01', fechaFinPlan:'2025-06-30' }),
+  'update-fase':            (D)   => ({ nombre:'Fase Editada Test', descripcion:'Editada', proyectoId:D.newProyectoId, orden:1, fechaInicioPlan:'2025-01-01', fechaFinPlan:'2025-07-31', porcentajeAvance:0, estado:1 }),
   'create-hito':            (D)   => ({ nombre:`Hito Test ${Date.now()}`, descripcion:'Hito de prueba', proyectoId:D.newProyectoId, fechaCompromiso:'2025-06-30', porcentajePeso:0, orden:1 }),
-  'update-hito':            (D)   => ({ nombre:'Hito Editado Test', descripcion:'Editado', proyectoId:D.newProyectoId, fechaCompromiso:'2025-07-31', porcentajePeso:0, orden:1 }),
+  'update-hito':            (D)   => ({ nombre:'Hito Editado Test', descripcion:'Editado', proyectoId:D.newProyectoId, fechaCompromiso:'2025-07-31', porcentajePeso:0, orden:1, estado:1 }),
   'create-wbs':             (D)   => ({ nombre:`WBS Test ${Date.now()}`, descripcion:'WBS de prueba', proyectoId:D.newProyectoId, nivel:1, orden:1 }),
   'update-wbs':             (D)   => ({ nombre:'WBS Editado Test', descripcion:'Editado', proyectoId:D.newProyectoId, nivel:1, orden:1 }),
 

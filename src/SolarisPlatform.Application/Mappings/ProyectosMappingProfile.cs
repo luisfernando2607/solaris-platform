@@ -92,9 +92,21 @@ public class ProyectosMappingProfile : Profile
             .ForAllMembers(o => o.Ignore());
 
         // ─── WBS ─────────────────────────────────────────────────
+        // FIX F2: WbsNodoDto es positional record — requiere ConstructUsing
+        // CodigoWbs → Codigo, PesoRelativo → PorcentajePeso
         CreateMap<WbsNodo, WbsNodoDto>()
-            .ForMember(d => d.Hijos,  o => o.MapFrom(s => s.Hijos))
-            .ForMember(d => d.Tareas, o => o.MapFrom(s => s.Tareas));
+            .ConstructUsing((s, ctx) => new WbsNodoDto(
+                s.Id, s.ProyectoId, s.FaseId, s.PadreId,
+                s.CodigoWbs, s.Nombre, s.Descripcion,
+                s.TipoNodo, s.Nivel, s.Orden,
+                s.PorcentajeAvance, s.PesoRelativo, s.EsHoja, true,
+                new List<WbsNodoDto>(), new List<TareaListDto>()))
+            .AfterMap((s, d, ctx) =>
+            {
+                if (s.Hijos  != null) d.Hijos.AddRange(ctx.Mapper.Map<List<WbsNodoDto>>(s.Hijos));
+                if (s.Tareas != null) d.Tareas.AddRange(ctx.Mapper.Map<List<TareaListDto>>(s.Tareas));
+            })
+            .ForAllMembers(o => o.Ignore());
 
         // ─── Tarea ───────────────────────────────────────────────
         // FIX: Eliminado FaseId — Tarea ya no tiene esa propiedad (no existe en BD)
@@ -131,9 +143,33 @@ public class ProyectosMappingProfile : Profile
             .ForMember(d => d.EmpleadoNombre, o => o.Ignore());
 
         // ─── Presupuesto ─────────────────────────────────────────
+        // FIX F5: PresupuestoDto es positional record con campos que difieren de la entidad
+        // Entidad: Version, Descripcion, Estado, TotalGeneral, MontoTotal*
+        // DTO:     Nombre, TotalIngresos, TotalEgresos, Contingencia, EsActivo, EsAprobado
         CreateMap<Presupuesto, PresupuestoDto>()
-            .ForMember(d => d.AprobadoPorNombre, o => o.Ignore())
-            .ForMember(d => d.Partidas,          o => o.MapFrom(s => s.Partidas));
+            .ConstructUsing((s, ctx) => new PresupuestoDto(
+                s.Id, s.ProyectoId,
+                s.Version,
+                s.Descripcion ?? $"Presupuesto v{s.Version}",  // Nombre ← Descripcion
+                s.Descripcion,
+                s.MontoTotalManoObra + s.MontoTotalMateriales,  // TotalIngresos (aproximado)
+                s.MontoTotalSubcontratos + s.MontoTotalEquipos + s.MontoTotalIndirectos, // TotalEgresos
+                0m,                           // Contingencia (no existe en BD)
+                s.TotalGeneral,               // TotalNeto
+                s.Estado == 1,                // EsActivo (Estado=1 es Borrador/activo)
+                s.Estado == 2,                // EsAprobado (Estado=2)
+                s.AprobadoPorId, null,
+                s.FechaAprobacion.HasValue
+                    ? s.FechaAprobacion.Value.ToDateTime(TimeOnly.MinValue)
+                    : (DateTime?)null,
+                DateTime.UtcNow,              // FechaCreacion (no en entidad, usar UtcNow)
+                new List<PresupuestoPartidaDto>()))
+            .AfterMap((s, d, ctx) =>
+            {
+                if (s.Partidas != null)
+                    d.Partidas.AddRange(ctx.Mapper.Map<List<PresupuestoPartidaDto>>(s.Partidas));
+            })
+            .ForAllMembers(o => o.Ignore());
 
         CreateMap<PresupuestoPartida, PresupuestoPartidaDto>()
             .ForMember(d => d.CostosReales, o => o.MapFrom(s => s.CostosReales));
@@ -185,9 +221,27 @@ public class ProyectosMappingProfile : Profile
         CreateMap<OtMaterial, OtMaterialDto>();
 
         // ─── Reporte de Avance ───────────────────────────────────
+        // FIX: ReporteAvanceDto positional record — entidad tiene AvanceGeneral/AvanceCosto
+        // DTO pide: OrdenTrabajoId, PorcentajeAvancePlan, PorcentajeAvanceReal, Bac/Ev/Pv/Ac/Cpi/Spi
         CreateMap<ReporteAvance, ReporteAvanceDto>()
-            .ForMember(d => d.ReportadoPorNombre, o => o.Ignore())
-            .ForMember(d => d.Fotos,              o => o.MapFrom(s => s.Fotos));
+            .ConstructUsing((s, ctx) => new ReporteAvanceDto(
+                s.Id, s.ProyectoId,
+                null,                  // OrdenTrabajoId — no existe en entidad
+                s.FechaReporte, s.Titulo,
+                s.Observaciones,       // Descripcion ← Observaciones
+                s.AvanceGeneral,       // PorcentajeAvancePlan ← AvanceGeneral
+                s.AvanceCosto,         // PorcentajeAvanceReal ← AvanceCosto
+                null, null, null, null, null, null,  // Bac/Ev/Pv/Ac/Cpi/Spi — no en BD
+                null,                  // ReportadoPorNombre
+                s.Observaciones,
+                null, null,            // Latitud/Longitud — no en entidad
+                new List<ReporteAvanceFotoDto>()))
+            .AfterMap((s, d, ctx) =>
+            {
+                if (s.Fotos != null)
+                    d.Fotos.AddRange(ctx.Mapper.Map<List<ReporteAvanceFotoDto>>(s.Fotos));
+            })
+            .ForAllMembers(o => o.Ignore());
 
         CreateMap<ReporteAvanceFoto, ReporteAvanceFotoDto>();
 

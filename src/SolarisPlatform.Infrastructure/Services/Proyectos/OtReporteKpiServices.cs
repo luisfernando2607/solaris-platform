@@ -70,11 +70,11 @@ public class OrdenTrabajoService : IOrdenTrabajoService
             await _actRepo.AddAsync(new OtActividad
             {
                 OrdenTrabajoId = e.Id,
-                EmpresaId      = request.EmpresaId,  // FIX: NOT NULL en BD
-                Nombre         = act.Nombre,
-                Descripcion    = act.Descripcion,
+                EmpresaId      = request.EmpresaId,
+                // FIX F7: BD tiene "descripcion" no "nombre"
+                Descripcion    = act.Nombre ?? act.Descripcion ?? "Actividad",
                 Orden          = i + 1,
-                Completada     = false
+                Completado     = false
             }, ct);
         }
         foreach (var mat in request.Materiales)
@@ -145,10 +145,10 @@ public class OrdenTrabajoService : IOrdenTrabajoService
         var actividad = await _actRepo.GetByIdAsync(request.ActividadId, ct);
         if (actividad == null || actividad.OrdenTrabajoId != request.OtId)
             return Result.Failure("Actividad no encontrada");
-        actividad.Completada      = true;
-        actividad.FechaComplecion = DateTime.UtcNow;
-        actividad.CompletadaPorId = usuarioId;
-        actividad.Observaciones   = request.Observaciones;
+        // FIX F7: campos reales de BD (no CompletadaPorId, FechaComplecion, Observaciones)
+        actividad.Completado          = true;
+        actividad.FechaCompletado     = DateTime.UtcNow;
+        actividad.ObservacionTecnico  = request.Observaciones;
         await _actRepo.UpdateAsync(actividad, ct);
         await _uow.SaveChangesAsync(ct);
         return Result.Success();

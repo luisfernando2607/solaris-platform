@@ -36,22 +36,29 @@ public class CentroCosto : BaseEntity
 
 /// <summary>
 /// Asignación de costo a un centro de costo.
-/// BD: proy.asignacion_centro_costo — sin cambios relevantes.
+/// BD: proy.asignacion_centro_costo
+/// Columnas reales: id, empresa_id, centro_costo_id, tipo_origen (NOT NULL),
+///   origen_id (NOT NULL), monto (NOT NULL), fecha (date NOT NULL),
+///   descripcion varchar(500), registrado_por_id
+/// FIX: Eliminados CostoRealId, OrdenTrabajoId, Porcentaje, Concepto, FechaAsignacion
+///      Agregados: TipoOrigen, OrigenId, Fecha, RegistradoPorId, EmpresaId
 /// </summary>
 public class AsignacionCentroCosto : BaseEntity
 {
-    public long     EmpresaId        { get; set; }
-    public long     CentroCostoId    { get; set; }
-    public long?    CostoRealId      { get; set; }
-    public long?    OrdenTrabajoId   { get; set; }
-    public decimal  Porcentaje       { get; set; }
-    public decimal  Monto            { get; set; }
-    public string?  Concepto         { get; set; }
-    public DateTime? FechaAsignacion { get; set; }
+    public long      EmpresaId        { get; set; }
+    public long      CentroCostoId    { get; set; }
+    // tipo_origen NOT NULL: 1=CostoReal, 2=OrdenTrabajo, 3=Manual
+    public short     TipoOrigen       { get; set; } = 1;
+    // origen_id NOT NULL: ID del registro origen
+    public long      OrigenId         { get; set; } = 1;
+    public decimal   Monto            { get; set; }
+    // fecha date NOT NULL
+    public DateOnly  Fecha            { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
+    // descripcion reemplaza Concepto
+    public string?   Descripcion      { get; set; }
+    public long?     RegistradoPorId  { get; set; }
 
-    public virtual CentroCosto    CentroCosto  { get; set; } = null!;
-    public virtual CostoReal?     CostoReal    { get; set; }
-    public virtual OrdenTrabajo?  OrdenTrabajo { get; set; }
+    public virtual CentroCosto CentroCosto { get; set; } = null!;
 }
 
 /// <summary>

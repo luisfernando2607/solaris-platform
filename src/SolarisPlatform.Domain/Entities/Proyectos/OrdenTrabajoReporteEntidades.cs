@@ -81,13 +81,18 @@ public class OtActividad : BaseEntity
 {
     public long    EmpresaId       { get; set; }
     public long    OrdenTrabajoId  { get; set; }
-    public string  Nombre          { get; set; } = null!;
-    public string? Descripcion     { get; set; }
+    // FIX F7: BD tiene solo "descripcion" (no "nombre" separado)
+    public string  Descripcion     { get; set; } = null!;
     public int     Orden           { get; set; } = 1;
-    public bool    Completada      { get; set; } = false;
-    public DateTime? FechaComplecion { get; set; }
-    public long?   CompletadaPorId { get; set; }
-    public string? Observaciones   { get; set; }
+    // FIX F7: BD: completado (bool), fecha_completado, observacion_tecnico
+    //         NO existe: nombre, completada_por_id
+    public bool    Completado      { get; set; } = false;
+    public DateTime? FechaCompletado { get; set; }
+    public string? ObservacionTecnico { get; set; }
+    // BD tiene: tipo_actividad, requiere_foto, url_foto
+    public short?  TipoActividad   { get; set; }
+    public bool    RequiereFoto    { get; set; } = false;
+    public string? UrlFoto         { get; set; }
 
     public virtual OrdenTrabajo OrdenTrabajo { get; set; } = null!;
 }

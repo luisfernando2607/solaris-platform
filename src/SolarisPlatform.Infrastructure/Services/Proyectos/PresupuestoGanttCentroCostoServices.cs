@@ -339,18 +339,20 @@ public class CentroCostoService : ICentroCostoService
     {
         var centro = await _repo.GetByIdAsync(request.CentroCostoId, ct);
         if (centro == null) return Result.Failure("Centro de costo no encontrado");
+        // FIX F6: entidad ahora usa TipoOrigen/OrigenId/Fecha/Descripcion
+        // Eliminados: CostoRealId, OrdenTrabajoId, Porcentaje, Concepto, FechaAsignacion
         var asign = new AsignacionCentroCosto
         {
-            CentroCostoId   = request.CentroCostoId,
-            CostoRealId     = request.CostoRealId,
-            OrdenTrabajoId  = request.OrdenTrabajoId,
-            Porcentaje      = request.Porcentaje,
-            Monto           = request.Monto,
-            Concepto        = request.Concepto,
-            FechaAsignacion = DateTime.UtcNow
+            EmpresaId        = centro.EmpresaId,
+            CentroCostoId    = request.CentroCostoId,
+            TipoOrigen       = request.TipoOrigen,
+            OrigenId         = request.OrigenId,
+            Monto            = request.Monto,
+            Fecha            = DateOnly.FromDateTime(DateTime.UtcNow),
+            Descripcion      = request.Concepto,
+            RegistradoPorId  = usuarioId
         };
         await _asignRepo.AddAsync(asign, ct);
-        // FIX: GastoActual eliminado de CentroCosto — no actualizamos ese campo
         await _repo.UpdateAsync(centro, ct);
         await _uow.SaveChangesAsync(ct);
         return Result.Success();
