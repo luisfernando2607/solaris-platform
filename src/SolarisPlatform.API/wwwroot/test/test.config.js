@@ -90,19 +90,19 @@ const BODY_FACTORIES = {
   // Proyectos core
   // FIX: codigo agregado — CrearProyectoRequest tiene string Codigo non-nullable
   // .NET 10 lo trata como [Required] implícito y rechaza con 400 si no se envía
-  'create-proyecto':        (D,S) => ({ codigo:`PROY${Date.now()%10000}`, nombre:`Proyecto Test ${Date.now()}`, descripcion:'Proyecto de prueba', empresaId:S.empresaId, tipoProyecto:1, prioridad:2, fechaInicioPlan:'2025-01-01', fechaFinPlan:'2025-12-31', presupuestoTotal:100000 }),
+  'create-proyecto':        (D,S) => ({ codigo:`PROY${Date.now()%10000}`, nombre:`Proyecto Test ${Date.now()}`, descripcion:'Proyecto de prueba', empresaId:S.empresaId, tipoProyecto:1, prioridad:2, fechaInicioPlan:'2025-01-01T00:00:00Z', fechaFinPlan:'2025-12-31T00:00:00Z', presupuestoTotal:100000 }),
   'update-proyecto':        (D,S) => ({ nombre:'Proyecto Editado Test', descripcion:'Editado por runner', empresaId:S.empresaId, tipoProyecto:1, prioridad:2, fechaInicioPlan:'2025-01-01', fechaFinPlan:'2025-12-31', presupuestoTotal:120000 }),
 
   // Planificación
-  'create-fase':            (D)   => ({ codigo:`FSE${Date.now().toString().slice(-4)}`, nombre:`Fase Test ${Date.now()}`, descripcion:'Fase de prueba', proyectoId:D.newProyectoId, orden:1, fechaInicioPlan:'2025-01-01', fechaFinPlan:'2025-06-30' }),
-  'update-fase':            (D)   => ({ nombre:'Fase Editada Test', descripcion:'Editada', proyectoId:D.newProyectoId, orden:1, fechaInicioPlan:'2025-01-01', fechaFinPlan:'2025-07-31', porcentajeAvance:0, estado:1 }),
+  'create-fase':            (D)   => ({ codigo:`FSE${Date.now().toString().slice(-4)}`, nombre:`Fase Test ${Date.now()}`, descripcion:'Fase de prueba', proyectoId:D.newProyectoId, orden:1, fechaInicioPlan:'2025-01-01T00:00:00Z', fechaFinPlan:'2025-06-30T00:00:00Z' }),
+  'update-fase':            (D)   => ({ nombre:'Fase Editada Test', descripcion:'Editada', proyectoId:D.newProyectoId, orden:1, fechaInicioPlan:'2025-01-01T00:00:00Z', fechaFinPlan:'2025-07-31T00:00:00Z', porcentajeAvance:0, estado:1 }),
   'create-hito':            (D)   => ({ nombre:`Hito Test ${Date.now()}`, descripcion:'Hito de prueba', proyectoId:D.newProyectoId, fechaCompromiso:'2025-06-30', porcentajePeso:0, orden:1 }),
   'update-hito':            (D)   => ({ nombre:'Hito Editado Test', descripcion:'Editado', proyectoId:D.newProyectoId, fechaCompromiso:'2025-07-31', porcentajePeso:0, orden:1, estado:1 }),
-  'create-wbs':             (D)   => ({ nombre:`WBS Test ${Date.now()}`, descripcion:'WBS de prueba', proyectoId:D.newProyectoId, nivel:1, orden:1 }),
+  'create-wbs':             (D)   => ({ codigo:`WBS${Date.now().toString().slice(-4)}`, nombre:`WBS Test ${Date.now()}`, descripcion:'WBS de prueba', proyectoId:D.newProyectoId, tipoNodo:1, nivel:1, orden:1 }),
   'update-wbs':             (D)   => ({ nombre:'WBS Editado Test', descripcion:'Editado', proyectoId:D.newProyectoId, nivel:1, orden:1 }),
 
   // Tareas / Cuadrillas
-  'create-tarea':           (D,S) => ({ nombre:`Tarea Test ${Date.now()}`, descripcion:'Tarea de prueba', proyectoId:D.newProyectoId, wbsNodoId:D.newWbsId||S.wbsId, prioridad:2, fechaInicioPlan:'2025-01-01', fechaFinPlan:'2025-03-31', duracionDias:90 }),
+  'create-tarea':           (D,S) => ({ nombre:`Tarea Test ${Date.now()}`, descripcion:'Tarea de prueba', proyectoId:D.newProyectoId, wbsNodoId:D.newWbsId||S.wbsId, prioridad:2, fechaInicioPlan:'2025-01-01T00:00:00Z', fechaFinPlan:'2025-03-31T00:00:00Z', duracionDias:90 }),
   'update-tarea':           (D,S) => ({ nombre:'Tarea Editada Test', descripcion:'Editada', proyectoId:D.newProyectoId, wbsNodoId:D.newWbsId||S.wbsId, prioridad:2, fechaInicioPlan:'2025-01-01', fechaFinPlan:'2025-04-30', duracionDias:120 }),
   'create-cuadrilla':       (D)   => ({ nombre:`Cuadrilla Test ${Date.now()}`, descripcion:'Cuadrilla de prueba', proyectoId:D.newProyectoId, activo:true }),
   'update-cuadrilla':       (D)   => ({ nombre:'Cuadrilla Editada', descripcion:'Editada', proyectoId:D.newProyectoId, activo:true }),
