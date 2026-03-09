@@ -11,13 +11,16 @@ public class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
+    private readonly IWebHostEnvironment _env;
 
     public ExceptionHandlingMiddleware(
         RequestDelegate next,
-        ILogger<ExceptionHandlingMiddleware> logger)
+        ILogger<ExceptionHandlingMiddleware> logger,
+        IWebHostEnvironment env)
     {
         _next = next;
         _logger = logger;
+        _env = env;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -29,11 +32,11 @@ public class ExceptionHandlingMiddleware
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error no controlado: {Message}", ex.Message);
-            await HandleExceptionAsync(context, ex);
+            await HandleExceptionAsync(context, ex, _env.IsDevelopment());
         }
     }
 
-    private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private static Task HandleExceptionAsync(HttpContext context, Exception exception, bool isDevelopment)
     {
         var statusCode = HttpStatusCode.InternalServerError;
         var message = "Ha ocurrido un error en el servidor";
@@ -44,7 +47,6 @@ public class ExceptionHandlingMiddleware
             case FluentValidation.ValidationException validationException:
                 statusCode = HttpStatusCode.BadRequest;
                 message = "Error de validación";
-                // ✅ CORREGIDO: Convertir a List<string> en lugar de Dictionary
                 errors = validationException.Errors
                     .Select(e => $"{e.PropertyName}: {e.ErrorMessage}")
                     .ToList();
@@ -71,20 +73,43 @@ public class ExceptionHandlingMiddleware
                 break;
 
             default:
-                // En producción, no revelar detalles del error
-                #if DEBUG
-                message = exception.Message;
-                #endif
+                if (isDevelopment)
+                    message = exception.Message;
                 break;
         }
 
-        var response = ApiResponse.Fail(
-            message: message,
-            errors: errors
-        );
+        // En desarrollo: construir respuesta enriquecida con inner exception
+        object response;
+        if (isDevelopment)
+        {
+            response = new
+            {
+                success   = false,
+                message,
+                data      = (object?)null,
+                errors,
+                timestamp = DateTime.UtcNow,
+                // ── Debug info ──────────────────────────────────────
+                debug = new
+                {
+                    exceptionType    = exception.GetType().FullName,
+                    exceptionMessage = exception.Message,
+                    innerException   = BuildInnerChain(exception.InnerException),
+                    stackTrace       = exception.StackTrace?.Split('\n')
+                                               .Take(8)
+                                               .Select(l => l.Trim())
+                                               .Where(l => l.Length > 0)
+                                               .ToArray()
+                }
+            };
+        }
+        else
+        {
+            response = ApiResponse.Fail(message: message, errors: errors);
+        }
 
         context.Response.ContentType = "application/json";
-        context.Response.StatusCode = (int)statusCode;
+        context.Response.StatusCode  = (int)statusCode;
 
         var options = new JsonSerializerOptions
         {
@@ -92,6 +117,33 @@ public class ExceptionHandlingMiddleware
         };
 
         return context.Response.WriteAsync(JsonSerializer.Serialize(response, options));
+    }
+
+    /// <summary>
+    /// Construye la cadena completa de inner exceptions como array de objetos.
+    /// Permite ver el error real de PostgreSQL aunque esté 3 niveles adentro.
+    /// </summary>
+    private static object? BuildInnerChain(Exception? ex)
+    {
+        if (ex is null) return null;
+
+        var chain = new List<object>();
+        var current = ex;
+        int depth = 0;
+
+        while (current is not null && depth < 5)
+        {
+            chain.Add(new
+            {
+                type    = current.GetType().Name,
+                message = current.Message,
+                inner   = (object?)null   // se encadena a continuación
+            });
+            current = current.InnerException;
+            depth++;
+        }
+
+        return chain;
     }
 }
 

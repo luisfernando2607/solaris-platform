@@ -35,6 +35,9 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         // ==========================================
+        // Npgsql: permitir DateTime sin zona en columnas timestamp without time zone
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
         // BASE DE DATOS
         // ==========================================
         services.AddDbContext<SolarisDbContext>(options =>

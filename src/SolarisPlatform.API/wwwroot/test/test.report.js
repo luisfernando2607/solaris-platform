@@ -1,5 +1,5 @@
 // ══════════════════════════════════════════════════════════════════════
-//  test.report.js  —  Solaris Platform · API Test Console  v2.1
+//  test.report.js  —  Solaris Platform · API Test Console  v2.2
 //  ─────────────────────────────────────────────────────────────────────
 //  Responsabilidad única: construir y descargar reportes JSON.
 //  - No manipula el DOM más allá de crear/remover un <a> temporal.
@@ -8,28 +8,70 @@
 //
 //  FIXES v2.1:
 //   [BUG-1] Reemplazado acceso directo a TEST_SUITES global por
-//           TestRunner.getSuites(). Elimina dependencia frágil de orden
-//           de carga de scripts.
-//   [BUG-3] Los tests con skipped:true ya no aparecen en la lista
-//           "passed" del reporte. Se añade una sección "skipped"
-//           separada con su propio conteo en el summary.
+//           TestRunner.getSuites().
+//   [BUG-3] Los tests con skipped:true ya no aparecen en "passed".
+//
+//  FIXES v2.2:
+//   [DIAG-1] Incluye dynamicSnapshot en cada fallo: estado exacto de
+//            DYNAMIC al momento en que ese test se ejecutó.
+//   [DIAG-3] Incluye serverDebug con innerException completo del backend
+//            (disponible cuando el middleware está en modo Development).
+//   [DIAG-4] Añade sección efCoreHints: resumen de errores de EF Core /
+//            PostgreSQL detectados automáticamente entre todos los fallos.
 // ══════════════════════════════════════════════════════════════════════
 
 const TestReport = (() => {
+
+  // ── Detectar patrones conocidos de EF Core en los fallos ────────
+  function _extractEfCoreHints(failures) {
+    const hints = [];
+    const seen  = new Set();
+
+    failures.forEach(f => {
+      const raw = JSON.stringify(f.data || '') + JSON.stringify(f.serverDebug || '');
+      const low = raw.toLowerCase();
+
+      const add = (key, msg) => { if (!seen.has(key)) { seen.add(key); hints.push(msg); } };
+
+      if (low.includes('kind=unspecified') || low.includes('timestamp with time zone')) {
+        add('datetime', `[${f.testId}] DateTime Kind=Unspecified → campo de fecha enviado sin zona UTC. Usar 'YYYY-MM-DD' (DateOnly) o 'YYYY-MM-DDTHH:mm:ssZ' (DateTime UTC).`);
+      }
+      if (low.includes('foreign key') || low.includes('violates foreign key')) {
+        const tbl = raw.match(/table "([^"]+)"/)?.[1] || '?';
+        const fk  = raw.match(/constraint "([^"]+)"/)?.[1] || '?';
+        add('fk_' + tbl, `[${f.testId}] FK violation en tabla '${tbl}', constraint '${fk}'. El registro padre no existe o create previo falló.`);
+      }
+      if (low.includes('duplicate key') || low.includes('unique')) {
+        const uc = raw.match(/constraint "([^"]+)"/)?.[1] || '?';
+        add('uq_' + uc, `[${f.testId}] Unique constraint '${uc}'. Ya existe ese valor en la BD — limpiar datos de prueba anteriores.`);
+      }
+      if (low.includes('not-null') || low.includes('null value in column')) {
+        const col = raw.match(/column "([^"]+)"/)?.[1] || '?';
+        add('nn_' + col, `[${f.testId}] NOT NULL violado en columna '${col}'. Falta campo en el body o el servicio no lo mapea.`);
+      }
+      if (low.includes('automapper') || low.includes('constructusing') || low.includes('mapping')) {
+        add('mapper', `[${f.testId}] Error de AutoMapper. Revisar ConstructUsing() para DTOs con record posicional.`);
+      }
+      if (low.includes('the request field is required')) {
+        add('req_' + f.testId, `[${f.testId}] "The request field is required" → el body completo no llega al controller. Revisar [FromBody] y Content-Type.`);
+      }
+    });
+
+    return hints;
+  }
 
   // ── Construir el objeto de reporte completo ─────────────────────
   function _buildReport() {
     const now     = new Date();
     const baseUrl = TestRunner.getBaseUrl();
-    const results = TestRunner.getResults();    // { testId: resultObj }
-    const suites  = TestRunner.getSuites();     // [BUG-1 FIX] usa getSuites() en vez de TEST_SUITES global
+    const results = TestRunner.getResults();
+    const suites  = TestRunner.getSuites();
 
-    // Todos los resultados ejecutados, en orden de suite
     const allTests = [];
     suites.forEach(suite => {
       suite.tests.forEach(t => {
         const res = results[t.id];
-        if (!res) return;  // no ejecutado aún
+        if (!res) return;
         allTests.push({
           // ─ Identificación ─
           suite:      suite.title,
@@ -38,8 +80,8 @@ const TestReport = (() => {
           name:       t.name,
           // ─ Configuración del test ─
           method:           t.method,
-          path:             res.path       || t.path,          // resolved path (con ID real)
-          fullUrl:          res.fullUrl    || baseUrl + t.path, // URL real usada en el fetch
+          path:             res.path       || t.path,
+          fullUrl:          res.fullUrl    || baseUrl + t.path,
           requiresAuth:     t.auth,
           expectedStatus:   t.expect.status,
           checkDescription: t.expect.checkDesc || null,
@@ -49,38 +91,40 @@ const TestReport = (() => {
           skipped:    res.skipped || false,
           httpStatus: res.status,
           latencyMs:  res.ms,
-          requestBody: res.requestBody ?? null,  // body enviado al servidor
+          requestBody: res.requestBody ?? null,
           response:   res.data,
+          // ─ [DIAG-1] Estado de DYNAMIC al ejecutar ─
+          dynamicSnapshot: res.dynamicSnapshot ?? null,
+          // ─ [DIAG-3] Debug del servidor (solo fallos, solo en dev) ─
+          serverDebug: res.serverDebug ?? null,
           // ─ Diagnóstico (solo en fallos) ─
           diagnosis:  res.passed ? null : res.diagnosis,
         });
       });
     });
 
-    // [BUG-3 FIX] Separar correctamente passed / failed / skipped
     const failures = allTests.filter(t => !t.passed && !t.skipped);
     const passed   = allTests.filter(t =>  t.passed && !t.skipped);
     const skipped  = allTests.filter(t =>  t.skipped);
 
-    // [BUG-1 FIX] Contar pending usando getSuites() en lugar de TEST_SUITES
     const totalDefined = suites.reduce((acc, s) => acc + s.tests.length, 0);
 
+    // [DIAG-4] Resumen de errores de EF Core detectados
+    const efCoreHints = _extractEfCoreHints(failures);
+
     return {
-      // ──────────────────────────────────────────────────────────
-      // _meta: contexto de la ejecución
-      // ──────────────────────────────────────────────────────────
       _meta: {
         tool:        'Solaris Platform · API Test Console',
-        version:     '2.1',
+        version:     '2.2',
         generatedAt: now.toISOString(),
         generatedAtLocal: now.toLocaleString('es-EC', { timeZone: 'America/Guayaquil' }),
         baseUrl,
         summary: {
-          totalDefined,                           // total de tests definidos en config
-          executed: allTests.length,              // cuántos se ejecutaron (ran + skip)
-          passed:   passed.length,                // pasaron de verdad (no skip)
+          totalDefined,
+          executed: allTests.length,
+          passed:   passed.length,
           failed:   failures.length,
-          skipped:  skipped.length,               // [BUG-3 FIX] conteo propio de skips
+          skipped:  skipped.length,
           pending:  totalDefined - allTests.length,
           passRate: allTests.length > 0
             ? Math.round((passed.length / (allTests.length - skipped.length || 1)) * 100) + '%'
@@ -88,9 +132,9 @@ const TestReport = (() => {
         }
       },
 
-      // ──────────────────────────────────────────────────────────
-      // suites: resultados agrupados por suite
-      // ──────────────────────────────────────────────────────────
+      // [DIAG-4] Errores de EF Core / PostgreSQL detectados automáticamente
+      efCoreHints: efCoreHints.length > 0 ? efCoreHints : null,
+
       suites: suites.map(s => {
         const sTests = allTests.filter(t => t.suiteId === s.id);
         return {
@@ -98,28 +142,16 @@ const TestReport = (() => {
           title: s.title,
           stats: {
             total:   sTests.length,
-            passed:  sTests.filter(t =>  t.passed && !t.skipped).length,   // [BUG-3 FIX]
-            failed:  sTests.filter(t => !t.passed && !t.skipped).length,   // [BUG-3 FIX]
-            skipped: sTests.filter(t =>  t.skipped).length,                // [BUG-3 FIX]
+            passed:  sTests.filter(t =>  t.passed && !t.skipped).length,
+            failed:  sTests.filter(t => !t.passed && !t.skipped).length,
+            skipped: sTests.filter(t =>  t.skipped).length,
           },
           tests: sTests
         };
       }),
 
-      // ──────────────────────────────────────────────────────────
-      // failures: lista plana de todos los fallos reales
-      // Incluye diagnosis[] para diagnóstico rápido
-      // ──────────────────────────────────────────────────────────
       failures,
-
-      // ──────────────────────────────────────────────────────────
-      // passed: solo tests que realmente pasaron (sin skips)  [BUG-3 FIX]
-      // ──────────────────────────────────────────────────────────
       passed,
-
-      // ──────────────────────────────────────────────────────────
-      // skipped: tests omitidos por skipIf (ID dinámico ausente) [BUG-3 FIX]
-      // ──────────────────────────────────────────────────────────
       skipped
     };
   }
@@ -147,8 +179,6 @@ const TestReport = (() => {
 
     /**
      * Descarga el reporte completo (todos los tests ejecutados).
-     * Incluye secciones: passed, failed, skipped.
-     * Archivo: solaris-test-results_YYYY-MM-DDTHH-MM-SS.json
      */
     downloadAll() {
       const report   = _buildReport();
@@ -157,9 +187,11 @@ const TestReport = (() => {
     },
 
     /**
-     * Descarga solo los tests fallidos (excluye skips).
-     * Ideal para compartir con el equipo de desarrollo o con Claude para diagnóstico.
-     * Archivo: solaris-test-fails_YYYY-MM-DDTHH-MM-SS.json
+     * Descarga solo los tests fallidos con diagnóstico completo:
+     * - diagnosis[]: hints automáticos
+     * - dynamicSnapshot: IDs capturados al momento del fallo
+     * - serverDebug.innerException: cadena de inner exceptions del backend
+     * - efCoreHints[]: resumen de errores de EF Core detectados
      */
     downloadFails() {
       const full = _buildReport();
@@ -173,14 +205,16 @@ const TestReport = (() => {
         _meta: {
           ...full._meta,
           mode: 'SOLO_FALLOS',
-          note: 'Este archivo contiene únicamente los tests fallidos (los skipped se omiten). Incluye diagnosis[] por test para facilitar el diagnóstico.'
+          note: 'Incluye diagnosis[], dynamicSnapshot, serverDebug.innerException y efCoreHints para diagnóstico preciso.'
         },
-        // Resumen de contexto de los que sí pasaron y los que fueron skipped
         contextPassed:  `${full._meta.summary.passed} test(s) pasaron correctamente.`,
-        contextSkipped: `${full._meta.summary.skipped} test(s) fueron omitidos (skipIf).`,  // [BUG-3 FIX]
-        // Los fallos con diagnóstico completo
+        contextSkipped: `${full._meta.summary.skipped} test(s) fueron omitidos (skipIf).`,
+
+        // [DIAG-4] Lo primero: resumen de problemas detectados
+        efCoreHints: full.efCoreHints,
+
         failures: full.failures,
-        // Agrupado por suite para facilitar lectura
+
         failuresBySuite: (() => {
           const bySuite = {};
           full.failures.forEach(f => {

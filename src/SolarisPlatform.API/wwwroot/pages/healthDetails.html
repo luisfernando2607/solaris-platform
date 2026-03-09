@@ -1,0 +1,1777 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>System Health · Solaris Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=JetBrains+Mono:wght@300;400;500&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+
+/* ════════════════════════════════════════════════════════
+   RESET + ROOT
+════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #050810;
+  --bg2:        #080c18;
+  --surface:    #0c1222;
+  --surface2:   #111828;
+  --surface3:   #161f30;
+  --border:     #1e2d45;
+  --border2:    #263650;
+  --border3:    #2f4060;
+  --accent:     #00d4ff;
+  --accent-dim: rgba(0,212,255,.12);
+  --accent2:    #7c3aed;
+  --green:      #00e676;
+  --green-dim:  rgba(0,230,118,.1);
+  --red:        #ff4458;
+  --red-dim:    rgba(255,68,88,.1);
+  --yellow:     #ffb300;
+  --yellow-dim: rgba(255,179,0,.1);
+  --purple:     #c084fc;
+  --cyan:       #22d3ee;
+  --text:       #e2ecff;
+  --text2:      #8a9bbf;
+  --text3:      #4e607e;
+  --r:          10px;
+  --r2:         16px;
+}
+
+[data-theme="light"] {
+  --bg:         #f0f4f8;
+  --bg2:        #e8edf5;
+  --surface:    #ffffff;
+  --surface2:   #f4f7fc;
+  --surface3:   #edf0f7;
+  --border:     #d0daea;
+  --border2:    #b8c8dc;
+  --border3:    #a0b4cc;
+  --accent:     #0099cc;
+  --accent-dim: rgba(0,153,204,.1);
+  --accent2:    #6d28d9;
+  --green:      #00a854;
+  --green-dim:  rgba(0,168,84,.08);
+  --red:        #e01030;
+  --red-dim:    rgba(224,16,48,.08);
+  --yellow:     #cc8800;
+  --yellow-dim: rgba(204,136,0,.08);
+  --purple:     #7c3aed;
+  --cyan:       #0891b2;
+  --text:       #0f1c30;
+  --text2:      #4a5e7a;
+  --text3:      #8a9bb8;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background .3s, color .3s;
+}
+
+/* ════════════════════════════════════════════════════════
+   BACKGROUND EFFECTS
+════════════════════════════════════════════════════════ */
+.bg-noise {
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    radial-gradient(ellipse 900px 700px at 20% 10%, rgba(0,212,255,.04) 0%, transparent 70%),
+    radial-gradient(ellipse 600px 500px at 80% 90%, rgba(124,58,237,.05) 0%, transparent 70%),
+    radial-gradient(ellipse 700px 400px at 60% 40%, rgba(0,230,118,.025) 0%, transparent 65%);
+  pointer-events: none;
+  animation: bgPulse 20s ease-in-out infinite alternate;
+}
+
+[data-theme="light"] .bg-noise {
+  background-image:
+    radial-gradient(ellipse 900px 700px at 20% 10%, rgba(0,153,204,.04) 0%, transparent 70%),
+    radial-gradient(ellipse 600px 500px at 80% 90%, rgba(124,58,237,.04) 0%, transparent 70%);
+}
+
+@keyframes bgPulse {
+  0%   { opacity: .7; }
+  100% { opacity: 1; }
+}
+
+.bg-grid {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(0,212,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,.025) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+[data-theme="light"] .bg-grid {
+  background-image:
+    linear-gradient(rgba(0,99,204,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,99,204,.03) 1px, transparent 1px);
+}
+
+/* ════════════════════════════════════════════════════════
+   LAYOUT
+════════════════════════════════════════════════════════ */
+.wrapper {
+  position: relative; z-index: 1;
+  max-width: 1100px; margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+  display: flex; flex-direction: column; gap: 2rem;
+  animation: fadeUp .55s ease both;
+}
+
+/* ════════════════════════════════════════════════════════
+   HEADER  (same style as health.html)
+════════════════════════════════════════════════════════ */
+.header {
+  display: flex; align-items: center; gap: 1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1.5rem;
+  position: relative;
+}
+.header::after {
+  content: '';
+  position: absolute; bottom: -1px; left: 0;
+  height: 1px; width: 0;
+  background: linear-gradient(90deg, var(--green), var(--accent2), transparent);
+  animation: scanline 2s cubic-bezier(.4,0,.2,1) .4s forwards;
+}
+@keyframes scanline { to { width: 100%; } }
+
+.back-btn {
+  display: flex; align-items: center; gap: .4rem;
+  font-family: 'JetBrains Mono', monospace; font-size: .72rem;
+  color: var(--text2); text-decoration: none;
+  border: 1px solid var(--border); padding: .35rem .8rem;
+  border-radius: 8px; transition: border-color .2s, color .2s;
+  white-space: nowrap; flex-shrink: 0;
+}
+.back-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.header-center { flex: 1; min-width: 0; }
+.header-center h1 {
+  font-size: 1.55rem; font-weight: 800; letter-spacing: -.4px;
+  background: linear-gradient(135deg, var(--text) 40%, var(--green));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.header-center p {
+  font-family: 'JetBrains Mono', monospace; font-size: .65rem;
+  color: var(--text2); margin-top: 3px;
+}
+
+.header-right {
+  margin-left: auto; display: flex; align-items: center; gap: .75rem; flex-shrink: 0;
+}
+
+/* Live badge */
+.live-badge {
+  display: flex; align-items: center; gap: .45rem;
+  font-family: 'JetBrains Mono', monospace; font-size: .62rem; font-weight: 600;
+  color: var(--green); letter-spacing: .1em; text-transform: uppercase;
+  padding: .25rem .7rem; border-radius: 999px;
+  background: var(--green-dim); border: 1px solid rgba(0,230,118,.25);
+}
+.live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green); animation: liveBlink 1.2s ease-in-out infinite;
+}
+@keyframes liveBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .25; }
+}
+
+/* Theme switch */
+.theme-switch { display: flex; align-items: center; gap: .4rem; user-select: none; }
+.theme-icon { font-size: .85rem; }
+.toggle { position: relative; width: 40px; height: 22px; cursor: pointer; }
+.toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.track {
+  position: absolute; inset: 0; border-radius: 999px;
+  background: var(--border); border: 1px solid var(--border); transition: background .3s;
+}
+.toggle input:checked + .track { background: var(--accent); border-color: var(--accent); }
+.thumb {
+  position: absolute; top: 3px; left: 3px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+}
+.toggle input:checked ~ .thumb { transform: translateX(18px); }
+
+/* Refresh button */
+.refresh-btn {
+  font-family: 'JetBrains Mono', monospace; font-size: .65rem;
+  background: transparent; border: 1px solid var(--border); color: var(--text2);
+  padding: .3rem .8rem; border-radius: 7px; cursor: pointer;
+  transition: all .2s; display: flex; align-items: center; gap: .4rem;
+  white-space: nowrap;
+}
+.refresh-btn:hover { border-color: var(--green); color: var(--green); }
+.r-icon { display: inline-block; }
+.refresh-btn.spinning .r-icon { animation: spin .6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ════════════════════════════════════════════════════════
+   STATUS BANNER — FULL HERO
+════════════════════════════════════════════════════════ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.status-banner {
+  position: relative; overflow: hidden;
+  border-radius: var(--r2); border: 1px solid var(--border);
+  background: var(--surface);
+  min-height: 160px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  animation: fadeUp .5s ease .05s both;
+  transition: border-color .6s, background .6s;
+}
+
+/* Animated glow blob */
+.status-banner::before {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none;
+  background: var(--banner-blob, transparent);
+  opacity: 0; transition: opacity .6s;
+  border-radius: var(--r2);
+}
+.status-banner.healthy::before   { --banner-blob: radial-gradient(ellipse 70% 80% at 80% 50%, rgba(0,230,118,.12) 0%, transparent 70%); opacity: 1; }
+.status-banner.degraded::before  { --banner-blob: radial-gradient(ellipse 70% 80% at 80% 50%, rgba(255,179,0,.12) 0%, transparent 70%);  opacity: 1; }
+.status-banner.unhealthy::before { --banner-blob: radial-gradient(ellipse 70% 80% at 80% 50%, rgba(255,68,88,.12) 0%, transparent 70%);   opacity: 1; }
+
+.status-banner.healthy   { border-color: rgba(0,230,118,.45); }
+.status-banner.degraded  { border-color: rgba(255,179,0,.45); }
+.status-banner.unhealthy { border-color: rgba(255,68,88,.45); }
+.status-banner.loading   { border-color: var(--border); }
+
+/* Top colour strip */
+.banner-status-bar {
+  height: 4px; width: 100%;
+  background: var(--border);
+  transition: background .6s, box-shadow .6s;
+  flex-shrink: 0;
+}
+.healthy  .banner-status-bar { background: var(--green);  box-shadow: 0 0 20px rgba(0,230,118,.5); }
+.degraded .banner-status-bar { background: var(--yellow); box-shadow: 0 0 20px rgba(255,179,0,.5); }
+.unhealthy .banner-status-bar { background: var(--red);   box-shadow: 0 0 20px rgba(255,68,88,.5); }
+.loading  .banner-status-bar  { animation: loadingPulse 1.2s ease infinite alternate; }
+@keyframes loadingPulse { from { opacity: .3; } to { opacity: .9; } }
+
+/* Main content row */
+.banner-main {
+  position: relative; z-index: 1;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem 1.75rem 1rem;
+}
+
+.banner-left { display: flex; flex-direction: column; gap: .75rem; }
+
+.banner-eyebrow {
+  display: flex; align-items: center; gap: .75rem;
+}
+.banner-eyebrow-chip {
+  font-family: 'IBM Plex Mono', monospace; font-size: .6rem; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase;
+  padding: .25rem .75rem; border-radius: 999px;
+  transition: background .4s, color .4s, border-color .4s;
+}
+.healthy  .banner-eyebrow-chip { background: var(--green-dim);  color: var(--green);  border: 1px solid rgba(0,230,118,.3); }
+.degraded .banner-eyebrow-chip { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(255,179,0,.3); }
+.unhealthy .banner-eyebrow-chip { background: var(--red-dim);   color: var(--red);    border: 1px solid rgba(255,68,88,.3); }
+.loading  .banner-eyebrow-chip  { background: var(--surface2);  color: var(--text3);  border: 1px solid var(--border); animation: liveBlink .9s ease infinite; }
+
+.banner-eyebrow-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  transition: background .4s;
+  animation: pulse 2s ease infinite;
+}
+.healthy  .banner-eyebrow-dot  { background: var(--green);  box-shadow: 0 0 0 3px var(--green-dim); }
+.degraded .banner-eyebrow-dot  { background: var(--yellow); box-shadow: 0 0 0 3px var(--yellow-dim); }
+.unhealthy .banner-eyebrow-dot { background: var(--red);    box-shadow: 0 0 0 3px var(--red-dim); }
+.loading  .banner-eyebrow-dot  { background: var(--text3);  box-shadow: none; animation: liveBlink .9s ease infinite; }
+
+.banner-heading {
+  display: flex; align-items: center; gap: 1rem;
+}
+.banner-icon-wrap { font-size: 2.2rem; line-height: 1; flex-shrink: 0; }
+.banner-title-group { display: flex; flex-direction: column; gap: .35rem; }
+
+.banner-info-title {
+  font-size: 1.35rem; font-weight: 700; letter-spacing: -.04em; line-height: 1.1;
+  transition: color .4s;
+}
+.healthy  .banner-info-title { color: var(--green); }
+.degraded .banner-info-title { color: var(--yellow); }
+.unhealthy .banner-info-title { color: var(--red); }
+.loading  .banner-info-title { color: var(--text); }
+
+.banner-info-desc {
+  font-family: 'IBM Plex Mono', monospace; font-size: .7rem;
+  color: var(--text2); line-height: 1.5; max-width: 480px;
+}
+
+/* Right side — countdown + timestamps */
+.banner-right {
+  display: flex; flex-direction: column; align-items: center; gap: .6rem;
+  flex-shrink: 0;
+}
+
+.ring-outer {
+  position: relative; width: 64px; height: 64px;
+}
+.ring-outer svg { transform: rotate(-90deg); }
+.ring-track { fill: none; stroke: var(--border); stroke-width: 4; }
+.ring-progress {
+  fill: none; stroke: var(--green); stroke-width: 4; stroke-linecap: round;
+  stroke-dasharray: 157; stroke-dashoffset: 0;
+  transition: stroke-dashoffset .95s linear, stroke .3s;
+}
+.ring-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.ring-num {
+  font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 1rem;
+  color: var(--text); line-height: 1;
+}
+.ring-label {
+  font-family: 'IBM Plex Mono', monospace; font-size: .5rem; color: var(--text3);
+  letter-spacing: .08em; text-transform: uppercase; margin-top: 2px;
+}
+
+.countdown-sub {
+  font-family: 'IBM Plex Mono', monospace; font-size: .58rem; color: var(--text3);
+  text-align: center; line-height: 1.5; letter-spacing: .06em; text-transform: uppercase;
+}
+
+/* Bottom meta bar */
+.banner-meta {
+  position: relative; z-index: 1;
+  display: flex; align-items: center; gap: 0;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.banner-meta-item {
+  flex: 1; padding: .55rem 1.25rem;
+  display: flex; flex-direction: column; gap: .2rem;
+  border-right: 1px solid var(--border);
+}
+.banner-meta-item:last-child { border-right: none; }
+
+.ts-row-label {
+  font-family: 'IBM Plex Mono', monospace; font-size: .52rem; color: var(--text3);
+  letter-spacing: .1em; text-transform: uppercase;
+}
+.ts-row-value {
+  font-family: 'IBM Plex Mono', monospace; font-size: .75rem; font-weight: 600; color: var(--text);
+}
+.ts-row-value.highlight { color: var(--accent); }
+
+/* ════════════════════════════════════════════════════════
+   KPI GRID
+════════════════════════════════════════════════════════ */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: .85rem;
+}
+
+@media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 560px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.kpi {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r2); padding: 1.1rem 1.1rem .9rem;
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; gap: .35rem;
+  transition: border-color .25s, transform .2s, box-shadow .25s;
+  animation: fadeUp .5s ease both;
+  cursor: default;
+}
+
+.kpi:nth-child(1) { animation-delay: .1s; }
+.kpi:nth-child(2) { animation-delay: .15s; }
+.kpi:nth-child(3) { animation-delay: .2s; }
+.kpi:nth-child(4) { animation-delay: .25s; }
+.kpi:nth-child(5) { animation-delay: .3s; }
+.kpi:nth-child(6) { animation-delay: .35s; }
+
+.kpi::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--kpi-accent, var(--border));
+  transition: opacity .3s;
+  opacity: .5;
+}
+.kpi:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,.3); }
+.kpi:hover { border-color: var(--kpi-accent, var(--border)); }
+.kpi:hover::before { opacity: 1; }
+
+.kpi-top {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.kpi-label {
+  font-family: 'IBM Plex Mono', monospace; font-size: .55rem; font-weight: 500;
+  color: var(--text3); text-transform: uppercase; letter-spacing: .1em;
+}
+.kpi-icon { font-size: .95rem; opacity: .7; }
+
+.kpi-value {
+  font-size: 1.6rem; font-weight: 700; letter-spacing: -.04em;
+  color: var(--kpi-accent, var(--text)); line-height: 1;
+  transition: color .4s;
+}
+.kpi-value.lg { font-size: 1.1rem; }
+
+.kpi-sub {
+  font-family: 'IBM Plex Mono', monospace; font-size: .57rem; color: var(--text3);
+}
+
+.kpi-trend {
+  display: flex; align-items: center; gap: .3rem;
+  font-family: 'IBM Plex Mono', monospace; font-size: .6rem; margin-top: .2rem;
+}
+.trend-up   { color: var(--green); }
+.trend-down { color: var(--red); }
+.trend-flat { color: var(--text3); }
+
+/* ════════════════════════════════════════════════════════
+   TWO COLUMNS MAIN
+════════════════════════════════════════════════════════ */
+.main-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 700px) { .main-cols { grid-template-columns: 1fr; } }
+
+/* ════════════════════════════════════════════════════════
+   SERVICE CARDS
+════════════════════════════════════════════════════════ */
+.service-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r2); overflow: hidden;
+  display: flex; flex-direction: column;
+  transition: border-color .35s, box-shadow .3s;
+  animation: fadeUp .5s ease both;
+}
+
+.service-card:nth-child(1) { animation-delay: .12s; }
+.service-card:nth-child(2) { animation-delay: .2s; }
+
+.service-card.ok  { border-color: rgba(0,230,118,.35); }
+.service-card.err { border-color: rgba(255,68,88,.35); }
+
+.sc-header {
+  display: flex; align-items: center; gap: .9rem;
+  padding: 1.1rem 1.25rem;
+  background: var(--surface2); border-bottom: 1px solid var(--border);
+  position: relative;
+}
+
+.sc-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; flex-shrink: 0;
+}
+
+.sc-title { flex: 1; min-width: 0; }
+.sc-name { font-weight: 700; font-size: 1rem; letter-spacing: -.02em; }
+.sc-sub  { font-family: 'IBM Plex Mono', monospace; font-size: .6rem; color: var(--text2); margin-top: 2px; }
+
+.sc-badge {
+  font-family: 'IBM Plex Mono', monospace; font-size: .6rem; font-weight: 600;
+  padding: .25rem .7rem; border-radius: 999px; letter-spacing: .06em;
+  display: flex; align-items: center; gap: .35rem; flex-shrink: 0;
+  text-transform: uppercase;
+}
+.sc-badge::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor;
+  animation: pulse 2s ease infinite;
+}
+.badge-ok      { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,230,118,.25); }
+.badge-err     { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(255,68,88,.25); }
+.badge-loading { background: var(--surface3);  color: var(--text3); border: 1px solid var(--border); }
+.badge-loading::before { animation: liveBlink .9s ease infinite; }
+
+.sc-body { padding: 1.1rem 1.25rem; display: flex; flex-direction: column; gap: 1rem; }
+
+/* Stat table */
+.stat-table { display: flex; flex-direction: column; gap: .3rem; }
+.stat-row {
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: 'IBM Plex Mono', monospace; font-size: .68rem;
+  padding: .42rem .7rem; border-radius: 7px;
+  background: var(--surface2); border: 1px solid transparent;
+  transition: border-color .2s, background .2s;
+}
+.stat-row:hover { background: var(--surface3); border-color: var(--border); }
+.sk { color: var(--text2); }
+.sv { color: var(--text); font-weight: 500; }
+.sv.ok   { color: var(--green); }
+.sv.warn { color: var(--yellow); }
+.sv.bad  { color: var(--red); }
+
+/* Latency gauge */
+.gauge-wrap {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r);
+  padding: .85rem 1rem; display: flex; flex-direction: column; gap: .6rem;
+}
+.gauge-header {
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: 'IBM Plex Mono', monospace; font-size: .6rem;
+}
+.gauge-title { color: var(--text2); text-transform: uppercase; letter-spacing: .08em; }
+.gauge-val   { font-weight: 600; color: var(--text); }
+
+.gauge-track {
+  position: relative; height: 8px; border-radius: 999px;
+  background: var(--surface3); border: 1px solid var(--border); overflow: hidden;
+}
+.gauge-fill {
+  height: 100%; border-radius: 999px;
+  background: var(--green); transition: width .7s cubic-bezier(.4,0,.2,1), background .4s;
+}
+
+.gauge-ticks {
+  display: flex; justify-content: space-between;
+  font-family: 'IBM Plex Mono', monospace; font-size: .52rem; color: var(--text3);
+}
+
+/* Sparkline */
+.spark-wrap {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r);
+  padding: .85rem 1rem; display: flex; flex-direction: column; gap: .55rem;
+}
+.spark-header {
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: 'IBM Plex Mono', monospace; font-size: .6rem;
+}
+.spark-title { color: var(--text2); text-transform: uppercase; letter-spacing: .08em; }
+.spark-live  { color: var(--text); font-weight: 600; }
+
+.sparkline {
+  display: flex; align-items: flex-end; gap: 2.5px; height: 38px;
+}
+.sp {
+  flex: 1; border-radius: 2px 2px 0 0; background: var(--accent2);
+  opacity: .3; min-height: 3px;
+  transition: height .45s cubic-bezier(.4,0,.2,1), opacity .3s, background .3s;
+}
+.sp:last-child { opacity: 1; }
+.sp.s-ok   { background: var(--green); }
+.sp.s-warn { background: var(--yellow); }
+.sp.s-bad  { background: var(--red); }
+
+/* SLA mini gauge */
+.sla-row {
+  display: flex; align-items: center; gap: .8rem;
+  padding: .6rem .85rem;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r);
+}
+.sla-label { font-family: 'IBM Plex Mono', monospace; font-size: .6rem; color: var(--text2); white-space: nowrap; flex-shrink: 0; }
+.sla-bar-wrap { flex: 1; height: 5px; background: var(--surface3); border-radius: 999px; overflow: hidden; }
+.sla-bar { height: 100%; border-radius: 999px; background: var(--green); transition: width .7s ease; }
+.sla-val { font-family: 'IBM Plex Mono', monospace; font-size: .65rem; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+
+/* ════════════════════════════════════════════════════════
+   HISTORY
+════════════════════════════════════════════════════════ */
+.history-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r2); overflow: hidden;
+  animation: fadeUp .5s ease .22s both;
+}
+
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .9rem 1.25rem;
+  background: var(--surface2); border-bottom: 1px solid var(--border);
+}
+
+.card-title {
+  font-family: 'IBM Plex Mono', monospace; font-size: .65rem; font-weight: 600;
+  color: var(--text2); letter-spacing: .1em; text-transform: uppercase;
+  display: flex; align-items: center; gap: .5rem;
+}
+
+.card-title-accent { color: var(--text); }
+
+.card-actions { display: flex; align-items: center; gap: .75rem; }
+
+.legend {
+  display: flex; gap: .85rem;
+  font-family: 'IBM Plex Mono', monospace; font-size: .58rem; color: var(--text3);
+}
+.leg-item { display: flex; align-items: center; gap: .3rem; }
+.leg-dot  { width: 8px; height: 8px; border-radius: 2px; }
+
+.uptime-chip {
+  font-family: 'IBM Plex Mono', monospace; font-size: .62rem; font-weight: 700;
+  padding: .18rem .65rem; border-radius: 6px;
+}
+.up-100 { background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,230,118,.25); }
+.up-ok  { background: var(--yellow-dim); color: var(--yellow); border: 1px solid rgba(255,179,0,.25); }
+.up-bad { background: var(--red-dim);    color: var(--red);   border: 1px solid rgba(255,68,88,.25); }
+
+.history-body { padding: 1.1rem 1.25rem; display: flex; flex-direction: column; gap: .75rem; }
+
+/* Timeline bars */
+.history-bars {
+  display: flex; gap: 3px; align-items: flex-end; height: 52px;
+}
+
+.hb {
+  flex: 1; border-radius: 3px 3px 0 0; cursor: pointer;
+  transition: opacity .2s;
+  position: relative;
+}
+.hb.ok    { background: var(--green); opacity: .5; height: 52px; }
+.hb.ok:hover { opacity: 1; }
+.hb.err   { background: var(--red);   opacity: .7; height: 24px; }
+.hb.err:hover { opacity: 1; }
+.hb.empty { background: var(--border); height: 8px; opacity: .3; cursor: default; border-radius: 2px; }
+
+.hb::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  background: var(--surface2); border: 1px solid var(--border2); color: var(--text);
+  font-family: 'IBM Plex Mono', monospace; font-size: .55rem; padding: .3rem .65rem;
+  border-radius: 7px; white-space: nowrap; opacity: 0; pointer-events: none;
+  transition: opacity .15s; z-index: 10; box-shadow: 0 6px 20px rgba(0,0,0,.4);
+}
+.hb:hover::after { opacity: 1; }
+
+.history-footer {
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: 'IBM Plex Mono', monospace; font-size: .58rem; color: var(--text3);
+}
+
+/* ════════════════════════════════════════════════════════
+   TIMELINE SPLIT — latency over time
+════════════════════════════════════════════════════════ */
+.latency-timeline {
+  display: flex; align-items: flex-end; gap: 2px; height: 48px;
+  padding: 0 0 0 0;
+}
+.lt-bar {
+  flex: 1; border-radius: 2px 2px 0 0;
+  background: var(--accent); opacity: .25; min-height: 3px;
+  transition: height .4s ease, opacity .2s, background .3s;
+  cursor: pointer; position: relative;
+}
+.lt-bar:hover { opacity: 1; }
+.lt-bar.lt-ok   { background: var(--green); }
+.lt-bar.lt-warn { background: var(--yellow); }
+.lt-bar.lt-bad  { background: var(--red); }
+
+.lt-bar::after {
+  content: attr(data-tip);
+  position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  background: var(--surface2); border: 1px solid var(--border2); color: var(--text);
+  font-family: 'IBM Plex Mono', monospace; font-size: .55rem; padding: .3rem .65rem;
+  border-radius: 7px; white-space: nowrap; opacity: 0; pointer-events: none;
+  transition: opacity .15s; z-index: 10; box-shadow: 0 6px 20px rgba(0,0,0,.4);
+}
+.lt-bar:hover::after { opacity: 1; }
+
+/* ════════════════════════════════════════════════════════
+   INCIDENT LOG
+════════════════════════════════════════════════════════ */
+.incident-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r2); overflow: hidden;
+  animation: fadeUp .5s ease .3s both;
+}
+
+.incidents-list { display: flex; flex-direction: column; }
+
+.inc-row {
+  display: grid; grid-template-columns: 28px 1fr 1fr auto;
+  align-items: center; gap: .7rem;
+  padding: .65rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  font-family: 'IBM Plex Mono', monospace; font-size: .65rem;
+  transition: background .15s;
+  animation: slideIn .25s ease both;
+}
+
+@keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+
+.inc-row:last-child { border-bottom: none; }
+.inc-row:hover { background: var(--surface2); }
+
+.inc-icon { font-size: 1rem; text-align: center; }
+.inc-msg  { color: var(--text); }
+.inc-svc  { color: var(--text2); }
+.inc-time { color: var(--text3); text-align: right; white-space: nowrap; }
+
+.no-incidents {
+  text-align: center; padding: 2rem 1.25rem;
+  font-family: 'IBM Plex Mono', monospace; font-size: .68rem; color: var(--text3);
+}
+
+.clear-btn {
+  font-family: 'IBM Plex Mono', monospace; font-size: .6rem;
+  background: transparent; border: 1px solid var(--border); color: var(--text3);
+  padding: .22rem .65rem; border-radius: 7px; cursor: pointer; transition: all .2s;
+}
+.clear-btn:hover { border-color: var(--red); color: var(--red); }
+
+/* ════════════════════════════════════════════════════════
+   RESPONSE TIME CHART (full width)
+════════════════════════════════════════════════════════ */
+.rt-chart-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r2); overflow: hidden;
+  animation: fadeUp .5s ease .26s both;
+}
+
+.rt-chart-body { padding: 1.1rem 1.25rem .85rem; }
+
+.rt-chart-svg-wrap {
+  position: relative;
+  height: 90px;
+}
+
+.rt-chart-svg-wrap svg {
+  width: 100%; height: 100%;
+  overflow: visible;
+}
+
+.chart-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.chart-area { fill: url(#chartGrad); }
+.chart-dot  { fill: var(--accent); }
+
+.rt-labels {
+  display: flex; justify-content: space-between;
+  font-family: 'IBM Plex Mono', monospace; font-size: .52rem; color: var(--text3);
+  margin-top: .4rem;
+}
+
+.rt-y-labels {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  display: flex; flex-direction: column; justify-content: space-between;
+  font-family: 'IBM Plex Mono', monospace; font-size: .5rem; color: var(--text3);
+  pointer-events: none;
+}
+
+/* ════════════════════════════════════════════════════════
+   METRICS MINI CARDS
+════════════════════════════════════════════════════════ */
+.metrics-row {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;
+}
+@media (max-width: 640px) { .metrics-row { grid-template-columns: 1fr; } }
+
+.metric-mini {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r2); padding: 1rem 1.1rem;
+  display: flex; flex-direction: column; gap: .65rem;
+  animation: fadeUp .5s ease both;
+}
+.metric-mini:nth-child(1) { animation-delay: .32s; }
+.metric-mini:nth-child(2) { animation-delay: .38s; }
+.metric-mini:nth-child(3) { animation-delay: .44s; }
+
+.mm-header { display: flex; align-items: center; justify-content: space-between; }
+.mm-title  { font-family: 'IBM Plex Mono', monospace; font-size: .58rem; color: var(--text3); text-transform: uppercase; letter-spacing: .1em; }
+.mm-badge  {
+  font-family: 'IBM Plex Mono', monospace; font-size: .55rem; font-weight: 600;
+  padding: .15rem .55rem; border-radius: 999px;
+}
+.mm-badge.ok  { background: var(--green-dim); color: var(--green); }
+.mm-badge.med { background: var(--yellow-dim); color: var(--yellow); }
+.mm-badge.bad { background: var(--red-dim); color: var(--red); }
+
+.mm-value { font-size: 1.5rem; font-weight: 700; letter-spacing: -.04em; color: var(--text); }
+.mm-sub   { font-family: 'IBM Plex Mono', monospace; font-size: .58rem; color: var(--text3); }
+
+.mm-bar {
+  height: 4px; background: var(--surface2); border-radius: 999px; overflow: hidden;
+}
+.mm-bar-fill { height: 100%; border-radius: 999px; transition: width .7s ease; }
+
+/* ════════════════════════════════════════════════════════
+   TOAST
+════════════════════════════════════════════════════════ */
+.toast {
+  position: fixed; bottom: 1.5rem; right: 1.5rem;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 14px; padding: .9rem 1.2rem;
+  font-family: 'IBM Plex Mono', monospace; font-size: .67rem;
+  display: flex; align-items: flex-start; gap: .75rem;
+  box-shadow: 0 16px 50px rgba(0,0,0,.5);
+  transform: translateY(20px); opacity: 0;
+  transition: transform .35s cubic-bezier(.4,0,.2,1), opacity .35s;
+  z-index: 999; max-width: 320px; pointer-events: none;
+  backdrop-filter: blur(10px);
+}
+.toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+.toast.t-ok  { border-color: rgba(0,230,118,.4); }
+.toast.t-err { border-color: rgba(255,68,88,.45); }
+.toast-icon { font-size: 1.25rem; flex-shrink: 0; line-height: 1.2; }
+.toast-body strong { display: block; color: var(--text); font-size: .72rem; margin-bottom: 3px; }
+.toast-body span   { color: var(--text2); font-size: .62rem; }
+
+/* ════════════════════════════════════════════════════════
+   FOOTER
+════════════════════════════════════════════════════════ */
+.footer {
+  text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: .6rem; color: var(--text3);
+  border-top: 1px solid var(--border); padding-top: 1.5rem;
+}
+.footer a { color: var(--accent); text-decoration: none; transition: opacity .2s; }
+.footer a:hover { opacity: .7; }
+
+/* ════════════════════════════════════════════════════════
+   SECTION LABEL
+════════════════════════════════════════════════════════ */
+.sec-label {
+  font-family: 'IBM Plex Mono', monospace; font-size: .6rem; font-weight: 600;
+  color: var(--text3); text-transform: uppercase; letter-spacing: .12em;
+  display: flex; align-items: center; gap: .6rem;
+  margin-bottom: .75rem;
+}
+.sec-label::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(to right, var(--border), transparent);
+}
+
+/* ════════════════════════════════════════════════════════
+   RESPONSIVE MISC
+════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .topbar-brand { display: none; }
+  .banner-timestamps { display: none; }
+  .banner-info-desc  { display: none; }
+}
+
+  </style>
+</head>
+<body>
+
+<!-- Background layers -->
+<div class="bg-noise"></div>
+<div class="bg-grid"></div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="tIcon">✅</span>
+  <div class="toast-body">
+    <strong id="tTitle"></strong>
+    <span id="tDesc"></span>
+  </div>
+</div>
+
+<div class="wrapper">
+
+  <!-- ═══════════ HEADER ═══════════ -->
+  <div class="header">
+    <a class="back-btn" href="/health">← Health</a>
+    <div class="header-center">
+      <h1>Health Details</h1>
+      <p>Solaris Platform &nbsp;·&nbsp; Diagnóstico completo del sistema</p>
+    </div>
+    <div class="header-right">
+      <div class="live-badge">
+        <div class="live-dot"></div>
+        Live
+      </div>
+      <button class="refresh-btn" id="refreshBtn" onclick="manualRefresh()">
+        <span class="r-icon">↻</span>
+        Refrescar
+      </button>
+      <div class="theme-switch">
+        <span class="theme-icon">☀️</span>
+        <label class="toggle">
+          <input type="checkbox" id="themeToggle" />
+          <span class="track"></span>
+          <span class="thumb"></span>
+        </label>
+        <span class="theme-icon">🌙</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ STATUS BANNER ═══════════ -->
+
+  <div class="status-banner loading" id="banner">
+
+    <!-- Top colour strip -->
+    <div class="banner-status-bar"></div>
+
+    <!-- Main body -->
+    <div class="banner-main">
+
+      <!-- LEFT: eyebrow + heading + description -->
+      <div class="banner-left">
+
+        <div class="banner-eyebrow">
+          <div class="banner-eyebrow-chip" id="bChip">VERIFICANDO</div>
+          <div class="banner-eyebrow-dot" id="bDot"></div>
+        </div>
+
+        <div class="banner-heading">
+          <div class="banner-icon-wrap" id="bIcon">⏳</div>
+          <div class="banner-title-group">
+            <div class="banner-info-title" id="bTitle">Verificando servicios…</div>
+            <div class="banner-info-desc"  id="bDesc">Conectando con la API de Solaris Platform</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: countdown ring -->
+      <div class="banner-right">
+        <div class="ring-outer">
+          <svg width="64" height="64" viewBox="0 0 64 64">
+            <defs>
+              <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="var(--accent)"/>
+                <stop offset="100%" stop-color="var(--green)"/>
+              </linearGradient>
+            </defs>
+            <circle class="ring-track" cx="32" cy="32" r="26"/>
+            <circle class="ring-progress" id="ringProg" cx="32" cy="32" r="26"
+              stroke="url(#ringGrad)"
+              stroke-dasharray="163.36" stroke-dashoffset="0"/>
+          </svg>
+          <div class="ring-center">
+            <div class="ring-num" id="ringNum">30</div>
+            <div class="ring-label">seg</div>
+          </div>
+        </div>
+        <div class="countdown-sub">próximo<br>check</div>
+      </div>
+
+    </div>
+
+    <!-- Bottom meta bar -->
+    <div class="banner-meta">
+      <div class="banner-meta-item">
+        <div class="ts-row-label">Último check</div>
+        <div class="ts-row-value highlight" id="bLastCheck">—</div>
+      </div>
+      <div class="banner-meta-item">
+        <div class="ts-row-label">Timestamp API</div>
+        <div class="ts-row-value" id="bTimestamp">—</div>
+      </div>
+      <div class="banner-meta-item">
+        <div class="ts-row-label">Entorno</div>
+        <div class="ts-row-value" id="bEnv">—</div>
+      </div>
+      <div class="banner-meta-item">
+        <div class="ts-row-label">Versión</div>
+        <div class="ts-row-value" id="bVersion">—</div>
+      </div>
+      <div class="banner-meta-item">
+        <div class="ts-row-label">Checks sesión</div>
+        <div class="ts-row-value highlight" id="bChecksCount">0</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════ KPI STRIP ═══════════ -->
+  <div class="kpi-grid">
+
+    <div class="kpi" style="--kpi-accent:var(--green)">
+      <div class="kpi-top">
+        <div class="kpi-label">Uptime sesión</div>
+        <div class="kpi-icon">🟢</div>
+      </div>
+      <div class="kpi-value" id="k-uptime">—</div>
+      <div class="kpi-sub" id="k-uptime-sub">calculando…</div>
+    </div>
+
+    <div class="kpi" style="--kpi-accent:var(--accent)">
+      <div class="kpi-top">
+        <div class="kpi-label">Latencia DB avg</div>
+        <div class="kpi-icon">⚡</div>
+      </div>
+      <div class="kpi-value" id="k-lat-avg">—</div>
+      <div class="kpi-sub" id="k-lat-sub">sin muestras</div>
+    </div>
+
+    <div class="kpi" style="--kpi-accent:var(--purple)">
+      <div class="kpi-top">
+        <div class="kpi-label">Latencia mínima</div>
+        <div class="kpi-icon">📉</div>
+      </div>
+      <div class="kpi-value" id="k-lat-min">—</div>
+      <div class="kpi-sub">mejor respuesta</div>
+    </div>
+
+    <div class="kpi" style="--kpi-accent:var(--yellow)">
+      <div class="kpi-top">
+        <div class="kpi-label">Latencia máxima</div>
+        <div class="kpi-icon">📈</div>
+      </div>
+      <div class="kpi-value" id="k-lat-max">—</div>
+      <div class="kpi-sub">pico de la sesión</div>
+    </div>
+
+    <div class="kpi" style="--kpi-accent:var(--cyan)">
+      <div class="kpi-top">
+        <div class="kpi-label">Checks totales</div>
+        <div class="kpi-icon">🔄</div>
+      </div>
+      <div class="kpi-value" id="k-checks">0</div>
+      <div class="kpi-sub">esta sesión</div>
+    </div>
+
+    <div class="kpi" style="--kpi-accent:var(--red)">
+      <div class="kpi-top">
+        <div class="kpi-label">Último incidente</div>
+        <div class="kpi-icon">🚨</div>
+      </div>
+      <div class="kpi-value lg" id="k-incident">—</div>
+      <div class="kpi-sub" id="k-incident-sub">sin incidentes</div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════ SERVICES ═══════════ -->
+  <div>
+    <div class="sec-label">Servicios</div>
+    <div class="main-cols">
+
+      <!-- API Card -->
+      <div class="service-card" id="cardApi">
+        <div class="sc-header">
+          <div class="sc-icon" style="background:rgba(0,212,255,.12)">🚀</div>
+          <div class="sc-title">
+            <div class="sc-name">API REST</div>
+            <div class="sc-sub">SolarisPlatform.API · .NET 10</div>
+          </div>
+          <span class="sc-badge badge-loading" id="apiBadge">···</span>
+        </div>
+        <div class="sc-body">
+          <div class="stat-table">
+            <div class="stat-row"><span class="sk">Servicio</span><span class="sv">Solaris Platform API</span></div>
+            <div class="stat-row"><span class="sk">Versión</span><span class="sv" id="apiVer">—</span></div>
+            <div class="stat-row"><span class="sk">Entorno</span><span class="sv" id="apiEnvRow">—</span></div>
+            <div class="stat-row"><span class="sk">Latencia endpoint</span><span class="sv" id="apiLat">— ms</span></div>
+            <div class="stat-row"><span class="sk">Protocolo</span><span class="sv ok">HTTPS / REST</span></div>
+            <div class="stat-row"><span class="sk">Status HTTP</span><span class="sv ok" id="apiHttp">—</span></div>
+          </div>
+
+          <div class="sla-row">
+            <span class="sla-label">SLA API</span>
+            <div class="sla-bar-wrap"><div class="sla-bar" id="apiSlaBar" style="width:0%"></div></div>
+            <span class="sla-val" id="apiSlaVal">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DB Card -->
+      <div class="service-card" id="cardDb">
+        <div class="sc-header">
+          <div class="sc-icon" style="background:rgba(0,230,118,.12)">🗄️</div>
+          <div class="sc-title">
+            <div class="sc-name">Base de Datos</div>
+            <div class="sc-sub">PostgreSQL 16 · EF Core 10</div>
+          </div>
+          <span class="sc-badge badge-loading" id="dbBadge">···</span>
+        </div>
+        <div class="sc-body">
+
+          <div class="stat-table">
+            <div class="stat-row"><span class="sk">Motor</span><span class="sv">PostgreSQL 16</span></div>
+            <div class="stat-row"><span class="sk">Base de datos</span><span class="sv" id="dbName">—</span></div>
+            <div class="stat-row"><span class="sk">Latencia actual</span><span class="sv" id="dbLat">—</span></div>
+            <div class="stat-row"><span class="sk">Min / Max sesión</span><span class="sv" id="dbMinMax">—</span></div>
+            <div class="stat-row"><span class="sk">Avg 15 lecturas</span><span class="sv" id="dbAvg15">—</span></div>
+            <div class="stat-row"><span class="sk">Estado conexión</span><span class="sv ok" id="dbConn">—</span></div>
+          </div>
+
+          <div class="gauge-wrap">
+            <div class="gauge-header">
+              <span class="gauge-title">Tiempo de respuesta</span>
+              <span class="gauge-val" id="gaugeLat">—</span>
+            </div>
+            <div class="gauge-track">
+              <div class="gauge-fill" id="gaugeFill" style="width:0%"></div>
+            </div>
+            <div class="gauge-ticks">
+              <span>0ms</span><span>125ms</span><span>250ms</span><span>375ms</span><span>500ms+</span>
+            </div>
+          </div>
+
+          <div class="spark-wrap">
+            <div class="spark-header">
+              <span class="spark-title">Latencia últimas 20 lecturas</span>
+              <span class="spark-live" id="sparkLive">—</span>
+            </div>
+            <div class="sparkline" id="sparkline">
+              <!-- filled by JS -->
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════ RT CHART + HISTORY ═══════════ -->
+  <div>
+    <div class="sec-label">Rendimiento</div>
+    <div style="display:flex; flex-direction:column; gap:1rem;">
+
+      <!-- Response time line chart -->
+      <div class="rt-chart-card">
+        <div class="card-header">
+          <div class="card-title">
+            Latencia DB — <span class="card-title-accent">últimas 30 lecturas</span>
+          </div>
+          <div class="card-actions">
+            <div class="legend">
+              <div class="leg-item"><div class="leg-dot" style="background:var(--green)"></div>&lt;50ms</div>
+              <div class="leg-item"><div class="leg-dot" style="background:var(--yellow)"></div>50–200ms</div>
+              <div class="leg-item"><div class="leg-dot" style="background:var(--red)"></div>&gt;200ms</div>
+            </div>
+          </div>
+        </div>
+        <div class="rt-chart-body">
+          <div class="rt-chart-svg-wrap">
+            <div class="rt-y-labels" id="yLabels">
+              <span></span><span></span><span></span><span></span>
+            </div>
+            <svg id="rtSvg" viewBox="0 0 800 90" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--accent)" stop-opacity=".25"/>
+                  <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path class="chart-area" id="chartArea" d=""/>
+              <path class="chart-line" id="chartLine" d=""/>
+            </svg>
+          </div>
+          <div class="rt-labels" id="rtLabels"></div>
+        </div>
+      </div>
+
+      <!-- History bars -->
+      <div class="history-card">
+        <div class="card-header">
+          <div class="card-title">
+            Historial checks — <span class="card-title-accent">últimos 30</span>
+          </div>
+          <div class="card-actions">
+            <div class="legend">
+              <div class="leg-item"><div class="leg-dot" style="background:var(--green)"></div>OK</div>
+              <div class="leg-item"><div class="leg-dot" style="background:var(--red)"></div>ERROR</div>
+            </div>
+            <span class="uptime-chip up-100" id="histChip">Uptime —</span>
+          </div>
+        </div>
+        <div class="history-body">
+          <div class="history-bars" id="histBars"></div>
+          <div class="history-footer">
+            <span>← hace 30 checks</span>
+            <span id="histStats">sin datos</span>
+            <span>ahora →</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════ METRICS ROW ═══════════ -->
+  <div>
+    <div class="sec-label">Métricas de sesión</div>
+    <div class="metrics-row">
+
+      <div class="metric-mini">
+        <div class="mm-header">
+          <div class="mm-title">Tasa de éxito</div>
+          <div class="mm-badge ok" id="successBadge">OK</div>
+        </div>
+        <div class="mm-value" id="successRate">—</div>
+        <div class="mm-sub" id="successSub">0 / 0 checks OK</div>
+        <div class="mm-bar"><div class="mm-bar-fill" id="successBar" style="width:0%; background:var(--green)"></div></div>
+      </div>
+
+      <div class="metric-mini">
+        <div class="mm-header">
+          <div class="mm-title">Jitter (variación lat.)</div>
+          <div class="mm-badge ok" id="jitterBadge">OK</div>
+        </div>
+        <div class="mm-value" id="jitterVal">—</div>
+        <div class="mm-sub">desviación estándar</div>
+        <div class="mm-bar"><div class="mm-bar-fill" id="jitterBar" style="width:0%; background:var(--accent)"></div></div>
+      </div>
+
+      <div class="metric-mini">
+        <div class="mm-header">
+          <div class="mm-title">P95 latencia</div>
+          <div class="mm-badge ok" id="p95Badge">OK</div>
+        </div>
+        <div class="mm-value" id="p95Val">—</div>
+        <div class="mm-sub">percentil 95</div>
+        <div class="mm-bar"><div class="mm-bar-fill" id="p95Bar" style="width:0%; background:var(--purple)"></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════ INCIDENTS ═══════════ -->
+  <div>
+    <div class="sec-label">Registro de incidentes</div>
+    <div class="incident-card">
+      <div class="card-header">
+        <div class="card-title">
+          Log — <span class="card-title-accent" id="incCount">0 eventos</span>
+        </div>
+        <button class="clear-btn" onclick="clearIncidents()">✕ Limpiar</button>
+      </div>
+      <div class="incidents-list" id="incList">
+        <div class="no-incidents" id="noInc">✅ Sin incidentes registrados en esta sesión</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ FOOTER ═══════════ -->
+  <div class="footer">
+    Solaris Platform ERP &nbsp;·&nbsp; Desarrollado por LuisFer &nbsp;·&nbsp;
+    <a href="/">← Inicio</a> &nbsp;·&nbsp;
+    <a href="/swagger">Swagger →</a> &nbsp;·&nbsp;
+    <a href="/api.html">API Reference →</a>
+  </div>
+
+</div>
+
+<script>
+/* ══════════════════════════════════════════
+   THEME
+══════════════════════════════════════════ */
+const THEME_KEY = 'solaris-theme';
+let curTheme = localStorage.getItem(THEME_KEY) || 'dark';
+applyTheme(curTheme);
+
+function applyTheme(t) {
+  curTheme = t;
+  document.documentElement.setAttribute('data-theme', t);
+  const cb = document.getElementById('themeToggle');
+  if (cb) cb.checked = (t === 'light');
+  localStorage.setItem(THEME_KEY, t);
+}
+
+function toggleTheme() {
+  applyTheme(curTheme === 'dark' ? 'light' : 'dark');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const cb = document.getElementById('themeToggle');
+  if (cb) cb.addEventListener('change', toggleTheme);
+});
+
+/* ══════════════════════════════════════════
+   STATE
+══════════════════════════════════════════ */
+const INTERVAL    = 30;
+const CIRC        = 2 * Math.PI * 26; // r=26 → ≈163.36
+let countdown     = INTERVAL;
+let totalChecks   = 0;
+let lastStatus    = null;
+let lastIncident  = null;
+let incidents     = [];
+let latHistory    = []; // {ms, ts, ok}
+let checkHistory  = []; // {ok, ts, ms}
+let latMin        = Infinity;
+let latMax        = 0;
+let sessionStart  = Date.now();
+
+/* ══════════════════════════════════════════
+   RING
+══════════════════════════════════════════ */
+const ringProg = document.getElementById('ringProg');
+const ringNum  = document.getElementById('ringNum');
+
+function updateRing() {
+  const pct    = countdown / INTERVAL;
+  const offset = CIRC * (1 - pct);
+  ringProg.style.strokeDashoffset = offset;
+  if (countdown <= 5) {
+    ringProg.style.stroke = 'var(--yellow)';
+  } else {
+    ringProg.style.stroke = 'url(#ringGrad)';
+  }
+  ringNum.textContent = countdown;
+}
+
+setInterval(() => {
+  countdown--;
+  if (countdown <= 0) { countdown = INTERVAL; doCheck(); }
+  updateRing();
+}, 1000);
+updateRing();
+
+/* ══════════════════════════════════════════
+   MANUAL REFRESH
+══════════════════════════════════════════ */
+function manualRefresh() {
+  countdown = INTERVAL; updateRing();
+  const btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+  doCheck().finally(() => btn.classList.remove('spinning'));
+}
+
+/* ══════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════ */
+let toastTmr = null;
+function toast(ok, title, desc) {
+  const el = document.getElementById('toast');
+  document.getElementById('tIcon').textContent  = ok ? '✅' : '🔴';
+  document.getElementById('tTitle').textContent = title;
+  document.getElementById('tDesc').textContent  = desc;
+  el.className = 'toast show ' + (ok ? 't-ok' : 't-err');
+  clearTimeout(toastTmr);
+  toastTmr = setTimeout(() => el.classList.remove('show'), 5000);
+}
+
+/* ══════════════════════════════════════════
+   MAIN CHECK
+══════════════════════════════════════════ */
+async function doCheck() {
+  totalChecks++;
+  document.getElementById('k-checks').textContent = totalChecks;
+
+  const t0 = Date.now();
+  try {
+    const res  = await fetch('/health/data');
+    const data = await res.json();
+    const apiMs = Date.now() - t0;
+
+    const ok = data.status === 'Healthy';
+    const db = data.checks?.find(c => c.name === 'database');
+    const ms = db?.latencyMs ?? 0;
+
+    // Update histories
+    checkHistory.push({ ok, ts: new Date(), ms });
+    if (checkHistory.length > 30) checkHistory.shift();
+
+    latHistory.push({ ms, ts: new Date(), ok });
+    if (latHistory.length > 30) latHistory.shift();
+
+    // Update min/max
+    if (ms > 0) {
+      latMin = Math.min(latMin, ms);
+      latMax = Math.max(latMax, ms);
+    }
+
+    // Render everything
+    renderBanner(data, apiMs);
+    renderServiceApi(data, apiMs);
+    renderServiceDb(db);
+    renderKPIs();
+    renderHistory();
+    renderSparkline();
+    renderChart();
+    renderMetrics();
+
+    // Transitions
+    const newStatus = ok ? 'healthy' : 'unhealthy';
+    if (lastStatus !== null && lastStatus !== newStatus) {
+      if (newStatus === 'healthy') {
+        toast(true, 'Sistema recuperado', 'Todos los servicios operativos');
+        addIncident('✅', true, 'Sistema recuperado', 'API + DB', 'recovery');
+      } else {
+        toast(false, 'Falla detectada', 'Revisa los detalles abajo');
+        addIncident('🔴', false, 'Falla detectada — servicio degradado', 'Sistema', 'error');
+        lastIncident = new Date();
+      }
+    } else if (lastStatus === null && !ok) {
+      addIncident('⚠️', false, 'Estado no-saludable al inicio de sesión', 'Sistema', 'warning');
+      lastIncident = new Date();
+    }
+    lastStatus = newStatus;
+
+    // Timestamp
+    document.getElementById('bLastCheck').textContent = new Date().toLocaleTimeString('es-EC', { hour12: false });
+    document.getElementById('bChecksCount').textContent = totalChecks;
+
+  } catch (e) {
+    renderBannerError();
+    checkHistory.push({ ok: false, ts: new Date(), ms: 0 });
+    if (checkHistory.length > 30) checkHistory.shift();
+    latHistory.push({ ms: 0, ts: new Date(), ok: false });
+    if (latHistory.length > 30) latHistory.shift();
+
+    if (lastStatus !== 'unhealthy') {
+      toast(false, 'Sin conexión', 'No se puede alcanzar la API');
+      addIncident('🔴', false, 'Sin conexión — API no responde', 'API', 'error');
+      lastIncident = new Date();
+    }
+    lastStatus = 'unhealthy';
+    renderHistory();
+    renderKPIs();
+    renderMetrics();
+    document.getElementById('bLastCheck').textContent = new Date().toLocaleTimeString('es-EC', { hour12: false });
+    document.getElementById('bChecksCount').textContent = totalChecks;
+  }
+}
+
+/* ══════════════════════════════════════════
+   RENDER BANNER
+══════════════════════════════════════════ */
+function renderBanner(data, apiMs) {
+  const ok  = data.status === 'Healthy';
+  const deg = data.status === 'Degraded';
+  const key = ok ? 'healthy' : deg ? 'degraded' : 'unhealthy';
+
+  const b = document.getElementById('banner');
+  b.className = 'status-banner ' + key;
+
+  document.getElementById('bIcon').textContent  = ok ? '✅' : deg ? '⚠️' : '❌';
+  document.getElementById('bTitle').textContent = ok  ? 'Todos los sistemas operativos'
+                                                : deg ? 'Sistema degradado — revisión recomendada'
+                                                :       'Sistema con fallas críticas';
+  document.getElementById('bDesc').textContent  = ok
+    ? 'API REST y base de datos funcionando dentro de los parámetros normales'
+    : 'Uno o más servicios presentan problemas — revisa los detalles abajo';
+
+  document.getElementById('bChip').textContent = ok ? 'OPERATIVO' : deg ? 'DEGRADADO' : 'FALLA CRÍTICA';
+
+  const ts = data.timestamp ? new Date(data.timestamp) : new Date();
+  document.getElementById('bTimestamp').textContent = ts.toLocaleTimeString('es-EC', { hour12: false });
+  document.getElementById('bEnv').textContent       = data.environment || '—';
+  document.getElementById('bVersion').textContent   = data.version     || '—';
+  document.getElementById('bChecksCount').textContent = totalChecks;
+}
+
+function renderBannerError() {
+  const b = document.getElementById('banner');
+  b.className = 'status-banner unhealthy';
+  document.getElementById('bIcon').textContent  = '❌';
+  document.getElementById('bTitle').textContent = 'No se puede conectar con la API';
+  document.getElementById('bDesc').textContent  = 'Verifica que el servidor de Solaris Platform esté corriendo';
+  document.getElementById('bChip').textContent  = 'SIN CONEXIÓN';
+  document.getElementById('bEnv').textContent   = '—';
+  document.getElementById('bVersion').textContent = '—';
+  document.getElementById('bChecksCount').textContent = totalChecks;
+}
+
+/* ══════════════════════════════════════════
+   RENDER SERVICE CARDS
+══════════════════════════════════════════ */
+function renderServiceApi(data, apiMs) {
+  const ok = data.status === 'Healthy';
+  document.getElementById('cardApi').className = 'service-card ' + (ok ? 'ok' : 'err');
+
+  const badge = document.getElementById('apiBadge');
+  badge.textContent = ok ? 'HEALTHY' : 'UNHEALTHY';
+  badge.className   = 'sc-badge ' + (ok ? 'badge-ok' : 'badge-err');
+
+  document.getElementById('apiVer').textContent    = data.version    || '1.0.0';
+  document.getElementById('apiEnvRow').textContent = data.environment || '—';
+
+  const latEl = document.getElementById('apiLat');
+  latEl.textContent = apiMs + ' ms';
+  latEl.className   = 'sv ' + (apiMs < 100 ? 'ok' : apiMs < 400 ? 'warn' : 'bad');
+
+  document.getElementById('apiHttp').textContent = ok ? '200 OK' : '5xx ERROR';
+  document.getElementById('apiHttp').className   = 'sv ' + (ok ? 'ok' : 'bad');
+
+  // SLA bar (uptime this session)
+  const total  = checkHistory.length;
+  const okCnt  = checkHistory.filter(h => h.ok).length;
+  const sla    = total > 0 ? (okCnt / total * 100) : 100;
+  document.getElementById('apiSlaBar').style.width = sla + '%';
+  document.getElementById('apiSlaBar').style.background = sla >= 99 ? 'var(--green)' : sla >= 95 ? 'var(--yellow)' : 'var(--red)';
+  document.getElementById('apiSlaVal').textContent  = sla.toFixed(1) + '%';
+}
+
+function renderServiceDb(db) {
+  const ok = db?.status === 'Healthy';
+  document.getElementById('cardDb').className = 'service-card ' + (db ? (ok ? 'ok' : 'err') : '');
+
+  const badge = document.getElementById('dbBadge');
+  if (!db) {
+    badge.textContent = 'SIN DATOS'; badge.className = 'sc-badge badge-loading'; return;
+  }
+  badge.textContent = ok ? 'HEALTHY' : 'UNHEALTHY';
+  badge.className   = 'sc-badge ' + (ok ? 'badge-ok' : 'badge-err');
+
+  const ms      = db.latencyMs ?? 0;
+  const msClass = ms < 50 ? 'ok' : ms < 200 ? 'warn' : 'bad';
+  const msLabel = ms < 50 ? 'excelente' : ms < 200 ? 'normal' : 'lento';
+
+  document.getElementById('dbName').textContent  = db.database || '—';
+  document.getElementById('dbConn').textContent  = ok ? 'Conectado' : 'Error';
+  document.getElementById('dbConn').className    = 'sv ' + (ok ? 'ok' : 'bad');
+
+  const latEl = document.getElementById('dbLat');
+  latEl.textContent = `${ms} ms — ${msLabel}`;
+  latEl.className   = 'sv ' + msClass;
+
+  const minStr = latMin === Infinity ? '—' : latMin + ' ms';
+  const maxStr = latMax === 0 ? '—' : latMax + ' ms';
+  document.getElementById('dbMinMax').textContent = `${minStr} / ${maxStr}`;
+
+  const lats = latHistory.filter(l => l.ms > 0).map(l => l.ms);
+  const avg15 = lats.length ? Math.round(lats.reduce((a, b) => a + b, 0) / lats.length) : 0;
+  const avg15El = document.getElementById('dbAvg15');
+  avg15El.textContent = avg15 ? avg15 + ' ms' : '—';
+  avg15El.className   = 'sv ' + (avg15 < 50 ? 'ok' : avg15 < 200 ? 'warn' : 'bad');
+
+  // Gauge
+  const pct = Math.min(100, (ms / 500) * 100);
+  const fill = document.getElementById('gaugeFill');
+  fill.style.width      = pct + '%';
+  fill.style.background = ms < 50 ? 'var(--green)' : ms < 200 ? 'var(--yellow)' : 'var(--red)';
+  document.getElementById('gaugeLat').textContent = ms + ' ms';
+}
+
+/* ══════════════════════════════════════════
+   SPARKLINE
+══════════════════════════════════════════ */
+function renderSparkline() {
+  const el   = document.getElementById('sparkline');
+  const lats = latHistory.map(l => l.ms);
+  if (!lats.length) return;
+
+  const N   = 20;
+  const pad = Array(Math.max(0, N - lats.length)).fill(0).concat(lats.slice(-N));
+  const maxMs = Math.max(...pad, 10);
+
+  el.innerHTML = '';
+  pad.forEach((ms, i) => {
+    const bar = document.createElement('div');
+    const h   = ms === 0 ? 5 : Math.max(8, Math.min(100, (ms / maxMs) * 100));
+    const cls = ms === 0 ? '' : ms < 50 ? 's-ok' : ms < 200 ? 's-warn' : 's-bad';
+    bar.className = `sp ${cls}`;
+    bar.style.height = h + '%';
+    if (i === pad.length - 1) bar.style.opacity = '1';
+    el.appendChild(bar);
+  });
+
+  const last = lats[lats.length - 1];
+  const liveEl = document.getElementById('sparkLive');
+  liveEl.textContent = last ? last + ' ms' : '—';
+  liveEl.style.color = last < 50 ? 'var(--green)' : last < 200 ? 'var(--yellow)' : 'var(--red)';
+}
+
+/* ══════════════════════════════════════════
+   LINE CHART
+══════════════════════════════════════════ */
+function renderChart() {
+  const data = latHistory.filter(l => l.ms > 0);
+  if (data.length < 2) return;
+
+  const W = 800; const H = 80;
+  const maxV = Math.max(...data.map(l => l.ms), 50);
+  const step = W / (data.length - 1);
+
+  const pts = data.map((l, i) => ({
+    x: i * step,
+    y: H - (l.ms / maxV) * H * 0.85 - 4
+  }));
+
+  const lineD = pts.map((p, i) => (i === 0 ? `M${p.x.toFixed(1)},${p.y.toFixed(1)}` : ` L${p.x.toFixed(1)},${p.y.toFixed(1)}`)).join('');
+  const areaD = lineD + ` L${pts[pts.length-1].x.toFixed(1)},${H} L0,${H} Z`;
+
+  document.getElementById('chartLine').setAttribute('d', lineD);
+  document.getElementById('chartArea').setAttribute('d', areaD);
+
+  // Y labels
+  const yLabels = document.getElementById('yLabels');
+  const steps   = [maxV, Math.round(maxV * .66), Math.round(maxV * .33), 0];
+  yLabels.querySelectorAll('span').forEach((s, i) => {
+    s.textContent = steps[i] + 'ms';
+  });
+
+  // X labels (first / last few)
+  const lbl = document.getElementById('rtLabels');
+  const show = [0, Math.floor(data.length / 3), Math.floor(data.length * 2 / 3), data.length - 1];
+  lbl.innerHTML = '';
+  show.forEach(idx => {
+    const span = document.createElement('span');
+    span.textContent = data[idx].ts.toLocaleTimeString('es-EC', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    lbl.appendChild(span);
+  });
+}
+
+/* ══════════════════════════════════════════
+   HISTORY BARS
+══════════════════════════════════════════ */
+function renderHistory() {
+  const el     = document.getElementById('histBars');
+  const padded = Array(Math.max(0, 30 - checkHistory.length)).fill(null).concat(checkHistory);
+
+  el.innerHTML = '';
+  padded.forEach(item => {
+    const d = document.createElement('div');
+    if (!item) {
+      d.className = 'hb empty';
+    } else {
+      d.className = 'hb ' + (item.ok ? 'ok' : 'err');
+      const t = item.ts.toLocaleTimeString('es-EC', { hour12: false });
+      const l = item.ms ? ` · ${item.ms}ms` : '';
+      d.setAttribute('data-tip', `${t}${l} · ${item.ok ? '✅ OK' : '❌ ERR'}`);
+    }
+    el.appendChild(d);
+  });
+
+  // Stats
+  const total = checkHistory.length;
+  const okCnt = checkHistory.filter(h => h.ok).length;
+  const pct   = total > 0 ? (okCnt / total * 100).toFixed(1) : null;
+
+  if (pct !== null) {
+    document.getElementById('histStats').textContent = `${okCnt} OK · ${total - okCnt} ERR`;
+    const chip = document.getElementById('histChip');
+    chip.textContent = `Uptime ${pct}%`;
+    chip.className   = 'uptime-chip ' + (pct >= 100 ? 'up-100' : pct >= 90 ? 'up-ok' : 'up-bad');
+  }
+}
+
+/* ══════════════════════════════════════════
+   KPIs
+══════════════════════════════════════════ */
+function renderKPIs() {
+  const total = checkHistory.length;
+  const okCnt = checkHistory.filter(h => h.ok).length;
+  const pct   = total > 0 ? (okCnt / total * 100).toFixed(1) : null;
+
+  if (pct !== null) {
+    const el = document.getElementById('k-uptime');
+    el.textContent = pct + '%';
+    el.style.color = pct >= 100 ? 'var(--green)' : pct >= 90 ? 'var(--yellow)' : 'var(--red)';
+    document.getElementById('k-uptime-sub').textContent = `${okCnt} / ${total} checks OK`;
+  }
+
+  const lats = latHistory.filter(l => l.ms > 0).map(l => l.ms);
+  if (lats.length) {
+    const avg = Math.round(lats.reduce((a, b) => a + b, 0) / lats.length);
+    document.getElementById('k-lat-avg').textContent = avg + ' ms';
+    document.getElementById('k-lat-sub').textContent  = lats.length + ' muestras';
+
+    if (latMin !== Infinity) {
+      document.getElementById('k-lat-min').textContent = latMin + ' ms';
+      document.getElementById('k-lat-min').style.color = 'var(--green)';
+    }
+    if (latMax > 0) {
+      document.getElementById('k-lat-max').textContent = latMax + ' ms';
+      document.getElementById('k-lat-max').style.color = latMax > 200 ? 'var(--yellow)' : 'var(--green)';
+    }
+  }
+
+  const kInc = document.getElementById('k-incident');
+  if (lastIncident) {
+    kInc.textContent = lastIncident.toLocaleTimeString('es-EC', { hour12: false });
+    kInc.style.color = 'var(--red)';
+    document.getElementById('k-incident-sub').textContent = lastIncident.toLocaleDateString('es-EC');
+  } else {
+    kInc.textContent = '—';
+    kInc.style.color = 'var(--green)';
+    document.getElementById('k-incident-sub').textContent = 'sin incidentes';
+  }
+}
+
+/* ══════════════════════════════════════════
+   METRICS
+══════════════════════════════════════════ */
+function renderMetrics() {
+  const total = checkHistory.length;
+  const okCnt = checkHistory.filter(h => h.ok).length;
+  const rate  = total > 0 ? (okCnt / total * 100) : 100;
+
+  document.getElementById('successRate').textContent = rate.toFixed(1) + '%';
+  document.getElementById('successSub').textContent  = `${okCnt} / ${total} checks OK`;
+  document.getElementById('successBar').style.width  = rate + '%';
+  const sb = document.getElementById('successBadge');
+  sb.textContent = rate >= 99 ? 'PERFECT' : rate >= 95 ? 'GOOD' : 'DEGRADED';
+  sb.className   = 'mm-badge ' + (rate >= 99 ? 'ok' : rate >= 95 ? 'med' : 'bad');
+
+  const lats = latHistory.filter(l => l.ms > 0).map(l => l.ms);
+  if (lats.length >= 2) {
+    const avg    = lats.reduce((a, b) => a + b, 0) / lats.length;
+    const variance = lats.reduce((a, b) => a + (b - avg) ** 2, 0) / lats.length;
+    const std    = Math.round(Math.sqrt(variance));
+    document.getElementById('jitterVal').textContent = std + ' ms';
+    document.getElementById('jitterBar').style.width = Math.min(100, (std / 100) * 100) + '%';
+    const jb = document.getElementById('jitterBadge');
+    jb.textContent = std < 20 ? 'ESTABLE' : std < 60 ? 'NORMAL' : 'INESTABLE';
+    jb.className   = 'mm-badge ' + (std < 20 ? 'ok' : std < 60 ? 'med' : 'bad');
+
+    // P95
+    const sorted = [...lats].sort((a, b) => a - b);
+    const p95    = sorted[Math.floor(sorted.length * 0.95)] ?? sorted[sorted.length - 1];
+    document.getElementById('p95Val').textContent = p95 + ' ms';
+    document.getElementById('p95Bar').style.width = Math.min(100, (p95 / 500) * 100) + '%';
+    const pb = document.getElementById('p95Badge');
+    pb.textContent = p95 < 100 ? 'OK' : p95 < 300 ? 'LENTO' : 'CRÍTICO';
+    pb.className   = 'mm-badge ' + (p95 < 100 ? 'ok' : p95 < 300 ? 'med' : 'bad');
+  }
+}
+
+/* ══════════════════════════════════════════
+   INCIDENTS
+══════════════════════════════════════════ */
+function addIncident(icon, ok, msg, svc, type) {
+  incidents.unshift({ icon, ok, msg, svc, type, ts: new Date() });
+  if (incidents.length > 25) incidents.pop();
+  renderIncidents();
+}
+
+function renderIncidents() {
+  const list  = document.getElementById('incList');
+  const noEl  = document.getElementById('noInc');
+  const count = document.getElementById('incCount');
+
+  list.querySelectorAll('.inc-row').forEach(el => el.remove());
+  count.textContent = incidents.length + ' evento' + (incidents.length !== 1 ? 's' : '');
+
+  if (!incidents.length) { noEl.style.display = 'block'; return; }
+  noEl.style.display = 'none';
+
+  incidents.forEach((inc, i) => {
+    const d = document.createElement('div');
+    d.className = 'inc-row';
+    d.style.animationDelay = (i * 0.04) + 's';
+    d.innerHTML = `
+      <div class="inc-icon">${inc.icon}</div>
+      <span class="inc-msg">${inc.msg}</span>
+      <span class="inc-svc">${inc.svc}</span>
+      <span class="inc-time">${inc.ts.toLocaleTimeString('es-EC', { hour12: false })}</span>
+    `;
+    list.insertBefore(d, noEl);
+  });
+}
+
+function clearIncidents() {
+  incidents    = [];
+  lastIncident = null;
+  renderIncidents();
+  renderKPIs();
+}
+
+/* ══════════════════════════════════════════
+   INIT
+══════════════════════════════════════════ */
+renderHistory();
+renderIncidents();
+doCheck();
+</script>
+</body>
+</html>

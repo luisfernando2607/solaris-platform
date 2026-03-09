@@ -104,7 +104,6 @@ app.MapControllers();
 // ============================================================
 // ESTRATEGIA DE RUTAS:
 //   /health          → redirige al dashboard visual (health.html)
-//   /health/full     → redirige al dashboard visual (health.html)
 //   /health/data     → JSON con estado de API + BD  ← usado por health.html e index.html
 //   /health/api      → JSON solo API
 //   /health/db       → JSON solo BD
@@ -112,7 +111,7 @@ app.MapControllers();
 
 // Rutas visuales — redirigen al dashboard HTML
 app.MapGet("/health",      () => Results.Redirect("/pages/health.html"));
-app.MapGet("/health/full", () => Results.Redirect("/pages/health.html"));
+app.MapGet("/health/full", () => Results.Redirect("/pages/healthDetails.html"));
 
 // ── /health/data — JSON completo (consumido por health.html e index.html) ──
 // IMPORTANTE: Este es el único endpoint que devuelve datos reales de ambos servicios
@@ -203,22 +202,24 @@ app.MapGet("/health/db", async (SolarisDbContext db) =>
 // Redirige /test al panel de pruebas
 app.MapGet("/test", () => Results.Redirect("/test.html"));
 
-app.MapGet("/api/info", () => Results.Ok(new
+if (app.Environment.IsDevelopment())
 {
-    name        = "Solaris Platform API",
-    version     = "1.0.0",
-    description = "ERP empresarial on-premise",
-    endpoints   = new
+    app.MapGet("/api/info", () => Results.Ok(new
     {
-        swagger    = "/swagger",
-        healthData = "/health/data",
-        healthApi  = "/health/api",
-        healthDb   = "/health/db",
-        auth       = "/api/auth",
-        usuarios   = "/api/usuarios",
-        roles      = "/api/roles",
-        empresas   = "/api/empresas"
-    }
-}));
+        name        = "Solaris Platform API",
+        version     = "1.0.0",
+        description = "ERP empresarial on-premise",
+        endpoints   = new
+        {
+            swagger    = "/swagger",
+            healthData = "/health/data",
+            healthApi  = "/health/api",
+            auth       = "/api/auth",
+            usuarios   = "/api/usuarios",
+            roles      = "/api/roles",
+            empresas   = "/api/empresas"
+        }
+    }));
+}
 
 app.Run();
