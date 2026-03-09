@@ -66,11 +66,15 @@ const TestUI = (() => {
           <div class="test-detail" id="d-${t.id}">
             <div class="detail-tabs">
               <button class="detail-tab active" onclick="TestUI.switchTab('${t.id}','response',this)">Respuesta</button>
+              <button class="detail-tab"        onclick="TestUI.switchTab('${t.id}','request',this)">Request ↑</button>
               <button class="detail-tab"        onclick="TestUI.switchTab('${t.id}','info',this)">Info</button>
             </div>
             <div class="detail-pane active" id="pane-response-${t.id}">
               <pre class="detail-response" id="r-${t.id}">—</pre>
               <div class="error-hint" id="hint-${t.id}" style="display:none"></div>
+            </div>
+            <div class="detail-pane" id="pane-request-${t.id}">
+              <pre class="detail-response" id="req-${t.id}">—</pre>
             </div>
             <div class="detail-pane" id="pane-info-${t.id}">
               <div class="detail-info" id="info-${t.id}">—</div>
@@ -163,6 +167,16 @@ const TestUI = (() => {
 
     // Respuesta JSON coloreada
     document.getElementById(`r-${testId}`).innerHTML = colorJson(result.data);
+
+    // Request tab — body enviado al servidor
+    const reqEl = document.getElementById(`req-${testId}`);
+    if (reqEl) {
+      if (result.requestBody !== null && result.requestBody !== undefined) {
+        reqEl.innerHTML = colorJson(result.requestBody);
+      } else {
+        reqEl.innerHTML = `<span style="opacity:.5">(sin body — ${result.method})</span>`;
+      }
+    }
 
     // Auto-expandir en fallo
     if (!result.passed) {

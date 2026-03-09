@@ -38,17 +38,18 @@ const TestReport = (() => {
           name:       t.name,
           // ─ Configuración del test ─
           method:           t.method,
-          path:             t.path,
-          fullUrl:          baseUrl + t.path,
+          path:             res.path       || t.path,          // resolved path (con ID real)
+          fullUrl:          res.fullUrl    || baseUrl + t.path, // URL real usada en el fetch
           requiresAuth:     t.auth,
           expectedStatus:   t.expect.status,
           checkDescription: t.expect.checkDesc || null,
           hint:             t.hint || null,
           // ─ Resultado ─
           passed:     res.passed,
-          skipped:    res.skipped || false,   // [BUG-3 FIX] propagar el flag
+          skipped:    res.skipped || false,
           httpStatus: res.status,
           latencyMs:  res.ms,
+          requestBody: res.requestBody ?? null,  // body enviado al servidor
           response:   res.data,
           // ─ Diagnóstico (solo en fallos) ─
           diagnosis:  res.passed ? null : res.diagnosis,

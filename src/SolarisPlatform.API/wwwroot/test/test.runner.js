@@ -234,6 +234,12 @@ const TestRunner = (() => {
       displayData.data.token = displayData.data.token.substring(0, 50) + '…[truncado]';
     }
 
+    // Sanitizar contraseña del body enviado
+    let displayBody = body;
+    if (body?.password) {
+      displayBody = { ...body, password: '***' };
+    }
+
     const result = {
       suiteId,
       testId:         testDef.id,
@@ -242,6 +248,7 @@ const TestRunner = (() => {
       status:         res.status,
       ms:             res.ms,
       data:           displayData,
+      requestBody:    displayBody,   // [v3.3] body enviado al servidor
       diagnosis,
       method:         testDef.method,
       path:           resolvedPath,

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SolarisPlatform.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+46ec53d868b96090028a8668164dc6ceaf204318")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+18590c06781e9eeaa37639c518d8fcb608ed71cf")]
 [assembly: System.Reflection.AssemblyProductAttribute("SolarisPlatform.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SolarisPlatform.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

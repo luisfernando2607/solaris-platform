@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="es" data-theme="dark">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>API Tests · Solaris Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=JetBrains+Mono:wght@300;400;500&display=swap"
+    rel="stylesheet" />
   <link rel="stylesheet" href="../assets/css/solaris.css" />
 </head>
+
 <body>
 
   <div class="orb orb-1"></div>
@@ -23,7 +27,7 @@
         <p>Solaris Platform · Pruebas de integración en tiempo real</p>
       </div>
       <div class="header-right">
-        <div class="theme-switch" >
+        <div class="theme-switch">
           <span>☀️</span>
           <label class="toggle">
             <input type="checkbox" id="themeToggle" />
@@ -63,20 +67,21 @@
 
     <!-- ── Acciones ── -->
     <div class="actions">
-      <button class="btn btn-primary"  id="btnRunAll"  onclick="TestUI.runAll()">▶ Ejecutar todos los tests</button>
-      <button class="btn btn-danger"                   onclick="TestUI.clearAll()">✕ Limpiar</button>
-      <button class="btn btn-outline"  id="btnDlAll"   onclick="TestReport.downloadAll()"   disabled>⬇ Resultados</button>
-      <button class="btn btn-dl-fails" id="btnDlFails" onclick="TestReport.downloadFails()" disabled>⬇ Solo fallos</button>
+      <button class="btn btn-primary" id="btnRunAll" onclick="TestUI.runAll()">▶ Ejecutar todos los tests</button>
+      <button class="btn btn-danger" onclick="TestUI.clearAll()">✕ Limpiar</button>
+      <button class="btn btn-outline" id="btnDlAll" onclick="TestReport.downloadAll()" disabled>⬇ Resultados</button>
+      <button class="btn btn-dl-fails" id="btnDlFails" onclick="TestReport.downloadFails()" disabled>⬇ Solo
+        fallos</button>
     </div>
-
-    <!-- ── Nav rápida por suite (generada por test.ui.js) ── -->
-    <div class="suite-nav" id="suiteNav"></div>
 
     <!-- ── Resumen final ── -->
     <div class="summary" id="summary">
       <span id="summaryText">—</span>
       <span class="summary-detail" id="summaryDetail"></span>
     </div>
+
+    <!-- ── Nav rápida por suite (generada por test.ui.js) ── -->
+    <div class="suite-nav" id="suiteNav"></div>
 
     <!-- ── Suites (generadas por test.ui.js) ── -->
     <div id="suitesContainer"></div>
@@ -107,4 +112,5 @@
   </script>
 
 </body>
+
 </html>
