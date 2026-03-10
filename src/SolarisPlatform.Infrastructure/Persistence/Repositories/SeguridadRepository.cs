@@ -32,7 +32,7 @@ public class UsuarioRepository : Repository<Usuario>, IUsuarioRepository
         return await _dbSet
             .Include(u => u.Empresa)
             .Include(u => u.Sucursal)
-            .Include(u => u.UsuarioRoles.Where(ur => ur.Activo))
+            .Include(u => u.UsuarioRoles)
                 .ThenInclude(ur => ur.Rol)
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
     }
@@ -42,7 +42,7 @@ public class UsuarioRepository : Repository<Usuario>, IUsuarioRepository
         return await _dbSet
             .Include(u => u.Empresa)
             .Include(u => u.Sucursal)
-            .Include(u => u.UsuarioRoles.Where(ur => ur.Activo))
+            .Include(u => u.UsuarioRoles)
                 .ThenInclude(ur => ur.Rol)
                     .ThenInclude(r => r.RolPermisos)
                         .ThenInclude(rp => rp.Permiso)
@@ -52,7 +52,7 @@ public class UsuarioRepository : Repository<Usuario>, IUsuarioRepository
     public async Task<IEnumerable<Usuario>> GetByEmpresaAsync(long empresaId, CancellationToken cancellationToken = default)
     {
         return await _dbSet
-            .Include(u => u.UsuarioRoles.Where(ur => ur.Activo))
+            .Include(u => u.UsuarioRoles)
                 .ThenInclude(ur => ur.Rol)
             .Where(u => u.EmpresaId == empresaId)
             .OrderBy(u => u.Apellidos)

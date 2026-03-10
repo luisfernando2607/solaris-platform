@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Solaris Platform · Estructura</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/solaris.css" />
+
+  <style>
+    /* ═══════════════════════════════════════════════════════
+       TOKENS — fallbacks para cuando solaris.css no está
+    ═══════════════════════════════════════════════════════ */
+    :root,
+    [data-theme="dark"] {
+      --bg:        #09090f;
+      --surface1:  #0d0e18;
+      --surface2:  #141720;
+      --surface3:  #1a1e2e;
+      --surface4:  #1f2437;
+      --border:    rgba(255,255,255,.08);
+      --border-hi: rgba(255,255,255,.14);
+      --muted:     #6b7280;
+      --muted-hi:  #9ca3af;
+      --text:      #e2e8f0;
+      --purple:    #a855f7;
+      --purple-dim:rgba(168,85,247,.18);
+      --green:     #34d399;
+      --green-dim: rgba(52,211,153,.15);
+      --mono:      'JetBrains Mono', monospace;
+      --sans:      'Syne', sans-serif;
+
+      /* Spacing scale */
+      --s1: .25rem; --s2: .5rem; --s3: .75rem;
+      --s4: 1rem;   --s5: 1.5rem; --s6: 2rem;
+
+      /* Radius */
+      --r1: 4px; --r2: 6px; --r3: 8px; --r4: 12px;
+    }
+
+    /* ── LIGHT THEME ── */
+    [data-theme="light"] {
+      --bg:        #f4f5f7;
+      --surface1:  #ffffff;
+      --surface2:  #f8f9fb;
+      --surface3:  #eef0f4;
+      --surface4:  #e4e7ee;
+      --border:    rgba(0,0,0,.08);
+      --border-hi: rgba(0,0,0,.13);
+      --muted:     #7c8494;
+      --muted-hi:  #4b5563;
+      --text:      #111827;
+      --purple:    #7c3aed;
+      --purple-dim:rgba(124,58,237,.12);
+      --green:     #059669;
+      --green-dim: rgba(5,150,105,.1);
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       RESET & BASE
+    ═══════════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    button { cursor: pointer; font-family: inherit; }
+    button:disabled { cursor: not-allowed; opacity: .38; }
+
+    /* ═══════════════════════════════════════════════════════
+       ORBS (atmósfera)
+    ═══════════════════════════════════════════════════════ */
+    .orb {
+      position: fixed; border-radius: 50%;
+      filter: blur(90px); pointer-events: none; z-index: 0;
+    }
+    .orb-1 { width: 520px; height: 520px; top: -140px; left: -120px; background: rgba(88,28,220,.12); }
+    .orb-2 { width: 420px; height: 420px; bottom: 10%; right: -100px; background: rgba(6,182,212,.08); }
+    .orb-3 { width: 300px; height: 300px; top: 50%; left: 50%; background: rgba(168,85,247,.06); }
+
+    /* ═══════════════════════════════════════════════════════
+       PAGE SHELL
+    ═══════════════════════════════════════════════════════ */
+    .page {
+      position: relative; z-index: 1;
+      max-width: 1180px; margin: 0 auto;
+      padding: var(--s4) var(--s5);
+      display: flex; flex-direction: column; gap: var(--s5);
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       HEADER — misma estructura que index.html
+    ═══════════════════════════════════════════════════════ */
+    .header {
+      display: flex; align-items: center; gap: var(--s4);
+      padding: var(--s3) var(--s4);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--r4);
+      backdrop-filter: blur(12px);
+    }
+    .logo img { height: 32px; width: auto; display: block; }
+    .header-text { flex: 1; min-width: 0; }
+    .header-text h1 {
+      font-family: var(--sans); font-size: 1.05rem;
+      font-weight: 800; color: var(--text); line-height: 1.2;
+    }
+    .header-text p {
+      font-family: var(--mono); font-size: .65rem;
+      color: var(--muted); margin-top: .15rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .header-right { display: flex; align-items: center; gap: var(--s3); flex-shrink: 0; }
+
+    /* ── Status badge (igual que index.html) ── */
+    .status-badge {
+      display: inline-flex; align-items: center; gap: .45rem;
+      padding: .32rem .85rem; border-radius: var(--r3);
+      background: var(--surface3); border: 1px solid var(--border-hi);
+      font-family: var(--mono); font-size: .65rem; font-weight: 600;
+      color: var(--muted-hi); text-decoration: none;
+      letter-spacing: .04em; transition: all .18s; cursor: default;
+    }
+    /* Dot dentro del badge */
+    .status-badge .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--muted); flex-shrink: 0;
+      transition: background .3s;
+    }
+    /* Variantes de estado */
+    .status-badge.loading {
+      border-color: rgba(245,158,11,.35); color: #fbbf24;
+    }
+    .status-badge.loading .dot {
+      background: #f59e0b; animation: dotPulse 1s infinite;
+    }
+    .status-badge.ok {
+      border-color: rgba(52,211,153,.35); color: #34d399;
+    }
+    .status-badge.ok .dot { background: var(--green); animation: none; }
+    .status-badge.error {
+      border-color: rgba(244,63,94,.35); color: #f87171;
+    }
+    .status-badge.error .dot { background: #f43f5e; animation: none; }
+
+    /* Back link — variante clickable */
+    .back-link {
+      display: inline-flex; align-items: center; gap: .4rem;
+      padding: .32rem .85rem; border-radius: var(--r3);
+      background: var(--surface3); border: 1px solid var(--border-hi);
+      font-family: var(--mono); font-size: .65rem; font-weight: 600;
+      color: var(--muted-hi); text-decoration: none;
+      letter-spacing: .03em; transition: all .18s;
+    }
+    .back-link:hover {
+      border-color: var(--purple); color: #c4b5fd;
+      background: var(--purple-dim);
+    }
+
+    /* ── Theme switch ── */
+    .theme-switch { display: flex; align-items: center; gap: var(--s2); }
+    .theme-icon { font-size: .9rem; line-height: 1; }
+    .toggle { position: relative; display: inline-flex; width: 34px; height: 18px; cursor: pointer; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .track {
+      position: absolute; inset: 0; border-radius: 9px;
+      background: var(--surface4); border: 1px solid var(--border-hi);
+      transition: background .2s;
+    }
+    .thumb {
+      position: absolute; top: 3px; left: 3px;
+      width: 12px; height: 12px; border-radius: 50%;
+      background: var(--muted); transition: all .2s;
+    }
+    .toggle input:checked ~ .track { background: var(--purple-dim); border-color: var(--purple); }
+    .toggle input:checked ~ .thumb { transform: translateX(16px); background: var(--purple); }
+
+    /* ═══════════════════════════════════════════════════════
+       SECTION LABEL
+    ═══════════════════════════════════════════════════════ */
+    .section-label {
+      font-family: var(--mono); font-size: .62rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .1em;
+      color: var(--muted); margin-bottom: var(--s3);
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       TOOLBAR COMPLETO
+    ═══════════════════════════════════════════════════════ */
+    .toolbar {
+      display: flex; flex-direction: column; gap: var(--s3);
+    }
+
+    /* Fila 1: Stats + Acciones */
+    .toolbar-top {
+      display: flex; align-items: center;
+      gap: var(--s2); flex-wrap: wrap;
+    }
+
+    /* Stats pills */
+    .s-pill {
+      display: inline-flex; align-items: center; gap: .3rem;
+      padding: .28rem .65rem; border-radius: var(--r3);
+      background: var(--surface2); border: 1px solid var(--border);
+      font-family: var(--mono); font-size: .68rem; color: var(--muted);
+      white-space: nowrap;
+    }
+    .s-pill strong { color: var(--purple); font-weight: 600; }
+    .s-pill-cs strong   { color: #93c5fd; }
+    .s-pill-json strong { color: #fcd34d; }
+    .s-pill-time        { color: var(--muted); font-size: .62rem; }
+
+    .toolbar-spacer { flex: 1; min-width: .5rem; }
+
+    /* Action buttons */
+    .s-btn {
+      display: inline-flex; align-items: center; gap: .4rem;
+      padding: .32rem .85rem; border-radius: var(--r3);
+      font-family: var(--mono); font-size: .68rem; font-weight: 600;
+      border: 1px solid var(--border); transition: all .18s;
+      white-space: nowrap;
+    }
+    .s-btn-scan {
+      background: var(--purple-dim); border-color: rgba(168,85,247,.35); color: #c4b5fd;
+    }
+    .s-btn-scan:not(:disabled):hover {
+      background: rgba(168,85,247,.28); border-color: var(--purple); color: #e9d5ff;
+      box-shadow: 0 0 16px rgba(168,85,247,.25); transform: translateY(-1px);
+    }
+    .s-btn-dl {
+      background: var(--green-dim); border-color: rgba(52,211,153,.3); color: #6ee7b7;
+    }
+    .s-btn-dl:not(:disabled):hover {
+      background: rgba(52,211,153,.22); border-color: var(--green); color: #a7f3d0;
+      box-shadow: 0 0 16px rgba(52,211,153,.2); transform: translateY(-1px);
+    }
+    .s-btn-copy {
+      background: var(--surface3); border-color: var(--border-hi); color: var(--muted-hi);
+    }
+    .s-btn-copy:not(:disabled):hover {
+      border-color: #60a5fa; color: #93c5fd;
+      box-shadow: 0 0 12px rgba(96,165,250,.15);
+    }
+
+    /* Fila 2: Search + Filtros */
+    .toolbar-bottom {
+      display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap;
+    }
+
+    /* Search box */
+    .search-wrap {
+      position: relative; flex-shrink: 0;
+    }
+    .search-ico {
+      position: absolute; left: .65rem; top: 50%; transform: translateY(-50%);
+      font-size: .78rem; pointer-events: none; color: var(--muted);
+    }
+    .search-input {
+      padding: .3rem .7rem .3rem 2rem;
+      border-radius: var(--r3); border: 1px solid var(--border-hi);
+      background: var(--surface3); color: var(--text);
+      font-family: var(--mono); font-size: .68rem;
+      width: 200px; transition: all .2s; outline: none;
+    }
+    .search-input:focus {
+      border-color: var(--purple); box-shadow: 0 0 0 2px rgba(168,85,247,.15);
+      width: 260px;
+    }
+    .search-input::placeholder { color: var(--muted); }
+    .search-clear {
+      position: absolute; right: .5rem; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: var(--muted); font-size: .75rem;
+      padding: .1rem; line-height: 1; display: none;
+      transition: color .15s;
+    }
+    .search-clear:hover { color: var(--text); }
+    .search-wrap.has-value .search-clear { display: block; }
+
+    /* Shortcut hint */
+    .kbd {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: .05rem .3rem; border-radius: 3px;
+      background: var(--surface4); border: 1px solid var(--border-hi);
+      font-family: var(--mono); font-size: .58rem; color: var(--muted);
+    }
+
+    /* Filter chips */
+    .filter-chips {
+      display: flex; align-items: center; gap: .3rem; flex-wrap: wrap;
+    }
+    .filter-label {
+      font-family: var(--mono); font-size: .62rem; color: var(--muted);
+      flex-shrink: 0;
+    }
+    .chip {
+      display: inline-flex; align-items: center; gap: .25rem;
+      padding: .22rem .55rem; border-radius: var(--r2);
+      background: var(--surface3); border: 1px solid var(--border);
+      font-family: var(--mono); font-size: .63rem; color: var(--muted);
+      transition: all .15s; cursor: pointer;
+    }
+    .chip:hover { border-color: var(--border-hi); color: var(--muted-hi); }
+    .chip.active {
+      background: var(--purple-dim); border-color: rgba(168,85,247,.5);
+      color: #d8b4fe;
+    }
+    .chip-dot {
+      width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       CARD DEL ÁRBOL
+    ═══════════════════════════════════════════════════════ */
+    .tree-card {
+      background: var(--surface1);
+      border: 1px solid var(--border);
+      border-radius: var(--r4);
+      overflow: hidden;
+    }
+    .tree-header {
+      display: flex; align-items: center; gap: var(--s3);
+      padding: var(--s3) var(--s4);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+      flex-wrap: wrap;
+    }
+    .tree-header-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .tree-header-meta { flex: 1; min-width: 0; }
+    .tree-path {
+      font-family: var(--mono); font-size: .78rem; font-weight: 600;
+      color: var(--text);
+    }
+    .tree-status {
+      font-family: var(--mono); font-size: .62rem; color: var(--muted);
+      margin-top: .12rem;
+    }
+
+    .tree-header-actions {
+      display: flex; align-items: center; gap: .4rem; flex-shrink: 0;
+    }
+    .btn-tree {
+      padding: .25rem .6rem; border-radius: var(--r2);
+      border: 1px solid var(--border); background: var(--surface3);
+      color: var(--muted); font-family: var(--mono); font-size: .63rem;
+      transition: all .15s;
+    }
+    .btn-tree:not(:disabled):hover {
+      border-color: var(--purple); color: #c4b5fd;
+    }
+    .btn-tree:disabled { opacity: .38; }
+
+    .tree-badge {
+      display: inline-flex; align-items: center; gap: .3rem;
+      padding: .22rem .6rem; border-radius: var(--r2);
+      background: var(--surface3); border: 1px solid var(--border);
+      font-family: var(--mono); font-size: .62rem; color: var(--muted);
+      flex-shrink: 0;
+    }
+    .badge-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--muted); flex-shrink: 0;
+    }
+    .badge-dot.scanning { background: #f59e0b; animation: blink 1s infinite; }
+    .badge-dot.ok       { background: var(--green); animation: none; }
+    .badge-dot.error    { background: #f43f5e; animation: none; }
+
+    /* Search result count */
+    .search-count {
+      font-family: var(--mono); font-size: .62rem; color: var(--muted);
+      padding: .22rem .6rem; border-radius: var(--r2);
+      background: var(--surface3); border: 1px solid var(--border);
+      white-space: nowrap; display: none;
+    }
+    .search-count.visible { display: inline-flex; align-items: center; }
+    .search-count em { color: #fcd34d; font-style: normal; font-weight: 600; }
+
+    /* Body del árbol */
+    .tree-body {
+      padding: .5rem;
+      min-height: 220px;
+      overflow-y: auto;
+      max-height: 70vh;
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       ÁRBOL — NODOS
+    ═══════════════════════════════════════════════════════ */
+    .t-row {
+      display: flex; align-items: center; gap: .3rem;
+      padding: .22rem .3rem; border-radius: var(--r1);
+      cursor: pointer; font-family: var(--mono);
+      transition: background .1s; position: relative;
+    }
+    .t-row:hover { background: rgba(255,255,255,.045); }
+    .t-row:hover .t-copy { opacity: 1; }
+    .t-row.search-match { background: rgba(245,158,11,.06); }
+    .t-row.search-match .t-name { color: #fcd34d !important; }
+
+    .t-toggle {
+      width: .85rem; font-size: .5rem; color: var(--muted);
+      flex-shrink: 0; transition: transform .15s; text-align: center;
+    }
+    .t-toggle.open  { transform: rotate(90deg); }
+    .t-toggle.leaf  { opacity: 0; pointer-events: none; }
+
+    .t-icon  { font-size: .82rem; flex-shrink: 0; }
+
+    .t-name  { font-size: .72rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .t-name.d { font-weight: 600; color: var(--text); }
+    .t-name.f { color: var(--muted-hi); }
+
+    /* Metadata inline (tamaño y líneas) */
+    .t-meta {
+      margin-left: .4rem; flex-shrink: 0;
+      font-size: .6rem; color: var(--muted); opacity: 0;
+      transition: opacity .15s; white-space: nowrap;
+    }
+    .t-row:hover .t-meta { opacity: 1; }
+
+    /* Copy button */
+    .t-copy {
+      margin-left: auto; flex-shrink: 0;
+      background: none; border: none;
+      font-size: .62rem; color: var(--muted);
+      padding: .1rem .3rem; border-radius: var(--r1);
+      opacity: 0; transition: all .12s;
+    }
+    .t-copy:hover { background: var(--surface4); color: var(--green); }
+
+    .t-ext {
+      flex-shrink: 0; font-size: .58rem; font-weight: 700;
+      padding: .05rem .3rem; border-radius: var(--r1);
+    }
+    .ext-cs   { background: rgba(59,130,246,.15);  color: #93c5fd; }
+    .ext-json { background: rgba(245,158,11,.15);  color: #fcd34d; }
+    .ext-html { background: rgba(249,115,22,.15);  color: #fdba74; }
+    .ext-css  { background: rgba(168,85,247,.15);  color: #c4b5fd; }
+    .ext-js   { background: rgba(234,179,8,.15);   color: #fde047; }
+    .ext-md   { background: rgba(52,211,153,.15);  color: #6ee7b7; }
+    .ext-o    { background: rgba(100,116,139,.15); color: #94a3b8; }
+
+    .t-kids       { display: none; }
+    .t-kids.open  { display: block; }
+
+    /* ── Hidden during filter ── */
+    .t-row.filtered-out { display: none; }
+    .t-wrap.filtered-out > .t-row { display: none; }
+
+    /* ═══════════════════════════════════════════════════════
+       ESTADOS ESPECIALES
+    ═══════════════════════════════════════════════════════ */
+    /* Skeleton loader */
+    .sk {
+      height: 12px; border-radius: var(--r1); margin: .4rem 0;
+      background: linear-gradient(
+        90deg, var(--surface3) 25%, rgba(255,255,255,.05) 50%, var(--surface3) 75%
+      );
+      background-size: 200% 100%; animation: sk 1.4s infinite;
+    }
+
+    /* Estado vacío / error */
+    .tree-empty {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 3rem 1rem; gap: .65rem;
+      color: var(--muted); font-family: var(--mono);
+      font-size: .75rem; text-align: center;
+    }
+    .tree-empty-icon { font-size: 2rem; }
+    .tree-empty-err  { color: #f87171; }
+    .tree-empty-hint { font-size: .62rem; color: var(--muted); }
+
+    /* No results */
+    .no-results {
+      display: none; padding: 1.5rem 1rem;
+      text-align: center; font-family: var(--mono);
+      font-size: .72rem; color: var(--muted);
+    }
+    .no-results.visible { display: block; }
+    .no-results strong  { color: #fcd34d; }
+
+    /* ═══════════════════════════════════════════════════════
+       FOOTER
+    ═══════════════════════════════════════════════════════ */
+    .footer {
+      text-align: center; font-family: var(--mono);
+      font-size: .6rem; color: var(--muted);
+      padding: var(--s4) 0;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       TOAST
+    ═══════════════════════════════════════════════════════ */
+    .toast {
+      position: fixed; bottom: 1.5rem; right: 1.5rem;
+      padding: .55rem 1rem; border-radius: var(--r3);
+      font-family: var(--mono); font-size: .7rem;
+      background: var(--surface2); border: 1px solid var(--green);
+      color: var(--green); z-index: 9999;
+      opacity: 0; transform: translateY(12px);
+      transition: all .25s; pointer-events: none;
+      display: flex; align-items: center; gap: .4rem;
+    }
+    .toast.error { border-color: #f43f5e; color: #f43f5e; }
+    .toast.show  { opacity: 1; transform: translateY(0); }
+
+    /* ═══════════════════════════════════════════════════════
+       SHORTCUTS TOOLTIP
+    ═══════════════════════════════════════════════════════ */
+    .shortcuts-bar {
+      display: flex; align-items: center; gap: var(--s4);
+      padding: .4rem var(--s4);
+      background: var(--surface1); border: 1px solid var(--border);
+      border-radius: var(--r3);
+      font-family: var(--mono); font-size: .6rem; color: var(--muted);
+      flex-wrap: wrap;
+    }
+    .sc-item { display: flex; align-items: center; gap: .3rem; }
+
+    /* ═══════════════════════════════════════════════════════
+       ANIMACIONES
+    ═══════════════════════════════════════════════════════ */
+    @keyframes blink {
+      0%,100% { opacity: 1; }
+      50%      { opacity: .2; }
+    }
+    @keyframes dotPulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: .4; transform: scale(.7); }
+    }
+    @keyframes sk {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .tree-body > * { animation: fadeIn .18s ease; }
+
+    /* ═══════════════════════════════════════════════════════
+       SCROLLBAR
+    ═══════════════════════════════════════════════════════ */
+    .tree-body::-webkit-scrollbar       { width: 5px; }
+    .tree-body::-webkit-scrollbar-track { background: transparent; }
+    .tree-body::-webkit-scrollbar-thumb { background: var(--surface4); border-radius: 3px; }
+    .tree-body::-webkit-scrollbar-thumb:hover { background: var(--surface3); }
+
+    /* ═══════════════════════════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════════════════════════ */
+    @media (max-width: 640px) {
+      .page { padding: var(--s3); gap: var(--s4); }
+      .search-input { width: 140px; }
+      .search-input:focus { width: 180px; }
+      .header-text p { display: none; }
+      .shortcuts-bar { display: none; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="page">
+
+    <!-- ══ HEADER — igual que index.html ══════════════════ -->
+    <div class="header">
+      <div class="logo">
+        <img src="../assets/img/logo_back.png" alt="Solaris"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
+        <span style="display:none;font-size:1.4rem">🌞</span>
+      </div>
+      <div class="header-text">
+        <h1>Solaris Platform</h1>
+        <p>Estructura del Proyecto &nbsp;·&nbsp; Clean Architecture &nbsp;·&nbsp; Explorador en vivo</p>
+      </div>
+      <div class="header-right">
+        <!-- Badge de estado del escáner (mismo patrón que index.html) -->
+        <div class="status-badge loading" id="globalBadge">
+          <span class="dot" id="globalDot"></span>
+          <span id="globalBadgeText">CARGANDO</span>
+        </div>
+        <!-- Volver al DevConsole -->
+        <a class="back-link" href="/index.html">← DevConsole</a>
+        <!-- Theme switch -->
+        <div class="theme-switch">
+          <span class="theme-icon">☀️</span>
+          <label class="toggle" aria-label="Cambiar tema">
+            <input type="checkbox" id="themeToggle" />
+            <span class="track"></span>
+            <span class="thumb"></span>
+          </label>
+          <span class="theme-icon">🌙</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ EXPLORADOR ══════════════════════════════════════ -->
+    <section>
+      <p class="section-label">Explorador de archivos</p>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+
+        <!-- Fila 1: Stats + Botones de acción -->
+        <div class="toolbar-top">
+          <div class="s-pill" id="stPillDirs">
+            <span>📁</span> Carpetas: <strong id="stDirs">—</strong>
+          </div>
+          <div class="s-pill" id="stPillFiles">
+            <span>📄</span> Archivos: <strong id="stFiles">—</strong>
+          </div>
+          <div class="s-pill s-pill-cs" id="stPillCs">
+            <span>🔵</span> .cs: <strong id="stCs">—</strong>
+          </div>
+          <div class="s-pill s-pill-json" id="stPillJson">
+            <span>🟡</span> .json: <strong id="stJson">—</strong>
+          </div>
+          <div class="s-pill s-pill-time" id="stPillTime">
+            <span>⏱</span> <span id="stTime">esperando…</span>
+          </div>
+
+          <div class="toolbar-spacer"></div>
+
+          <button id="btnScan" class="s-btn s-btn-scan"
+            onclick="scanProject()" title="Re-escanear proyecto (R)">
+            <span id="scanIco">🔄</span>
+            <span id="scanTxt">Escanear ahora</span>
+          </button>
+
+          <button id="btnDl" class="s-btn s-btn-dl"
+            onclick="downloadForClaude()" disabled
+            title="Descargar árbol para Claude (D)">
+            ⬇️ Descargar para Claude
+          </button>
+
+          <button id="btnCopyTree" class="s-btn s-btn-copy"
+            onclick="copyTreeToClipboard()" disabled
+            title="Copiar árbol al portapapeles (C)">
+            📋 Copiar árbol
+          </button>
+        </div>
+
+        <!-- Fila 2: Búsqueda + Filtros por extensión -->
+        <div class="toolbar-bottom">
+          <!-- Search -->
+          <div class="search-wrap" id="searchWrap">
+            <span class="search-ico">🔍</span>
+            <input
+              id="searchInput"
+              class="search-input"
+              type="search"
+              placeholder="Buscar archivo… (/)"
+              autocomplete="off"
+              oninput="handleSearch(this.value)"
+            />
+            <button class="search-clear" id="searchClear" onclick="clearSearch()" title="Limpiar (Esc)">✕</button>
+          </div>
+
+          <!-- Separador -->
+          <span style="color:var(--border-hi);font-size:.8rem">|</span>
+
+          <!-- Filtros por extensión -->
+          <div class="filter-chips" id="filterBar" role="group" aria-label="Filtrar por tipo">
+            <span class="filter-label">Filtrar:</span>
+            <button class="chip active" data-ext="all"  onclick="filterExt(this,'all')">
+              Todo
+            </button>
+            <button class="chip" data-ext="cs"   onclick="filterExt(this,'cs')">
+              <span class="chip-dot" style="background:#93c5fd"></span>.cs
+            </button>
+            <button class="chip" data-ext="json" onclick="filterExt(this,'json')">
+              <span class="chip-dot" style="background:#fcd34d"></span>.json
+            </button>
+            <button class="chip" data-ext="html" onclick="filterExt(this,'html')">
+              <span class="chip-dot" style="background:#fdba74"></span>.html
+            </button>
+            <button class="chip" data-ext="css"  onclick="filterExt(this,'css')">
+              <span class="chip-dot" style="background:#c4b5fd"></span>.css
+            </button>
+            <button class="chip" data-ext="js"   onclick="filterExt(this,'js')">
+              <span class="chip-dot" style="background:#fde047"></span>.js
+            </button>
+            <button class="chip" data-ext="dirs" onclick="filterExt(this,'dirs')">
+              📁 Carpetas
+            </button>
+          </div>
+        </div>
+
+      </div><!-- /toolbar -->
+
+      <!-- Árbol -->
+      <div class="tree-card" style="margin-top: var(--s3)">
+        <div class="tree-header">
+          <span class="tree-header-icon">📂</span>
+          <div class="tree-header-meta">
+            <div class="tree-path" id="treePath">solaris_platform/</div>
+            <div class="tree-status" id="scanStatus">Presiona <strong>Escanear ahora</strong> para cargar la estructura</div>
+          </div>
+
+          <!-- Expand / Collapse -->
+          <div class="tree-header-actions">
+            <span class="search-count" id="searchCount"></span>
+            <button id="btnExp" class="btn-tree" onclick="expandAll()"   disabled title="Expandir todo (E)">⊞ Expandir</button>
+            <button id="btnCol" class="btn-tree" onclick="collapseAll()" disabled title="Colapsar todo (Q)">⊟ Colapsar</button>
+          </div>
+
+          <!-- Badge estado -->
+          <div class="tree-badge" id="treeBadge">
+            <span class="badge-dot" id="badgeDot"></span>
+            <span id="treeBadgeTxt">sin escanear</span>
+          </div>
+        </div>
+
+        <!-- No results message -->
+        <div class="no-results" id="noResults">
+          Sin resultados para <strong id="noResultsQuery"></strong>
+        </div>
+
+        <!-- Body del árbol -->
+        <div class="tree-body" id="treeBody">
+          <div class="tree-empty">
+            <span class="tree-empty-icon">🔍</span>
+            <span>Presiona <strong>Escanear ahora</strong> para cargar la estructura</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Atajos de teclado -->
+      <div class="shortcuts-bar" id="shortcutsBar" style="margin-top: var(--s3)">
+        <span style="color:var(--muted-hi);font-weight:600">Atajos:</span>
+        <span class="sc-item"><kbd class="kbd">R</kbd> Re-escanear</span>
+        <span class="sc-item"><kbd class="kbd">/</kbd> Buscar</span>
+        <span class="sc-item"><kbd class="kbd">E</kbd> Expandir todo</span>
+        <span class="sc-item"><kbd class="kbd">Q</kbd> Colapsar todo</span>
+        <span class="sc-item"><kbd class="kbd">D</kbd> Descargar</span>
+        <span class="sc-item"><kbd class="kbd">C</kbd> Copiar árbol</span>
+        <span class="sc-item"><kbd class="kbd">Esc</kbd> Limpiar búsqueda</span>
+        <span class="sc-item"><kbd class="kbd">Click</kbd> en archivo = copiar ruta</span>
+      </div>
+
+    </section>
+
+    <!-- ══ FOOTER ══════════════════════════════════════════ -->
+    <footer class="footer">
+      Solaris Platform ERP &nbsp;·&nbsp; Developer Console &nbsp;·&nbsp;
+      .NET 10 + PostgreSQL 16 &nbsp;·&nbsp; Clean Architecture
+    </footer>
+
+  </div><!-- /page -->
+
+  <!-- Toast -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- ══ THEME — inline (no depende de theme.js) ══════════ -->
+  <script>
+  (function () {
+    const KEY   = 'solaris-theme';
+    const html  = document.documentElement;
+    const saved = localStorage.getItem(KEY) || 'dark';
+
+    // Aplicar tema guardado antes de pintar
+    html.setAttribute('data-theme', saved);
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const toggle = document.getElementById('themeToggle');
+      if (!toggle) return;
+
+      // Sincronizar checkbox con el tema actual
+      toggle.checked = saved === 'light';
+
+      toggle.addEventListener('change', () => {
+        const next = toggle.checked ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem(KEY, next);
+      });
+    });
+  })();
+  </script>
+
+  <script>
+  'use strict';
+
+  // ══════════════════════════════════════════════════════════
+  //  CONFIG & ESTADO
+  // ══════════════════════════════════════════════════════════
+  const API = '/api/DevTools/estructura';
+
+  let projectData = null;
+  let flatFiles   = [];
+  let scanTime    = null;
+  let activeFilter = 'all';
+  let activeSearch = '';
+
+  // ══════════════════════════════════════════════════════════
+  //  INIT
+  // ══════════════════════════════════════════════════════════
+  window.addEventListener('DOMContentLoaded', () => {
+    scanProject();
+    initKeyboardShortcuts();
+  });
+
+  // ══════════════════════════════════════════════════════════
+  //  KEYBOARD SHORTCUTS
+  // ══════════════════════════════════════════════════════════
+  function initKeyboardShortcuts() {
+    document.addEventListener('keydown', e => {
+      const tag = document.activeElement.tagName;
+      const typing = tag === 'INPUT' || tag === 'TEXTAREA';
+
+      if (e.key === 'Escape') {
+        clearSearch(); return;
+      }
+      if (typing) return; // no interceptar mientras se escribe
+
+      switch (e.key.toLowerCase()) {
+        case 'r': scanProject(); break;
+        case '/':
+          e.preventDefault();
+          document.getElementById('searchInput').focus();
+          break;
+        case 'e': if (!document.getElementById('btnExp').disabled) expandAll(); break;
+        case 'q': if (!document.getElementById('btnCol').disabled) collapseAll(); break;
+        case 'd': if (!document.getElementById('btnDl').disabled) downloadForClaude(); break;
+        case 'c': if (!document.getElementById('btnCopyTree').disabled) copyTreeToClipboard(); break;
+      }
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  SCAN
+  // ══════════════════════════════════════════════════════════
+  async function scanProject() {
+    const btn      = document.getElementById('btnScan');
+    const ss       = document.getElementById('scanStatus');
+    const dot      = document.getElementById('badgeDot');
+    const badgeTxt = document.getElementById('treeBadgeTxt');
+    const scanIco  = document.getElementById('scanIco');
+    const scanTxt  = document.getElementById('scanTxt');
+
+    btn.disabled = true;
+    scanIco.textContent = '⏳';
+    scanTxt.textContent = 'Escaneando…';
+    ss.textContent = 'Escaneando…';
+    dot.className = 'badge-dot scanning';
+    badgeTxt.textContent = 'escaneando…';
+
+    // Skeleton loader
+    document.getElementById('treeBody').innerHTML = buildSkeleton();
+
+    const t0 = Date.now();
+    try {
+      const res = await fetch(API);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+
+      projectData = json.data ?? json;
+      scanTime    = new Date();
+      const ms    = Date.now() - t0;
+
+      flatFiles = [];
+      collectFiles(projectData, '');
+      renderTree(projectData);
+      updateStats(ms);
+      enableBtns();
+
+      ss.textContent   = `OK · ${ms}ms · ${scanTime.toLocaleTimeString('es-EC')}`;
+      dot.className    = 'badge-dot ok';
+      badgeTxt.textContent = flatFiles.length + ' archivos';
+      scanIco.textContent  = '🔄';
+      scanTxt.textContent  = 'Re-escanear';
+      btn.disabled = false;
+      toast(`✅ Estructura cargada · ${flatFiles.length} archivos`);
+
+    } catch (err) {
+      ss.textContent       = '❌ Error: ' + err.message;
+      dot.className        = 'badge-dot error';
+      badgeTxt.textContent = 'error';
+      scanIco.textContent  = '⚠️';
+      scanTxt.textContent  = 'Reintentar';
+      btn.disabled = false;
+
+      document.getElementById('treeBody').innerHTML = `
+        <div class="tree-empty">
+          <span class="tree-empty-icon">⚠️</span>
+          <span class="tree-empty-err">${err.message}</span>
+          <span class="tree-empty-hint">Verifica que /api/DevTools/estructura esté activo en Development</span>
+        </div>`;
+      toast('❌ ' + err.message, true);
+    }
+  }
+
+  function buildSkeleton() {
+    const widths = [60,45,70,38,55,48,63,42,50,68];
+    return widths.map(w =>
+      `<div class="sk" style="width:${w}%;margin-left:${Math.random()>0.5?'1.5rem':'0'}"></div>`
+    ).join('');
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  COLECCIÓN PLANA
+  // ══════════════════════════════════════════════════════════
+  function collectFiles(node, path) {
+    const p = path ? path + '/' + node.name : node.name;
+    if (node.type === 'file') {
+      flatFiles.push({
+        name:  node.name,
+        path:  p,
+        ext:   getExt(node.name),
+        size:  node.size  || 0,
+        lines: node.lines || 0
+      });
+    }
+    (node.children || []).forEach(c => collectFiles(c, p));
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  RENDER ÁRBOL
+  // ══════════════════════════════════════════════════════════
+  function renderTree(data) {
+    const body  = document.getElementById('treeBody');
+    body.innerHTML = '';
+    const roots = data.children
+      ? data.children
+      : (Array.isArray(data) ? data : [data]);
+    roots.forEach(n => body.appendChild(makeNode(n, 0, '')));
+  }
+
+  function makeNode(node, depth, parentPath) {
+    const isDir = node.type === 'directory' || (node.children && node.children.length >= 0);
+    const ext   = isDir ? '' : getExt(node.name);
+    const path  = parentPath ? parentPath + '/' + node.name : node.name;
+
+    const wrap = document.createElement('div');
+    wrap.className = 't-wrap';
+
+    // ── Row ──
+    const row = document.createElement('div');
+    row.className = 't-row';
+    row.style.paddingLeft = (depth * 14 + 4) + 'px';
+    row.dataset.path = path;
+    row.dataset.name = node.name.toLowerCase();
+    row.dataset.ext  = ext;
+    row.dataset.isdir = isDir ? '1' : '0';
+
+    // Toggle arrow
+    const tog = document.createElement('span');
+    tog.className = isDir ? 't-toggle' : 't-toggle leaf';
+    tog.textContent = '▶';
+
+    // Icon
+    const ico = document.createElement('span');
+    ico.className = 't-icon';
+    ico.textContent = isDir ? getFolderIcon(node.name) : getFileIcon(ext);
+
+    // Name
+    const nm = document.createElement('span');
+    nm.className = isDir ? 't-name d' : 't-name f';
+    nm.textContent = node.name;
+
+    row.appendChild(tog);
+    row.appendChild(ico);
+    row.appendChild(nm);
+
+    // Extension badge (solo archivos)
+    if (!isDir && ext) {
+      const bd = document.createElement('span');
+      bd.className = 't-ext ' + extClass(ext);
+      bd.textContent = '.' + ext;
+      row.appendChild(bd);
+    }
+
+    // Metadata (size + lines) — visible on hover
+    if (!isDir && (node.size || node.lines)) {
+      const meta = document.createElement('span');
+      meta.className = 't-meta';
+      const parts = [];
+      if (node.size)  parts.push(fmtSize(node.size));
+      if (node.lines) parts.push(node.lines + ' líneas');
+      meta.textContent = parts.join(' · ');
+      row.appendChild(meta);
+    }
+
+    // Copy path button (solo archivos)
+    if (!isDir) {
+      const cpBtn = document.createElement('button');
+      cpBtn.className = 't-copy';
+      cpBtn.title     = 'Copiar ruta';
+      cpBtn.textContent = '⎘';
+      cpBtn.onclick = ev => {
+        ev.stopPropagation();
+        copyToClipboard(path);
+      };
+      row.appendChild(cpBtn);
+    }
+
+    // Children container
+    const kids = document.createElement('div');
+    kids.className = 't-kids';
+
+    if (isDir) {
+      if (depth <= 1) {
+        kids.classList.add('open');
+        tog.classList.add('open');
+      }
+      row.onclick = () => {
+        const open = kids.classList.toggle('open');
+        tog.classList.toggle('open', open);
+      };
+      (node.children || []).forEach(c => kids.appendChild(makeNode(c, depth + 1, path)));
+    } else {
+      // Click en archivo = copiar ruta
+      row.onclick = () => copyToClipboard(path);
+    }
+
+    wrap.appendChild(row);
+    wrap.appendChild(kids);
+    return wrap;
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  EXPAND / COLLAPSE
+  // ══════════════════════════════════════════════════════════
+  function expandAll() {
+    document.querySelectorAll('.t-kids').forEach(el => el.classList.add('open'));
+    document.querySelectorAll('.t-toggle:not(.leaf)').forEach(el => el.classList.add('open'));
+  }
+  function collapseAll() {
+    document.querySelectorAll('.t-kids').forEach(el => el.classList.remove('open'));
+    document.querySelectorAll('.t-toggle').forEach(el => el.classList.remove('open'));
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  BÚSQUEDA POR NOMBRE
+  // ══════════════════════════════════════════════════════════
+  function handleSearch(val) {
+    activeSearch = val.trim().toLowerCase();
+    const wrap   = document.getElementById('searchWrap');
+    const input  = document.getElementById('searchInput');
+
+    wrap.classList.toggle('has-value', activeSearch.length > 0);
+
+    if (!activeSearch) {
+      clearSearch(false);
+      return;
+    }
+
+    let matchCount = 0;
+
+    document.querySelectorAll('.t-row').forEach(row => {
+      const name  = row.dataset.name  || '';
+      const isDir = row.dataset.isdir === '1';
+      const matches = name.includes(activeSearch) && !isDir;
+
+      row.classList.toggle('search-match', matches);
+      row.classList.toggle('filtered-out', !matches && !isDir);
+
+      if (matches) {
+        matchCount++;
+        // Asegurar que los padres estén expandidos
+        let parent = row.closest('.t-kids');
+        while (parent) {
+          parent.classList.add('open');
+          const tog = parent.previousElementSibling?.querySelector('.t-toggle');
+          if (tog) tog.classList.add('open');
+          parent = parent.parentElement?.closest('.t-kids');
+        }
+      }
+    });
+
+    // Ocultar carpetas vacías en modo búsqueda
+    document.querySelectorAll('.t-row[data-isdir="1"]').forEach(row => {
+      const kids = row.nextElementSibling;
+      const hasVisible = kids && kids.querySelector('.t-row.search-match');
+      row.classList.toggle('filtered-out', !hasVisible);
+    });
+
+    // Mostrar contador
+    const counter = document.getElementById('searchCount');
+    counter.className = 'search-count visible';
+    counter.innerHTML = `<em>${matchCount}</em>&nbsp;resultado${matchCount !== 1 ? 's' : ''}`;
+
+    const noRes = document.getElementById('noResults');
+    document.getElementById('noResultsQuery').textContent = `"${activeSearch}"`;
+    noRes.classList.toggle('visible', matchCount === 0);
+  }
+
+  function clearSearch(resetInput = true) {
+    activeSearch = '';
+    if (resetInput) {
+      const input = document.getElementById('searchInput');
+      input.value = '';
+    }
+    document.getElementById('searchWrap').classList.remove('has-value');
+    document.getElementById('searchCount').className = 'search-count';
+    document.getElementById('noResults').classList.remove('visible');
+    document.querySelectorAll('.t-row').forEach(row => {
+      row.classList.remove('search-match', 'filtered-out');
+    });
+    // Reaplicar el filtro de extensión activo
+    if (activeFilter !== 'all') applyExtFilter(activeFilter);
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  FILTRO POR EXTENSIÓN
+  // ══════════════════════════════════════════════════════════
+  function filterExt(btn, val) {
+    document.querySelectorAll('#filterBar .chip').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = val;
+
+    // Limpiar búsqueda cuando se cambia el filtro
+    clearSearch();
+
+    applyExtFilter(val);
+  }
+
+  function applyExtFilter(val) {
+    document.querySelectorAll('.t-row').forEach(row => {
+      const isDir = row.dataset.isdir === '1';
+      const ext   = row.dataset.ext   || '';
+
+      if (val === 'all')  { row.classList.remove('filtered-out'); return; }
+      if (val === 'dirs') { row.classList.toggle('filtered-out', !isDir); return; }
+      row.classList.toggle('filtered-out', ext !== val);
+    });
+
+    // Expandir todo para que los resultados sean visibles
+    if (val !== 'all') expandAll();
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  STATS
+  // ══════════════════════════════════════════════════════════
+  function updateStats(ms) {
+    document.getElementById('stDirs').textContent  = document.querySelectorAll('.t-name.d').length;
+    document.getElementById('stFiles').textContent = flatFiles.length;
+    document.getElementById('stCs').textContent    = flatFiles.filter(f => f.ext === 'cs').length;
+    document.getElementById('stJson').textContent  = flatFiles.filter(f => f.ext === 'json').length;
+    document.getElementById('stTime').textContent  = scanTime.toLocaleTimeString('es-EC') + ' (' + ms + 'ms)';
+    document.getElementById('treePath').textContent =
+      (projectData?.name || 'solaris_platform') + '/';
+  }
+
+  function enableBtns() {
+    ['btnDl', 'btnCopyTree', 'btnExp', 'btnCol'].forEach(id => {
+      const b = document.getElementById(id);
+      if (b) { b.disabled = false; b.style.opacity = '1'; }
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  COPY TO CLIPBOARD
+  // ══════════════════════════════════════════════════════════
+  async function copyToClipboard(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast('⎘ Ruta copiada: ' + text);
+    } catch {
+      // Fallback
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast('⎘ Ruta copiada: ' + text);
+    }
+  }
+
+  async function copyTreeToClipboard() {
+    if (!projectData) return;
+    const lines = buildTreeLines();
+    await copyToClipboard(lines.join('\n'));
+    toast('📋 Árbol copiado al portapapeles');
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  DESCARGAR PARA CLAUDE
+  // ══════════════════════════════════════════════════════════
+  function buildTreeLines() {
+    const L = [];
+    function tLine(node, prefix, last) {
+      const c = last ? '└── ' : '├── ';
+      const p = last ? '    ' : '│   ';
+      const isDir = node.type === 'directory' || node.children;
+      const suf = !isDir && node.size
+        ? ' [' + fmtSize(node.size) + (node.lines ? ', ' + node.lines + ' líneas' : '') + ']'
+        : '';
+      L.push(prefix + c + (isDir ? '📁 ' : getFileIcon(getExt(node.name)) + ' ') + node.name + suf);
+      if (node.children)
+        node.children.forEach((c2, i) => tLine(c2, prefix + p, i === node.children.length - 1));
+    }
+    const roots = projectData.children || [projectData];
+    roots.forEach((n, i) => tLine(n, '', i === roots.length - 1));
+    return L;
+  }
+
+  function downloadForClaude() {
+    if (!projectData) return;
+    const d   = scanTime;
+    const pad = n => String(n).padStart(2, '0');
+    const L   = [];
+
+    L.push('╔══════════════════════════════════════════════════════════════╗');
+    L.push('║   SOLARIS PLATFORM — ESTRUCTURA DEL PROYECTO                 ║');
+    L.push('╚══════════════════════════════════════════════════════════════╝');
+    L.push('');
+    L.push('TIMESTAMP : ' + d.toISOString());
+    L.push('STACK     : .NET 10 · PostgreSQL 16 · Angular 19 · Clean Architecture');
+    L.push('ARCHIVOS  : ' + flatFiles.length + ' total · '
+      + flatFiles.filter(f => f.ext === 'cs').length + ' .cs · '
+      + flatFiles.filter(f => f.ext === 'json').length + ' .json');
+    L.push('');
+    L.push('══ ÁRBOL ══════════════════════════════════════════════════════');
+    L.push('');
+    L.push(...buildTreeLines());
+    L.push('');
+    L.push('══ LISTA PLANA ════════════════════════════════════════════════');
+
+    const byExt = {};
+    flatFiles.forEach(f => (byExt[f.ext || 'otros'] = byExt[f.ext || 'otros'] || []).push(f));
+    Object.keys(byExt).sort().forEach(e => {
+      L.push('\n── .' + e.toUpperCase() + ' (' + byExt[e].length + ') ──');
+      byExt[e].forEach(f => L.push('  ' + f.path + (f.lines ? ' [' + f.lines + ' líneas]' : '')));
+    });
+
+    L.push('\n══ CAPAS DETECTADAS ══════════════════════════════════════════');
+    [['API','SolarisPlatform.API'],['Application','SolarisPlatform.Application'],
+     ['Domain','SolarisPlatform.Domain'],['Infrastructure','SolarisPlatform.Infrastructure'],
+     ['Tests','SolarisPlatform.Tests']].forEach(([lbl, key]) => {
+      const fs = flatFiles.filter(f => f.path.includes(key));
+      if (!fs.length) return;
+      L.push('\n▶ ' + lbl + ' (' + fs.length + ' archivos)');
+      fs.filter(f => f.ext === 'cs').forEach(f => L.push('  • ' + f.name));
+    });
+
+    const blob = new Blob([L.join('\n')], { type: 'text/plain;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'solaris_estructura_'
+      + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate())
+      + '_' + pad(d.getHours()) + pad(d.getMinutes()) + '.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('⬇️ Descargado');
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  TOAST
+  // ══════════════════════════════════════════════════════════
+  let _ttTimer;
+  function toast(msg, err = false) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className   = 'toast' + (err ? ' error' : '') + ' show';
+    clearTimeout(_ttTimer);
+    _ttTimer = setTimeout(() => { el.className = 'toast' + (err ? ' error' : ''); }, 3500);
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  HELPERS
+  // ══════════════════════════════════════════════════════════
+  function getExt(name) {
+    const p = (name || '').split('.');
+    return p.length > 1 ? p.pop().toLowerCase() : '';
+  }
+  function extClass(e) {
+    return { cs:'ext-cs', json:'ext-json', html:'ext-html', css:'ext-css', js:'ext-js', md:'ext-md' }[e] || 'ext-o';
+  }
+  function getFileIcon(e) {
+    return { cs:'🔵', json:'🟡', html:'🟠', css:'🟣', js:'💛', md:'📝', xml:'🔴',
+             csproj:'⚙️', sln:'🔷', png:'🖼️', ico:'🖼️', sh:'🐚', yml:'📋' }[e] || '📄';
+  }
+  function getFolderIcon(n) {
+    n = (n || '').toLowerCase();
+    if (n.includes('controller')) return '🚀';
+    if (n.includes('service'))    return '⚙️';
+    if (n.includes('repo'))       return '🗄️';
+    if (n.includes('domain'))     return '🧩';
+    if (n.includes('migrat'))     return '🔄';
+    if (n.includes('dto'))        return '📦';
+    if (n.includes('middleware')) return '🔗';
+    if (n.includes('wwwroot'))    return '🌐';
+    if (n.includes('assets'))     return '🎨';
+    if (n.includes('test'))       return '🧪';
+    if (n.includes('entit'))      return '🧩';
+    if (n.includes('interf'))     return '📐';
+    if (n.includes('enum'))       return '🔖';
+    if (n.includes('mapping'))    return '🗺️';
+    if (n.includes('valid'))      return '✅';
+    if (n.includes('persist'))    return '💾';
+    if (n.includes('identit'))    return '🔐';
+    return '📁';
+  }
+  function fmtSize(b) {
+    if (!b) return '—';
+    if (b < 1024)    return b + 'B';
+    if (b < 1048576) return (b / 1024).toFixed(1) + 'KB';
+    return (b / 1048576).toFixed(1) + 'MB';
+  }
+  </script>
+
+</body>
+</html>

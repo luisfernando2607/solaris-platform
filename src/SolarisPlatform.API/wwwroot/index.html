@@ -10,6 +10,37 @@
     href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/solaris.css" />
+  <style>
+    /* ── Quick-access cards: 4 en una línea, layout vertical ── */
+    .quick-grid {
+      grid-template-columns: repeat(4, 1fr) !important;
+    }
+    .quick-card {
+      flex-direction: column !important;
+      align-items: center !important;
+      text-align: center !important;
+      padding: 1.4rem .9rem !important;
+      gap: .75rem !important;
+    }
+    .quick-icon {
+      width: 2.8rem !important;
+      height: 2.8rem !important;
+      font-size: 1.3rem !important;
+      flex-shrink: 0;
+    }
+    .quick-card > div:last-child {
+      display: flex;
+      flex-direction: column;
+      gap: .2rem;
+    }
+    .quick-title {
+      font-size: .82rem !important;
+    }
+    .quick-sub {
+      font-size: .65rem !important;
+      word-break: break-word;
+    }
+  </style>
 </head>
 
 <body>
@@ -125,6 +156,13 @@
           <div>
             <div class="quick-title">Health Dashboard</div>
             <div class="quick-sub">/pages/health · Uptime y métricas</div>
+          </div>
+        </a>
+        <a class="quick-card qc-structure" href="/pages/estructura.html">
+          <div class="quick-icon" style="background:rgba(168,85,247,.12)">🗂️</div>
+          <div>
+            <div class="quick-title">Estructura del Proyecto</div>
+            <div class="quick-sub">/pages/estructura · Explorar y descargar para Claude</div>
           </div>
         </a>
       </div>
