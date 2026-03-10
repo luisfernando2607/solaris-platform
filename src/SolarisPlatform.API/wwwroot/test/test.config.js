@@ -98,12 +98,12 @@ const BODY_FACTORIES = {
   'update-fase':            (D)   => ({ nombre:'Fase Editada Test', descripcion:'Editada', proyectoId:D.newProyectoId, orden:1, fechaInicioPlan:'2025-01-01', fechaFinPlan:'2025-07-31', porcentajeAvance:0, estado:1 }),
   'create-hito':            (D)   => ({ nombre:`Hito Test ${Date.now()}`, descripcion:'Hito de prueba', proyectoId:D.newProyectoId, fechaCompromiso:'2025-06-30', porcentajePeso:0, orden:1 }),
   'update-hito':            (D)   => ({ nombre:'Hito Editado Test', descripcion:'Editado', proyectoId:D.newProyectoId, fechaCompromiso:'2025-07-31', porcentajePeso:0, orden:1, estado:1 }),
-  'create-wbs':             (D)   => ({ codigo:`WBS${Date.now().toString().slice(-4)}`, nombre:`WBS Test ${Date.now()}`, descripcion:'WBS de prueba', proyectoId:D.newProyectoId, tipoNodo:1, nivel:1, orden:1 }),
-  'update-wbs':             (D)   => ({ nombre:'WBS Editado Test', descripcion:'Editado', proyectoId:D.newProyectoId, tipoNodo:1, nivel:1, orden:1 }),
+  'create-wbs':             (D)   => ({ codigo:`WBS${Date.now().toString().slice(-4)}`, nombre:`WBS Test ${Date.now()}`, descripcion:'WBS de prueba', proyectoId:D.newProyectoId, tipoNodo:1, nivel:1, orden:1, porcentajePeso:100 }),
+  'update-wbs':             (D)   => ({ nombre:'WBS Editado Test', descripcion:'Editado', proyectoId:D.newProyectoId, tipoNodo:1, orden:1, porcentajePeso:100 }),
 
   // Tareas / Cuadrillas
-  'create-tarea':           (D,S) => ({ nombre:`Tarea Test ${Date.now()}`, descripcion:'Tarea de prueba', proyectoId:D.newProyectoId, wbsNodoId:D.newWbsId||S.wbsId, prioridad:2, fechaInicioPlan:'2025-01-01', fechaFinPlan:'2025-03-31', duracionDias:90 }),
-  'update-tarea':           (D,S) => ({ nombre:'Tarea Editada Test', descripcion:'Editada', proyectoId:D.newProyectoId, wbsNodoId:D.newWbsId||S.wbsId, prioridad:2, fechaInicioPlan:'2025-01-01', fechaFinPlan:'2025-04-30', duracionDias:120 }),
+  'create-tarea':           (D,S) => ({ nombre:`Tarea Test ${Date.now()}`, descripcion:'Tarea de prueba', proyectoId:D.newProyectoId, wbsNodoId:D.newWbsId, prioridad:2, fechaInicioPlan:'2025-01-01', fechaFinPlan:'2025-03-31', duracionDias:90 }),
+  'update-tarea':           (D,S) => ({ nombre:'Tarea Editada Test', descripcion:'Editada', proyectoId:D.newProyectoId, wbsNodoId:D.newWbsId, prioridad:2, fechaInicioPlan:'2025-01-01', fechaFinPlan:'2025-04-30', duracionDias:120 }),
   'create-cuadrilla':       (D)   => ({ nombre:`Cuadrilla Test ${Date.now()}`, descripcion:'Cuadrilla de prueba', proyectoId:D.newProyectoId, activo:true }),
   'update-cuadrilla':       (D)   => ({ nombre:'Cuadrilla Editada', descripcion:'Editada', proyectoId:D.newProyectoId, activo:true }),
 
@@ -393,7 +393,7 @@ const TEST_SUITES = [
 
     // ── Tareas ───────────────────────────────────────────────────────
     { id:'list-tareas',            method:'GET',    path:`/api/proy/proyectos/${SEED.proyectoId}/tareas`,                         auth:true, name:'GET tareas seed',           expect:{status:200} },
-    { id:'create-tarea',           method:'POST',   path:'/api/proy/proyectos/{DYN}/tareas',                                      auth:true, name:'POST tarea',                useDynamic:'newProyectoId', skipIf:'newProyectoId', bodyFn:'create-tarea', captureId:'newTareaId', expect:{status:[200,201]} },
+    { id:'create-tarea',           method:'POST',   path:'/api/proy/proyectos/{DYN}/tareas',                                      auth:true, name:'POST tarea',                useDynamic:'newProyectoId', skipIf:'newWbsId', bodyFn:'create-tarea', captureId:'newTareaId', expect:{status:[200,201]} },
     { id:'get-tarea',              method:'GET',    path:'/api/proy/proyectos/{DYN}/tareas/{newTareaId}',                         auth:true, name:'GET tarea creada',          useDynamic:'newProyectoId', skipIf:'newTareaId', expect:{status:200} },
     { id:'update-tarea',           method:'PUT',    path:'/api/proy/proyectos/{DYN}/tareas/{newTareaId}',                         auth:true, name:'PUT tarea',                 useDynamic:'newProyectoId', skipIf:'newTareaId', bodyFn:'update-tarea', expect:{status:[200,204]} },
     { id:'patch-tarea-estado',     method:'PATCH',  path:'/api/proy/proyectos/{DYN}/tareas/{newTareaId}/estado',                  auth:true, name:'PATCH tarea/estado',        useDynamic:'newProyectoId', skipIf:'newTareaId', body:{estado:2}, expect:{status:[200,204]} },
@@ -478,12 +478,12 @@ const TEST_SUITES = [
   { id:'ordenes-trabajo', icon:'🔧', title:'Órdenes de Trabajo', desc:'CRUD OT + estado + actividades + firma', tests:[
     { id:'list-ot',              method:'GET',    path:'/api/proy/ordenes-trabajo',                              auth:true, name:'GET OT — listar',        expect:{status:200} },
     { id:'ot-por-proyecto',      method:'GET',    path:`/api/proy/proyectos/${SEED.proyectoId}/ordenes-trabajo`, auth:true, name:'GET OT por proyecto',    expect:{status:200} },
-    { id:'create-ot',            method:'POST',   path:'/api/proy/ordenes-trabajo',                              auth:true, name:'POST OT — crear',        bodyFn:'create-ot', captureId:'newOtId', expect:{status:[200,201]} },
+    { id:'create-ot',            method:'POST',   path:'/api/proy/ordenes-trabajo',                              auth:true, name:'POST OT — crear',        bodyFn:'create-ot', captureId:'newOtId', captureFrom:{newActividadId: r=>r?.actividades?.[0]?.id}, expect:{status:[200,201]} },
     { id:'get-ot-new',           method:'GET',    path:'/api/proy/ordenes-trabajo/{DYN}',                        auth:true, name:'GET OT creada',          useDynamic:'newOtId', skipIf:'newOtId', expect:{status:200} },
     { id:'update-ot',            method:'PUT',    path:'/api/proy/ordenes-trabajo/{DYN}',                        auth:true, name:'PUT OT',                 useDynamic:'newOtId', skipIf:'newOtId', bodyFn:'update-ot', expect:{status:[200,204]} },
     { id:'patch-ot-estado',      method:'PATCH',  path:'/api/proy/ordenes-trabajo/{DYN}/estado',                 auth:true, name:'PATCH OT/estado',        useDynamic:'newOtId', skipIf:'newOtId', body:{estado:2, observacion:'En progreso'}, expect:{status:[200,204]} },
-    { id:'patch-ot-actividades', method:'PATCH',  path:'/api/proy/ordenes-trabajo/{DYN}/actividades',            auth:true, name:'PATCH OT/actividades',   useDynamic:'newOtId', skipIf:'newOtId', body:{actividades:[{descripcion:'Actividad de prueba',completado:false}]}, expect:{status:[200,204]} },
-    { id:'patch-ot-firma',       method:'PATCH',  path:'/api/proy/ordenes-trabajo/{DYN}/firma',                  auth:true, name:'PATCH OT/firma',         useDynamic:'newOtId', skipIf:'newOtId', body:{firmado:true, observacion:'Firmado por runner'}, expect:{status:[200,204]} },
+    { id:'patch-ot-actividades', method:'PATCH',  path:'/api/proy/ordenes-trabajo/{DYN}/actividades',            auth:true, name:'PATCH OT/actividades',   useDynamic:'newOtId', skipIf:'newOtId', bodyFn:'patch-ot-actividades', expect:{status:[200,204]} },
+    { id:'patch-ot-firma',       method:'PATCH',  path:'/api/proy/ordenes-trabajo/{DYN}/firma',                  auth:true, name:'PATCH OT/firma',         useDynamic:'newOtId', skipIf:'newOtId', body:{firmaBase64:'data:image/png;base64,abc123', firmantNombre:'Supervisor Runner'}, expect:{status:[200,204]} },
     { id:'delete-ot',            method:'DELETE', path:'/api/proy/ordenes-trabajo/{DYN}',                        auth:true, name:'DELETE OT',              useDynamic:'newOtId', skipIf:'newOtId', expect:{status:[200,204]} },
     { id:'delete-presupuesto',   method:'DELETE', path:'/api/proy/proyectos/{DYN}/presupuesto/{newPresupuestoId}',  auth:true, name:'DELETE presupuesto',     useDynamic:'newProyectoId', skipIf:'newPresupuestoId', expect:{status:[200,204,404,405]} },
     { id:'delete-proyecto',        method:'DELETE', path:'/api/proy/proyectos/{DYN}',                        auth:true, name:'DELETE proyecto creado', useDynamic:'newProyectoId', skipIf:'newProyectoId', expect:{status:[200,204]}, hint:'Cleanup: borra el proyecto creado en este ciclo de tests' },

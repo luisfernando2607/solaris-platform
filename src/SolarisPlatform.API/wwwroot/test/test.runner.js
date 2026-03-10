@@ -256,6 +256,13 @@ const TestRunner = (() => {
         DYNAMIC[testDef.captureId] = capturedId;
       }
     }
+    // Capturar campos adicionales via captureFrom: {key: fn(responseData)}
+    if (testDef.captureFrom) {
+      const respData = res.data?.data ?? res.data;
+      for (const [key, fn] of Object.entries(testDef.captureFrom)) {
+        try { const val = fn(respData); if (val != null) DYNAMIC[key] = val; } catch(e) {}
+      }
+    }
 
     const passed    = _checkExpect(testDef.expect, res.status, res.data);
     const diagnosis = passed ? null : _buildDiagnosis(testDef, res, dynamicSnapshot);

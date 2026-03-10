@@ -222,23 +222,47 @@ public class ProyectoMappingProfile : Profile
             .ForAllMembers(o => o.Ignore());
 
         CreateMap<OrdenTrabajo, OrdenTrabajoDto>()
-            .ForMember(d => d.ProyectoNombre,    o => o.Ignore())
-            .ForMember(d => d.TareaNombre,       o => o.Ignore())
-            .ForMember(d => d.CuadrillaNombre,   o => o.Ignore())
-            .ForMember(d => d.AsignadoPorNombre, o => o.Ignore())
-            .ForMember(d => d.TecnicoNombre,     o => o.Ignore())
-            .ForMember(d => d.FirmadoPorNombre,  o => o.Ignore())
-            .ForMember(d => d.Actividades,       o => o.MapFrom(s => s.Actividades))
-            .ForMember(d => d.Materiales,        o => o.MapFrom(s => s.Materiales));
-
+            .ConstructUsing((s, ctx) => new OrdenTrabajoDto(
+                s.Id, s.ProyectoId, null,
+                s.TareaId, null,
+                s.CuadrillaId, null,
+                s.Codigo ?? "",
+                s.Descripcion,
+                s.Descripcion,
+                s.Estado,
+                s.FechaInicioEjecucion ?? DateTime.UtcNow,
+                s.FechaProgramada,
+                s.FechaFinEjecucion,
+                s.FechaInicioEjecucion,
+                s.FechaFinEjecucion,
+                null, null,
+                s.TecnicoAsignadoId, null,
+                s.Latitud, s.Longitud, s.Direccion,
+                false, false, 0,
+                s.ObservacionesTecnico,
+                false, null, null,
+                ctx.Mapper.Map<List<OtActividadDto>>(s.Actividades),
+                ctx.Mapper.Map<List<OtMaterialDto>>(s.Materiales)));
         CreateMap<OtActividad, OtActividadDto>()
-            .ForMember(d => d.CompletadaPorNombre, o => o.Ignore());
-
-        CreateMap<OtMaterial, OtMaterialDto>();
-
-        // ─── Reporte de Avance ───────────────────────────────────
-        // FIX: ReporteAvanceDto positional record — entidad tiene AvanceGeneral/AvanceCosto
-        // DTO pide: OrdenTrabajoId, PorcentajeAvancePlan, PorcentajeAvanceReal, Bac/Ev/Pv/Ac/Cpi/Spi
+            .ConstructUsing((s, ctx) => new OtActividadDto(
+                s.Id,
+                s.Descripcion ?? "",
+                s.Descripcion,
+                s.Orden,
+                s.Completado,
+                s.FechaCompletado,
+                null,
+                s.ObservacionTecnico));
+        CreateMap<OtMaterial, OtMaterialDto>()
+            .ConstructUsing((s, ctx) => new OtMaterialDto(
+                s.Id,
+                s.NombreMaterial ?? "",
+                s.CodigoMaterial,
+                s.UnidadMedida,
+                s.CantidadPlan,
+                s.CantidadReal,
+                s.CostoUnitario,
+                s.CostoTotal));
         CreateMap<ReporteAvance, ReporteAvanceDto>()
             .ConstructUsing((s, ctx) => new ReporteAvanceDto(
                 s.Id, s.ProyectoId,
