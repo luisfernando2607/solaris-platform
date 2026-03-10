@@ -102,7 +102,7 @@ const BODY_FACTORIES = {
   'update-wbs':             (D)   => ({ nombre:'WBS Editado Test', descripcion:'Editado', proyectoId:D.newProyectoId, tipoNodo:1, orden:1, porcentajePeso:100 }),
 
   // Tareas / Cuadrillas
-  'create-tarea':           (D,S) => ({ nombre:`Tarea Test ${Date.now()}`, descripcion:'Tarea de prueba', proyectoId:D.newProyectoId, wbsNodoId:D.newWbsId, prioridad:2, fechaInicioPlan:'2025-01-01', fechaFinPlan:'2025-03-31', duracionDias:90 }),
+  'create-tarea':           (D,S) => ({ nombre:`Tarea Test ${Date.now()}`, descripcion:'Tarea de prueba', proyectoId:D.newProyectoId, prioridad:2, fechaInicioPlan:'2025-01-01', fechaFinPlan:'2025-03-31', duracionDias:90 }),
   'update-tarea':           (D,S) => ({ nombre:'Tarea Editada Test', descripcion:'Editada', proyectoId:D.newProyectoId, wbsNodoId:D.newWbsId, prioridad:2, fechaInicioPlan:'2025-01-01', fechaFinPlan:'2025-04-30', duracionDias:120 }),
   'create-cuadrilla':       (D)   => ({ nombre:`Cuadrilla Test ${Date.now()}`, descripcion:'Cuadrilla de prueba', proyectoId:D.newProyectoId, activo:true }),
   'update-cuadrilla':       (D)   => ({ nombre:'Cuadrilla Editada', descripcion:'Editada', proyectoId:D.newProyectoId, activo:true }),
@@ -119,6 +119,7 @@ const BODY_FACTORIES = {
   // OT
   'create-ot':              (D,S) => ({ proyectoId:D.newProyectoId||S.proyectoId, empresaId:S.empresaId, descripcion:'OT automatizada', tipoOt:1, prioridad:2, actividades:[{nombre:'Actividad 1',descripcion:'Prueba',tipoActividad:1}], materiales:[{nombreMaterial:'Material 1',codigoMaterial:'M001',unidadMedida:'und',cantidadPlan:1,cantidadReal:0,costoUnitario:10.00,costoTotal:10.00}] }),
   'update-ot':              (D,S) => ({ proyectoId:D.newProyectoId||S.proyectoId, tareaId:D.newTareaId||null, numero:`OT-E${Date.now()%10000}`, titulo:'OT Editada Runner', descripcion:'Editada por runner', tipo:1, fechaProgramada:'2025-04-01', prioridad:1 }),
+  'patch-ot-actividades':   (D,S) => ({ actividadId:D.newActividadId, observaciones:'Completada por runner' }),
 };
 
 // ── TEST SUITES ───────────────────────────────────────────────────────
