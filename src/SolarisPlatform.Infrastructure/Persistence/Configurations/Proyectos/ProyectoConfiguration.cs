@@ -325,6 +325,8 @@ public class CostoRealConfiguration : IEntityTypeConfiguration<CostoReal>
         b.Property(e => e.Observaciones).HasColumnName("observaciones");
         b.HasOne(e => e.Presupuesto).WithMany().HasForeignKey(e => e.PresupuestoId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne(e => e.Partida).WithMany(p => p.CostosReales).HasForeignKey(e => e.PartidaId).OnDelete(DeleteBehavior.Restrict);
+        b.Property(e => e.OrdenTrabajoId).HasColumnName("orden_trabajo_id");
+        b.HasOne(e => e.OrdenTrabajo).WithMany().HasForeignKey(e => e.OrdenTrabajoId).OnDelete(DeleteBehavior.SetNull);
     }
 }
 
@@ -478,14 +480,14 @@ public class OtMaterialConfiguration : IEntityTypeConfiguration<OtMaterial>
         b.HasKey(e => e.Id);
         b.Property(e => e.Id).HasColumnName("id").UseIdentityColumn();
         b.Property(e => e.EmpresaId).HasColumnName("empresa_id").IsRequired();
-        b.Property(e => e.NombreMaterial).HasColumnName("nombre_material").HasMaxLength(300).IsRequired();
-        b.Property(e => e.CodigoMaterial).HasColumnName("codigo_material").HasMaxLength(50);
-        b.Property(e => e.UnidadMedida).HasColumnName("unidad_medida").HasMaxLength(50);
+        b.Property(e => e.NombreMaterial).HasColumnName("descripcion").HasMaxLength(300).IsRequired();
+        b.Ignore(e => e.CodigoMaterial);
+        b.Property(e => e.UnidadMedida).HasColumnName("unidad").HasMaxLength(50);
         b.Property(e => e.CantidadPlan).HasColumnName("cantidad_plan").HasColumnType("decimal(12,2)");
         b.Property(e => e.CantidadReal).HasColumnName("cantidad_real").HasColumnType("decimal(12,2)");
         b.Property(e => e.CostoUnitario).HasColumnName("costo_unitario").HasColumnType("decimal(18,2)");
         b.Property(e => e.CostoTotal).HasColumnName("costo_total").HasColumnType("decimal(18,2)");
-        b.Property(e => e.ProductoId).HasColumnName("producto_id");
+        b.Ignore(e => e.ProductoId);
         b.Property(e => e.OrdenTrabajoId).HasColumnName("orden_trabajo_id").IsRequired();
         b.HasOne(e => e.OrdenTrabajo).WithMany(o => o.Materiales).HasForeignKey(e => e.OrdenTrabajoId).OnDelete(DeleteBehavior.Cascade);
     }

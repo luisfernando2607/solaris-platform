@@ -486,7 +486,7 @@ public record CrearOrdenTrabajoRequest(
     public long EmpresaId { get; set; }
 }
 
-public record CrearOtActividadItem(string Nombre, string? Descripcion);
+public record CrearOtActividadItem(string Nombre, string? Descripcion, short? TipoActividad = 1);
 public record CrearOtMaterialItem(
     string NombreMaterial, string? CodigoMaterial, string? UnidadMedida,
     decimal CantidadPlan, decimal CostoUnitario);

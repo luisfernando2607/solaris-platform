@@ -73,6 +73,7 @@ public class OrdenTrabajoService : IOrdenTrabajoService
                 EmpresaId      = request.EmpresaId,
                 // FIX F7: BD tiene "descripcion" no "nombre"
                 Descripcion    = act.Nombre ?? act.Descripcion ?? "Actividad",
+                TipoActividad  = act.TipoActividad ?? 1,
                 Orden          = i + 1,
                 Completado     = false
             }, ct);
