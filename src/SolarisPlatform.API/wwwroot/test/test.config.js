@@ -356,7 +356,6 @@ const TEST_SUITES = [
     { id:'patch-proyecto-avance',  method:'PATCH',  path:'/api/proy/proyectos/{DYN}/avance',                 auth:true, name:'PATCH proyecto/avance',  useDynamic:'newProyectoId', skipIf:'newProyectoId', body:{avancePorcentaje:10}, expect:{status:[200,204]} },
     { id:'get-proyecto-seed',      method:'GET',    path:`/api/proy/proyectos/${SEED.proyectoId}`,           auth:true, name:'GET proyecto seed',      expect:{status:[200,404]} },
     { id:'dashboard-seed',         method:'GET',    path:`/api/proy/proyectos/${SEED.proyectoId}/dashboard`, auth:true, name:'GET dashboard seed',     expect:{status:[200,404]} },
-    { id:'delete-proyecto',        method:'DELETE', path:'/api/proy/proyectos/{DYN}',                        auth:true, name:'DELETE proyecto creado', useDynamic:'newProyectoId', skipIf:'newProyectoId', expect:{status:[200,204]}, hint:'Cleanup: borra el proyecto creado en este ciclo de tests' },
   ]},
 
   // ══════════════════════════════════════════════════════════════════
@@ -486,6 +485,7 @@ const TEST_SUITES = [
     { id:'patch-ot-actividades', method:'PATCH',  path:'/api/proy/ordenes-trabajo/{DYN}/actividades',            auth:true, name:'PATCH OT/actividades',   useDynamic:'newOtId', skipIf:'newOtId', body:{actividades:[{descripcion:'Actividad de prueba',completado:false}]}, expect:{status:[200,204]} },
     { id:'patch-ot-firma',       method:'PATCH',  path:'/api/proy/ordenes-trabajo/{DYN}/firma',                  auth:true, name:'PATCH OT/firma',         useDynamic:'newOtId', skipIf:'newOtId', body:{firmado:true, observacion:'Firmado por runner'}, expect:{status:[200,204]} },
     { id:'delete-ot',            method:'DELETE', path:'/api/proy/ordenes-trabajo/{DYN}',                        auth:true, name:'DELETE OT',              useDynamic:'newOtId', skipIf:'newOtId', expect:{status:[200,204]} },
+    { id:'delete-proyecto',        method:'DELETE', path:'/api/proy/proyectos/{DYN}',                        auth:true, name:'DELETE proyecto creado', useDynamic:'newProyectoId', skipIf:'newProyectoId', expect:{status:[200,204]}, hint:'Cleanup: borra el proyecto creado en este ciclo de tests' },
     { id:'get-ot-seed',          method:'GET',    path:`/api/proy/ordenes-trabajo/${SEED.otId}`,                 auth:true, name:'GET OT seed',            expect:{status:[200,404]} },
   ]},
 

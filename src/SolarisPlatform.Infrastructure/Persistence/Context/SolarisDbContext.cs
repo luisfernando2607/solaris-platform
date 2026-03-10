@@ -141,8 +141,8 @@ public class SolarisDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(SolarisDbContext).Assembly);
         modelBuilder.HasDefaultSchema("public");
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(SolarisDbContext).Assembly);
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
