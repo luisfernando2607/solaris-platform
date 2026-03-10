@@ -136,11 +136,23 @@ public class ProyectoMappingProfile : Profile
 
         // ─── Cuadrilla ───────────────────────────────────────────
         CreateMap<Cuadrilla, CuadrillaDto>()
-            .ForMember(d => d.LiderNombre, o => o.Ignore())
-            .ForMember(d => d.Miembros,    o => o.MapFrom(s => s.Miembros));
+            .ConstructUsing((s, ctx) => new CuadrillaDto(
+                s.Id, s.ProyectoId, s.Nombre, s.Descripcion,
+                s.LiderId, null, s.CapacidadMaxima, true,
+                new List<CuadrillaMiembroDto>()))
+            .AfterMap((s, d, ctx) =>
+            {
+                if (s.Miembros != null)
+                    d.Miembros.AddRange(ctx.Mapper.Map<List<CuadrillaMiembroDto>>(s.Miembros));
+            })
+            .ForAllMembers(o => o.Ignore());
 
         CreateMap<CuadrillaMiembro, CuadrillaMiembroDto>()
-            .ForMember(d => d.EmpleadoNombre, o => o.Ignore());
+            .ConstructUsing((s, ctx) => new CuadrillaMiembroDto(
+                s.Id, s.EmpleadoId, string.Empty,
+                s.FechaIngreso, s.FechaSalida,
+                s.Rol.HasValue ? s.Rol.Value.ToString() : null, true))
+            .ForAllMembers(o => o.Ignore());
 
         // ─── Presupuesto ─────────────────────────────────────────
         // FIX F5: PresupuestoDto es positional record con campos que difieren de la entidad
@@ -178,7 +190,11 @@ public class ProyectoMappingProfile : Profile
             .ForMember(d => d.RegistradoPorNombre, o => o.Ignore());
 
         // ─── Centro de Costo ─────────────────────────────────────
-        CreateMap<CentroCosto, CentroCostoDto>();
+        CreateMap<CentroCosto, CentroCostoDto>()
+            .ConstructUsing((s, ctx) => new CentroCostoDto(
+                s.Id, s.ProyectoId, s.Codigo, s.Nombre, s.Descripcion,
+                s.PresupuestoAnual, 0m, true))
+            .ForAllMembers(o => o.Ignore());
 
         // ─── Orden de Trabajo ────────────────────────────────────
         // FIX: Alineado con entidad real en BD y con OrdenTrabajoListDto actualizado:

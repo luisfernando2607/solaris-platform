@@ -296,7 +296,7 @@ public record ActualizarCuadrillaRequest(
 }
 
 public record AgregarMiembroCuadrillaRequest(
-    long EmpleadoId, DateOnly FechaIngreso, string? Rol)
+    long EmpleadoId, DateOnly FechaIngreso, short? Rol)
 {
     public long CuadrillaId { get; set; }
 }

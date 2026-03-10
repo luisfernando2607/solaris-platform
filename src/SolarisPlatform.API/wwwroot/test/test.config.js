@@ -99,7 +99,7 @@ const BODY_FACTORIES = {
   'create-hito':            (D)   => ({ nombre:`Hito Test ${Date.now()}`, descripcion:'Hito de prueba', proyectoId:D.newProyectoId, fechaCompromiso:'2025-06-30', porcentajePeso:0, orden:1 }),
   'update-hito':            (D)   => ({ nombre:'Hito Editado Test', descripcion:'Editado', proyectoId:D.newProyectoId, fechaCompromiso:'2025-07-31', porcentajePeso:0, orden:1, estado:1 }),
   'create-wbs':             (D)   => ({ codigo:`WBS${Date.now().toString().slice(-4)}`, nombre:`WBS Test ${Date.now()}`, descripcion:'WBS de prueba', proyectoId:D.newProyectoId, tipoNodo:1, nivel:1, orden:1 }),
-  'update-wbs':             (D)   => ({ nombre:'WBS Editado Test', descripcion:'Editado', proyectoId:D.newProyectoId, nivel:1, orden:1 }),
+  'update-wbs':             (D)   => ({ nombre:'WBS Editado Test', descripcion:'Editado', proyectoId:D.newProyectoId, tipoNodo:1, nivel:1, orden:1 }),
 
   // Tareas / Cuadrillas
   'create-tarea':           (D,S) => ({ nombre:`Tarea Test ${Date.now()}`, descripcion:'Tarea de prueba', proyectoId:D.newProyectoId, wbsNodoId:D.newWbsId||S.wbsId, prioridad:2, fechaInicioPlan:'2025-01-01', fechaFinPlan:'2025-03-31', duracionDias:90 }),
@@ -109,7 +109,7 @@ const BODY_FACTORIES = {
 
   // Presupuesto / CC
   'create-presupuesto':     (D)   => ({ proyectoId:D.newProyectoId, nombre:'Presupuesto Test', descripcion:'Presupuesto de prueba', contingencia:0 }),
-  'create-partida':         (D)   => ({ presupuestoId:D.newPresupuestoId, tipo:'MaterialDirecto', concepto:'Cables fibra óptica', descripcion:'Partida de prueba', unidadMedida:'m', cantidad:100, precioUnitario:5.50, porcentaje:0, orden:1 }),
+  'create-partida':         (D)   => ({ presupuestoId:D.newPresupuestoId, tipo:1, concepto:'Cables fibra óptica', descripcion:'Partida de prueba', unidadMedida:'m', cantidad:100, precioUnitario:5.50, porcentaje:0, orden:1 }),
   'create-centro-costo':    (D,S) => ({ proyectoId:D.newProyectoId, nombre:`CC Test ${Date.now()}`, codigo:`CC${Date.now()%1000}`, descripcion:'CC de prueba', presupuestoAsignado:5000 }),
   'update-centro-costo':    (D,S) => ({ proyectoId:D.newProyectoId, nombre:'CC Editado', descripcion:'Editado', presupuestoAsignado:6000 }),
 
@@ -117,7 +117,7 @@ const BODY_FACTORIES = {
   'create-reporte':         (D)   => ({ proyectoId:D.newProyectoId, titulo:`Reporte Test ${Date.now()}`, descripcion:'Reporte de prueba', porcentajeAvancePlan:25, porcentajeAvanceReal:0, fechaReporte:new Date().toISOString().split('T')[0] }),
 
   // OT
-  'create-ot':              (D,S) => ({ proyectoId:D.newProyectoId||S.proyectoId, empresaId:S.empresaId, descripcion:'OT automatizada', tipoOt:1, prioridad:2, actividades:[{nombre:'Actividad 1',descripcion:'Prueba'}], materiales:[{nombreMaterial:'Material 1',codigoMaterial:'M001',unidadMedida:'und',cantidadPlan:1,cantidadReal:0,costoUnitario:10.00,costoTotal:10.00}] }),
+  'create-ot':              (D,S) => ({ proyectoId:D.newProyectoId||S.proyectoId, empresaId:S.empresaId, descripcion:'OT automatizada', tipoOt:1, prioridad:2, actividades:[{nombre:'Actividad 1',descripcion:'Prueba',tipoActividad:1}], materiales:[{nombreMaterial:'Material 1',codigoMaterial:'M001',unidadMedida:'und',cantidadPlan:1,cantidadReal:0,costoUnitario:10.00,costoTotal:10.00}] }),
   'update-ot':              (D,S) => ({ proyectoId:D.newProyectoId||S.proyectoId, tareaId:D.newTareaId||null, numero:`OT-E${Date.now()%10000}`, titulo:'OT Editada Runner', descripcion:'Editada por runner', tipo:1, fechaProgramada:'2025-04-01', prioridad:1 }),
 };
 
@@ -408,7 +408,7 @@ const TEST_SUITES = [
     { id:'create-cuadrilla',       method:'POST',   path:'/api/proy/proyectos/{DYN}/cuadrillas',                                  auth:true, name:'POST cuadrilla',            useDynamic:'newProyectoId', skipIf:'newProyectoId', bodyFn:'create-cuadrilla', captureId:'newCuadrillaId', expect:{status:[200,201]} },
     { id:'get-cuadrilla',          method:'GET',    path:'/api/proy/proyectos/{DYN}/cuadrillas/{newCuadrillaId}',                 auth:true, name:'GET cuadrilla creada',      useDynamic:'newProyectoId', skipIf:'newCuadrillaId', expect:{status:200} },
     { id:'update-cuadrilla',       method:'PUT',    path:'/api/proy/proyectos/{DYN}/cuadrillas/{newCuadrillaId}',                 auth:true, name:'PUT cuadrilla',             useDynamic:'newProyectoId', skipIf:'newCuadrillaId', bodyFn:'update-cuadrilla', expect:{status:[200,204]} },
-    { id:'add-miembro',            method:'POST',   path:'/api/proy/proyectos/{DYN}/cuadrillas/{newCuadrillaId}/miembros',        auth:true, name:'POST cuadrilla/miembros',   useDynamic:'newProyectoId', skipIf:'newCuadrillaId', body:{empleadoId:SEED.empleadoId, rol:'Tecnico'}, expect:{status:[200,201,409]} },
+    { id:'add-miembro',            method:'POST',   path:'/api/proy/proyectos/{DYN}/cuadrillas/{newCuadrillaId}/miembros',        auth:true, name:'POST cuadrilla/miembros',   useDynamic:'newProyectoId', skipIf:'newCuadrillaId', body:{empleadoId:SEED.empleadoId, rol:1}, expect:{status:[200,201,409]} },
     { id:'delete-miembro',         method:'DELETE', path:'/api/proy/proyectos/{DYN}/cuadrillas/{newCuadrillaId}/miembros',        auth:true, name:'DELETE cuadrilla/miembros', useDynamic:'newProyectoId', skipIf:'newCuadrillaId', body:{empleadoId:SEED.empleadoId}, expect:{status:[200,204,404]}, hint:'404 aceptado si el miembro no existe en la cuadrilla' },
     { id:'delete-cuadrilla',       method:'DELETE', path:'/api/proy/proyectos/{DYN}/cuadrillas/{newCuadrillaId}',                 auth:true, name:'DELETE cuadrilla',          useDynamic:'newProyectoId', skipIf:'newCuadrillaId', expect:{status:[200,204]} },
   ]},
@@ -485,6 +485,7 @@ const TEST_SUITES = [
     { id:'patch-ot-actividades', method:'PATCH',  path:'/api/proy/ordenes-trabajo/{DYN}/actividades',            auth:true, name:'PATCH OT/actividades',   useDynamic:'newOtId', skipIf:'newOtId', body:{actividades:[{descripcion:'Actividad de prueba',completado:false}]}, expect:{status:[200,204]} },
     { id:'patch-ot-firma',       method:'PATCH',  path:'/api/proy/ordenes-trabajo/{DYN}/firma',                  auth:true, name:'PATCH OT/firma',         useDynamic:'newOtId', skipIf:'newOtId', body:{firmado:true, observacion:'Firmado por runner'}, expect:{status:[200,204]} },
     { id:'delete-ot',            method:'DELETE', path:'/api/proy/ordenes-trabajo/{DYN}',                        auth:true, name:'DELETE OT',              useDynamic:'newOtId', skipIf:'newOtId', expect:{status:[200,204]} },
+    { id:'delete-presupuesto',   method:'DELETE', path:'/api/proy/proyectos/{DYN}/presupuesto/{newPresupuestoId}',  auth:true, name:'DELETE presupuesto',     useDynamic:'newProyectoId', skipIf:'newPresupuestoId', expect:{status:[200,204,404,405]} },
     { id:'delete-proyecto',        method:'DELETE', path:'/api/proy/proyectos/{DYN}',                        auth:true, name:'DELETE proyecto creado', useDynamic:'newProyectoId', skipIf:'newProyectoId', expect:{status:[200,204]}, hint:'Cleanup: borra el proyecto creado en este ciclo de tests' },
     { id:'get-ot-seed',          method:'GET',    path:`/api/proy/ordenes-trabajo/${SEED.otId}`,                 auth:true, name:'GET OT seed',            expect:{status:[200,404]} },
   ]},

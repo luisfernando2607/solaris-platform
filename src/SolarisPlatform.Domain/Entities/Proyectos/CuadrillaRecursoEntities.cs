@@ -40,7 +40,7 @@ public class CuadrillaMiembro : BaseEntity
     public long     EmpleadoId    { get; set; }
     public DateOnly FechaIngreso  { get; set; }
     public DateOnly? FechaSalida  { get; set; }
-    public string?  Rol           { get; set; }
+    public short?   Rol           { get; set; }
 
     public virtual Cuadrilla Cuadrilla { get; set; } = null!;
 }

@@ -210,8 +210,8 @@ public class CuadrillaMiembroConfiguration : IEntityTypeConfiguration<CuadrillaM
         b.Property(e => e.EmpresaId).HasColumnName("empresa_id").IsRequired();
         b.Property(e => e.CuadrillaId).HasColumnName("cuadrilla_id").IsRequired();
         b.Property(e => e.EmpleadoId).HasColumnName("empleado_id").IsRequired();
-        b.Property(e => e.FechaIngreso).HasColumnName("fecha_ingreso").IsRequired();
-        b.Property(e => e.FechaSalida).HasColumnName("fecha_salida");
+        b.Property(e => e.FechaIngreso).HasColumnName("fecha_asignacion").IsRequired();
+        b.Property(e => e.FechaSalida).HasColumnName("fecha_liberacion");
         b.Property(e => e.Rol).HasColumnName("rol").HasMaxLength(100);
         b.HasOne(e => e.Cuadrilla).WithMany(c => c.Miembros).HasForeignKey(e => e.CuadrillaId).OnDelete(DeleteBehavior.Cascade);
     }
@@ -316,7 +316,6 @@ public class CostoRealConfiguration : IEntityTypeConfiguration<CostoReal>
         b.Property(e => e.EmpresaId).HasColumnName("empresa_id").IsRequired();
         b.Property(e => e.PresupuestoId).HasColumnName("presupuesto_id").IsRequired();
         b.Property(e => e.PartidaId).HasColumnName("partida_id").IsRequired();
-        b.Property(e => e.OrdenTrabajoId).HasColumnName("orden_trabajo_id");
         b.Property(e => e.Origen).HasColumnName("origen").IsRequired();
         b.Property(e => e.OrigenId).HasColumnName("origen_id");
         b.Property(e => e.Concepto).HasColumnName("concepto").HasMaxLength(300).IsRequired();
@@ -326,7 +325,6 @@ public class CostoRealConfiguration : IEntityTypeConfiguration<CostoReal>
         b.Property(e => e.Observaciones).HasColumnName("observaciones");
         b.HasOne(e => e.Presupuesto).WithMany().HasForeignKey(e => e.PresupuestoId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne(e => e.Partida).WithMany(p => p.CostosReales).HasForeignKey(e => e.PartidaId).OnDelete(DeleteBehavior.Restrict);
-        b.HasOne(e => e.OrdenTrabajo).WithMany(o => o.CostosReales).HasForeignKey(e => e.OrdenTrabajoId).OnDelete(DeleteBehavior.SetNull);
     }
 }
 
@@ -444,7 +442,6 @@ public class OrdenTrabajoConfiguration : IEntityTypeConfiguration<OrdenTrabajo>
         b.HasOne(e => e.Proyecto).WithMany(p => p.OrdenesTrabajo).HasForeignKey(e => e.ProyectoId).OnDelete(DeleteBehavior.Cascade);
         b.HasOne(e => e.Tarea).WithMany().HasForeignKey(e => e.TareaId).OnDelete(DeleteBehavior.SetNull);
         b.HasOne(e => e.Cuadrilla).WithMany().HasForeignKey(e => e.CuadrillaId).OnDelete(DeleteBehavior.SetNull);
-        // FIX: OrdenTrabajo.Reportes genera shadow property OrdenTrabajoId en ReporteAvance
         // ReporteAvance pertenece a Proyecto, NO a OrdenTrabajo — ignorar esta colección
         b.Ignore(e => e.Reportes);
 
@@ -460,7 +457,6 @@ public class OtActividadConfiguration : IEntityTypeConfiguration<OtActividad>
         b.HasKey(e => e.Id);
         b.Property(e => e.Id).HasColumnName("id").UseIdentityColumn();
         b.Property(e => e.EmpresaId).HasColumnName("empresa_id").IsRequired();
-        b.Property(e => e.OrdenTrabajoId).HasColumnName("orden_trabajo_id").IsRequired();
         b.Property(e => e.Descripcion).HasColumnName("descripcion").HasMaxLength(500).IsRequired();
         b.Property(e => e.Orden).HasColumnName("orden");
         b.Property(e => e.Completado).HasColumnName("completado");
@@ -469,7 +465,6 @@ public class OtActividadConfiguration : IEntityTypeConfiguration<OtActividad>
         b.Property(e => e.TipoActividad).HasColumnName("tipo_actividad");
         b.Property(e => e.RequiereFoto).HasColumnName("requiere_foto");
         b.Property(e => e.UrlFoto).HasColumnName("url_foto").HasMaxLength(1000);
-        b.HasOne(e => e.OrdenTrabajo).WithMany(o => o.Actividades).HasForeignKey(e => e.OrdenTrabajoId).OnDelete(DeleteBehavior.Cascade);
     }
 }
 
@@ -481,7 +476,6 @@ public class OtMaterialConfiguration : IEntityTypeConfiguration<OtMaterial>
         b.HasKey(e => e.Id);
         b.Property(e => e.Id).HasColumnName("id").UseIdentityColumn();
         b.Property(e => e.EmpresaId).HasColumnName("empresa_id").IsRequired();
-        b.Property(e => e.OrdenTrabajoId).HasColumnName("orden_trabajo_id").IsRequired();
         b.Property(e => e.NombreMaterial).HasColumnName("nombre_material").HasMaxLength(300).IsRequired();
         b.Property(e => e.CodigoMaterial).HasColumnName("codigo_material").HasMaxLength(50);
         b.Property(e => e.UnidadMedida).HasColumnName("unidad_medida").HasMaxLength(50);
@@ -490,11 +484,9 @@ public class OtMaterialConfiguration : IEntityTypeConfiguration<OtMaterial>
         b.Property(e => e.CostoUnitario).HasColumnName("costo_unitario").HasColumnType("decimal(18,2)");
         b.Property(e => e.CostoTotal).HasColumnName("costo_total").HasColumnType("decimal(18,2)");
         b.Property(e => e.ProductoId).HasColumnName("producto_id");
-        b.HasOne(e => e.OrdenTrabajo).WithMany(o => o.Materiales).HasForeignKey(e => e.OrdenTrabajoId).OnDelete(DeleteBehavior.Cascade);
     }
 }
 
-// ─── FIX #3: ReporteAvance — entidad ya no tiene OrdenTrabajoId ──────────────
 public class ReporteAvanceConfiguration : IEntityTypeConfiguration<ReporteAvance>
 {
     public void Configure(EntityTypeBuilder<ReporteAvance> b)
