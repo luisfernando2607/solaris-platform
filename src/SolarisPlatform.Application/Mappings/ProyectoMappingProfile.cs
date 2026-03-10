@@ -122,10 +122,19 @@ public class ProyectoMappingProfile : Profile
             .ForAllMembers(o => o.Ignore());
 
         CreateMap<Tarea, TareaDto>()
-            .ForMember(d => d.ResponsableNombre,   o => o.Ignore())
-            .ForMember(d => d.DependenciasOrigen,  o => o.MapFrom(s => s.DependenciasOrigen))
-            .ForMember(d => d.DependenciasDestino, o => o.MapFrom(s => s.DependenciasDestino));
-
+            .ConstructUsing((s, ctx) => new TareaDto(
+                s.Id, s.ProyectoId, s.WbsNodoId, null, s.CuadrillaId,
+                s.ResponsableId, null,
+                s.Nombre, s.Descripcion,
+                s.Estado, s.Prioridad,
+                s.FechaInicioPlan, s.FechaFinPlan,
+                s.FechaInicioReal, s.FechaFinReal,
+                s.DuracionDiasPlan, null, 0m,
+                s.PorcentajeAvance,
+                null, null, null, true,
+                ctx.Mapper.Map<List<TareaDependenciaDto>>(s.DependenciasOrigen),
+                ctx.Mapper.Map<List<TareaDependenciaDto>>(s.DependenciasDestino)))
+            .ForAllMembers(o => o.Ignore());
         CreateMap<TareaDependencia, TareaDependenciaDto>()
             .ConstructUsing((s, ctx) => new TareaDependenciaDto(
                 s.Id,

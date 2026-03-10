@@ -85,6 +85,7 @@ public class Tarea : BaseEntity
 public class TareaDependencia : BaseEntity
 {
     public long            EmpresaId      { get; set; }
+    public long            ProyectoId     { get; set; }
     public long            TareaOrigenId  { get; set; }
     public long            TareaDestinoId { get; set; }
     public TipoDependencia TipoDependencia { get; set; } = TipoDependencia.FinInicio;

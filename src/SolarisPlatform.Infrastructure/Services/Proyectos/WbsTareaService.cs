@@ -186,12 +186,16 @@ public class TareaService : ITareaService
 
     public async Task<Result<TareaDependenciaDto>> AgregarDependenciaAsync(CrearDependenciaTareaRequest request, long usuarioId, CancellationToken ct = default)
     {
+        var tarea = await _repo.GetByIdAsync(request.TareaOrigenId, ct);
+        if (tarea == null) return Result<TareaDependenciaDto>.Failure("Tarea origen no encontrada");
         var e = new TareaDependencia
         {
             TareaOrigenId   = request.TareaOrigenId,
             TareaDestinoId  = request.TareaDestinoId,
             TipoDependencia = request.TipoDependencia,
-            Desfase         = request.Desfase ?? 0
+            Desfase         = request.Desfase ?? 0,
+            ProyectoId      = tarea.ProyectoId,
+            EmpresaId       = tarea.EmpresaId
         };
         await _depRepo.AddAsync(e, ct);
         await _uow.SaveChangesAsync(ct);

@@ -176,7 +176,8 @@ public class TareaDependenciaConfiguration : IEntityTypeConfiguration<TareaDepen
         b.Property(e => e.TareaOrigenId).HasColumnName("tarea_origen_id").IsRequired();
         b.Property(e => e.TareaDestinoId).HasColumnName("tarea_destino_id").IsRequired();
         b.Property(e => e.TipoDependencia).HasColumnName("tipo_dependencia").IsRequired();
-        b.Property(e => e.Desfase).HasColumnName("desfase");
+        b.Property(e => e.Desfase).HasColumnName("desfase_dias");
+        b.Property(e => e.ProyectoId).HasColumnName("proyecto_id");
         b.HasOne(e => e.TareaOrigen).WithMany(t => t.DependenciasOrigen).HasForeignKey(e => e.TareaOrigenId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne(e => e.TareaDestino).WithMany(t => t.DependenciasDestino).HasForeignKey(e => e.TareaDestinoId).OnDelete(DeleteBehavior.Restrict);
     }
