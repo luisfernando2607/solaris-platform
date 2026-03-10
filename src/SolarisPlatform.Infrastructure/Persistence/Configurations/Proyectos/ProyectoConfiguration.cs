@@ -465,6 +465,8 @@ public class OtActividadConfiguration : IEntityTypeConfiguration<OtActividad>
         b.Property(e => e.TipoActividad).HasColumnName("tipo_actividad");
         b.Property(e => e.RequiereFoto).HasColumnName("requiere_foto");
         b.Property(e => e.UrlFoto).HasColumnName("url_foto").HasMaxLength(1000);
+        b.Property(e => e.OrdenTrabajoId).HasColumnName("orden_trabajo_id").IsRequired();
+        b.HasOne(e => e.OrdenTrabajo).WithMany(o => o.Actividades).HasForeignKey(e => e.OrdenTrabajoId).OnDelete(DeleteBehavior.Cascade);
     }
 }
 
@@ -484,6 +486,8 @@ public class OtMaterialConfiguration : IEntityTypeConfiguration<OtMaterial>
         b.Property(e => e.CostoUnitario).HasColumnName("costo_unitario").HasColumnType("decimal(18,2)");
         b.Property(e => e.CostoTotal).HasColumnName("costo_total").HasColumnType("decimal(18,2)");
         b.Property(e => e.ProductoId).HasColumnName("producto_id");
+        b.Property(e => e.OrdenTrabajoId).HasColumnName("orden_trabajo_id").IsRequired();
+        b.HasOne(e => e.OrdenTrabajo).WithMany(o => o.Materiales).HasForeignKey(e => e.OrdenTrabajoId).OnDelete(DeleteBehavior.Cascade);
     }
 }
 
